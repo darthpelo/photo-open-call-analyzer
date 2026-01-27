@@ -28,10 +28,27 @@ Thumbs.db
 # Test
 coverage/
 
-# Data (keep structure, ignore content)
+# Data (keep structure, ignore analysis content)
+# Photos & test images
 data/open-calls/*/photos/*
-data/open-calls/*/scores/*
+data/test-photos/*
+
+# Analysis results & generated data
+data/open-calls/*/results/*
+data/open-calls/*/batch-results.json
+data/open-calls/*/analysis-prompt.json
+data/open-calls/*/analysis-results.json
+
+# Personal analysis documents (Art Critic, Dev notes)
+data/open-calls/*/final-ranking.md
+data/open-calls/*/open-call-analysis.md
+data/open-calls/*/photo-analysis-prompt.md
+data/open-calls/*/project-brief.md
+
+# Keep directory structure
 !data/open-calls/*/.gitkeep
+!data/open-calls/*/photos/.gitkeep
+!data/open-calls/*/results/.gitkeep
 
 # Temp
 tmp/
