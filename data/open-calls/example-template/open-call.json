@@ -1,0 +1,12 @@
+{
+  "title": "Example Photography Competition",
+  "theme": "Urban Photography",
+  "jury": [
+    "Professional Photographer 1",
+    "Museum Curator",
+    "Photo Editor",
+    "Artist"
+  ],
+  "pastWinners": "Previous winners featured strong compositions with interesting use of light and shadow, often capturing decisive moments in urban environments. Common themes included street photography, architecture, and people interaction.",
+  "context": "This is an example configuration for the Photo Open Call Analyzer. Customize these fields with your actual open call details."
+}

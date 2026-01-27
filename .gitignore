@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Build
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Test
+coverage/
+
+# Data (keep structure, ignore content)
+data/open-calls/*/photos/*
+data/open-calls/*/scores/*
+!data/open-calls/*/.gitkeep
+
+# Temp
+tmp/
+temp/
+*.tmp
