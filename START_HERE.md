@@ -2,14 +2,14 @@
 
 ## Status: ✅ READY FOR USE
 
-**Stack**: Node.js + Ollama (LLaVA) - 100% locale e gratuito
+**Stack**: Node.js + Ollama (LLaVA) - 100% local and free
 **Date**: January 2026
 
 ---
 
 ## What You Have
 
-Un sistema AI completo per analizzare foto per competizioni fotografiche, usando **Ollama con LLaVA** (modello vision locale).
+A complete AI system to analyze photos for photography competitions, using **Ollama with LLaVA** (local vision model).
 
 ### Core Features ✓
 
