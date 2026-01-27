@@ -2,14 +2,19 @@
 
 ## Setup
 
-### 1. Install Dependencies
+### 1. Verifica Ollama
 ```bash
-npm install
+ollama list
 ```
 
-### 2. Set API Key
+Se non vedi `llava:7b`:
 ```bash
-export ANTHROPIC_API_KEY=your-anthropic-api-key
+ollama pull llava:7b
+```
+
+### 2. Install Dependencies
+```bash
+npm install
 ```
 
 ## Usage
@@ -24,7 +29,7 @@ This will:
 1. Load the open call configuration from `open-call.json`
 2. Validate photos in the `photos/` directory
 3. Generate an analysis prompt (or load existing one)
-4. Process all photos with Claude Vision API
+4. Process all photos with Ollama/LLaVA
 5. Aggregate scores and generate rankings
 6. Export reports in Markdown, JSON, and CSV formats
 
@@ -45,7 +50,7 @@ node src/cli/analyze.js validate ./path/to/photos/
 ```
 src/
 ├── analysis/
-│   ├── photo-analyzer.js       # Claude Vision integration
+│   ├── photo-analyzer.js       # Ollama/LLaVA integration
 │   ├── score-aggregator.js     # Score aggregation and ranking
 │   └── prompt-generator.js     # Dynamic prompt generation
 ├── processing/
@@ -55,7 +60,7 @@ src/
 ├── cli/
 │   └── analyze.js              # CLI commands
 └── utils/
-    ├── api-client.js           # Anthropic API client
+    ├── api-client.js           # Ollama client
     ├── file-utils.js           # File I/O utilities
     └── logger.js               # Logging utilities
 ```
@@ -93,13 +98,12 @@ Results will be in the `results/` directory.
 
 ## Features
 
-✓ **Claude Vision Integration** - Uses Claude 3.5 Sonnet for advanced image analysis
-✓ **Smart Criteria Generation** - Automatically generates evaluation criteria from open call details
-✓ **Batch Processing** - Process 20+ photos in parallel
-✓ **Detailed Scoring** - Individual criterion scores plus weighted overall scores
-✓ **Multi-Format Export** - Generate Markdown, JSON, and CSV reports
+✓ **Ollama/LLaVA Integration** - Local AI vision analysis (free, no API key)
+✓ **Smart Criteria Generation** - Automatically generates evaluation criteria
+✓ **Batch Processing** - Process multiple photos in parallel
+✓ **Detailed Scoring** - Individual criterion scores plus weighted overall
+✓ **Multi-Format Export** - Markdown, JSON, and CSV reports
 ✓ **Ranking System** - Automatic ranking with tier classification
-✓ **Statistics** - Average, median, std deviation, and percentile analysis
 
 ## Testing
 
@@ -117,20 +121,27 @@ node tests/workflow-test.js
 
 ### Evaluation Criteria Weights
 
-The default criteria are:
+Default criteria:
 - Theme Alignment: 30%
 - Technical Quality: 20%
 - Originality: 25%
 - Emotional Impact: 15%
 - Jury Fit: 10%
 
-These can be customized by editing the open call configuration or the analysis prompt.
+Customizable in the open call configuration.
 
 ### Batch Processing
 
 Control parallel processing with the `--parallel` option:
 ```bash
 npm run analyze data/open-calls/my-project -- --parallel 5
+```
+
+### Change Model
+
+Use a different Ollama vision model:
+```bash
+OLLAMA_MODEL=llava:13b npm run analyze data/open-calls/my-project
 ```
 
 ## Output
@@ -142,7 +153,6 @@ Human-readable report with:
 - Summary statistics
 - Top recommendations
 - Full ranking table
-- Visual score bars
 
 ### photo-analysis.json
 Machine-readable format with:
@@ -153,17 +163,18 @@ Machine-readable format with:
 
 ### photo-analysis.csv
 Spreadsheet-compatible format with:
-- Rank
-- Photo filename
-- Overall score
-- Recommendation
+- Rank, Photo, Score, Recommendation
 
 ## Troubleshooting
 
-### API Key Error
-Ensure `ANTHROPIC_API_KEY` is set:
+### Ollama Not Running
 ```bash
-echo $ANTHROPIC_API_KEY
+ollama serve
+```
+
+### Model Not Found
+```bash
+ollama pull llava:7b
 ```
 
 ### No Photos Found
@@ -171,14 +182,18 @@ Check that photos are in the correct directory:
 - `data/open-calls/[project]/photos/`
 - Supported formats: JPG, PNG, GIF, WebP
 
-### Test Images
-The project includes test data:
-```bash
-node data/open-calls/nature-wildlife/create-test-images.js
-```
+## Performance
+
+| Operation | Time |
+|-----------|------|
+| Single photo | 15-30 seconds |
+| Batch 10 photos | 3-5 minutes |
+| Batch 50 photos | 15-25 minutes |
+
+*Times on MacBook Pro M1 with LLaVA 7B*
 
 ## Next Steps (Roadmap)
 
-- **Milestone 2**: Full CLI with config files
-- **Milestone 3**: Web UI with visual comparison
-- **Milestone 4**: Caching and performance optimization
+- **Milestone 2**: Web UI with visual comparison
+- **Milestone 3**: Caching and performance optimization
+- **Milestone 4**: Integration with photo platforms

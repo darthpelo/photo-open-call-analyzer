@@ -1,81 +1,77 @@
-# 🎉 Implementation Complete - Milestone 1 MVP
+# Photo Open Call Analyzer - Start Here
 
-## Status: ✅ READY FOR PRODUCTION
+## Status: ✅ READY FOR USE
 
-**Date**: January 27, 2026  
-**Duration**: Single session  
-**Result**: Fully functional MVP with comprehensive testing
+**Stack**: Node.js + Ollama (LLaVA) - 100% locale e gratuito
+**Date**: January 2026
 
 ---
 
 ## What You Have
 
-A complete, production-ready AI-powered photo analysis system for photography competitions.
+Un sistema AI completo per analizzare foto per competizioni fotografiche, usando **Ollama con LLaVA** (modello vision locale).
 
-### Core Features Implemented ✓
+### Core Features ✓
 
-1. **Claude Vision Integration**
-   - Full API integration with error handling
-   - Base64 image encoding support
-   - Multi-format support (JPG, PNG, GIF, WebP)
-   - Smart criterion scoring
+1. **Ollama/LLaVA Vision Integration**
+   - Analisi immagini locale (nessuna API key richiesta)
+   - Supporto JPG, PNG, GIF, WebP
+   - Scoring intelligente per criterio
 
 2. **Intelligent Analysis Engine**
-   - Automatic open call analysis
-   - Dynamic prompt generation from competition details
-   - Weighted scoring system (customizable criteria)
-   - Detailed feedback for each photo
+   - Analisi automatica open call
+   - Generazione dinamica prompt
+   - Sistema scoring pesato
+   - Feedback dettagliato per ogni foto
 
 3. **Batch Processing**
-   - Parallel photo processing (3+ concurrent)
+   - Processing parallelo
    - Progress tracking
-   - Error handling and reporting
-   - Scales from 1 to 100+ photos
+   - Error handling
+   - Scala da 1 a 100+ foto
 
 4. **Comprehensive Reporting**
-   - Markdown reports with visual elements
-   - JSON for programmatic use
-   - CSV for spreadsheet analysis
-   - Customizable metadata
+   - Markdown reports
+   - JSON per uso programmatico
+   - CSV per spreadsheet
 
 5. **Professional CLI**
-   - Full command-line interface
-   - Single photo analysis
-   - Batch directory validation
-   - Helpful error messages
-
-### Code Quality
-
-- **10/10 Unit Tests** - All passing ✓
-- **~1,500 LOC** - Production code
-- **100% Core Coverage** - All major modules tested
-- **Clean Architecture** - Modular, maintainable design
-- **Full Documentation** - Code comments + guides
+   - Interfaccia command-line completa
+   - Analisi singola foto
+   - Validazione directory
 
 ---
 
 ## Quick Start
 
-### 1. Setup
+### 1. Verifica Ollama
 ```bash
-export ANTHROPIC_API_KEY=sk-your-key-here
+ollama list  # Deve mostrare llava:7b
+```
+
+Se manca:
+```bash
+ollama pull llava:7b
+```
+
+### 2. Installa Dipendenze
+```bash
 npm install
 ```
 
-### 2. Verify Everything Works
+### 3. Analizza una Foto
 ```bash
-node status-check.js
-npm test
+node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 ```
 
-### 3. Analyze Photos
+### 4. Analizza un Progetto
 ```bash
 npm run analyze data/open-calls/nature-wildlife
 ```
 
-### 4. Check Results
+### 5. Vedi Risultati
 ```bash
-open results/photo-analysis.md
+cat results/photo-analysis.md
 ```
 
 ---
@@ -83,44 +79,29 @@ open results/photo-analysis.md
 ## Project Structure
 
 ```
-src/ (10 files)
-├── analysis/           # Claude Vision + scoring
+src/
+├── analysis/           # Ollama/LLaVA + scoring
 ├── processing/         # Batch operations
-├── output/            # Report generation
-├── cli/               # Command-line interface
-├── utils/             # Helpers & utilities
-└── index.js           # Entry point
+├── output/             # Report generation
+├── cli/                # Command-line interface
+└── utils/              # Helpers (api-client, logger)
 
-tests/ (4 files)       # 10/10 passing tests
-data/                  # Sample projects + test photos
+data/                   # Sample projects + test photos
+tests/                  # Test suite
 ```
-
----
-
-## What's Ready
-
-✓ Core photo analysis engine  
-✓ Batch processing pipeline  
-✓ Multi-format report generation  
-✓ CLI interface  
-✓ Test suite  
-✓ Documentation  
-✓ Example projects  
-✓ Sample test photos  
-✓ Status checker  
 
 ---
 
 ## How to Use
 
-### Analyze a Competition
+### Analizzare una Competizione
 
-1. **Create a project directory**:
+1. **Crea directory progetto**:
 ```bash
-mkdir data/open-calls/my-competition
+mkdir -p data/open-calls/my-competition/photos
 ```
 
-2. **Add competition details** (`open-call.json`):
+2. **Aggiungi configurazione** (`open-call.json`):
 ```json
 {
   "title": "Your Competition Name",
@@ -131,166 +112,69 @@ mkdir data/open-calls/my-competition
 }
 ```
 
-3. **Add photos** to `photos/` subdirectory
+3. **Aggiungi foto** nella subdirectory `photos/`
 
-4. **Run analysis**:
+4. **Lancia analisi**:
 ```bash
 npm run analyze data/open-calls/my-competition
 ```
 
-5. **Get results** in `results/` directory:
-- `photo-analysis.md` - Human-readable report
-- `photo-analysis.json` - Machine-readable data
-- `photo-analysis.csv` - Spreadsheet format
+5. **Risultati** in `results/`:
+- `photo-analysis.md` - Report leggibile
+- `photo-analysis.json` - Dati strutturati
+- `photo-analysis.csv` - Per Excel/Sheets
 
 ---
 
 ## Testing
 
-All tests are **PASSING** ✓
-
 ```bash
 # Run all tests
 npm test
 
-# Run workflow test with mock data
+# Run workflow test
 node tests/workflow-test.js
-
-# Check project status
-node status-check.js
 ```
 
 ---
 
 ## Documentation
 
-- **[QUICKSTART.md](QUICKSTART.md)** - Full usage guide
-- **[IMPLEMENTATION_SUMMARY.md](IMPLEMENTATION_SUMMARY.md)** - Detailed overview
+- **[README.md](README.md)** - Documentazione completa
+- **[QUICKSTART.md](QUICKSTART.md)** - Guida rapida
 - **[ROADMAP.md](ROADMAP.md)** - Future milestones
 - **[BACKLOG.md](BACKLOG.md)** - Task tracking
 
 ---
 
-## Next Steps (Roadmap)
+## Troubleshooting
 
-### Milestone 2: Automation
-- Config file system for recurring competitions
-- Resume interrupted analyses
-- Email report delivery
-
-### Milestone 3: Web UI
-- Visual dashboard
-- Photo comparison view
-- Interactive ranking
-
-### Milestone 4: Optimization
-- Result caching
-- Better parallelization
-- Photo improvement suggestions
-
----
-
-## Files Created
-
-**Core Implementation** (9 files):
-- `src/analysis/photo-analyzer.js` - Claude Vision integration
-- `src/analysis/score-aggregator.js` - Scoring & ranking
-- `src/analysis/prompt-generator.js` - Dynamic prompts
-- `src/processing/batch-processor.js` - Batch operations
-- `src/output/report-generator.js` - Report generation
-- `src/cli/analyze.js` - CLI commands
-- `src/utils/api-client.js` - API management
-- `src/utils/file-utils.js` - File I/O
-- `src/utils/logger.js` - Logging
-- `src/index.js` - Entry point
-
-**Tests** (4 files):
-- Unit tests for core modules
-- Workflow integration test
-
-**Documentation**:
-- QUICKSTART.md
-- IMPLEMENTATION_SUMMARY.md
-- status-check.js
-
-**Sample Data**:
-- Example project configuration
-- Test photos
-
----
-
-## Key Metrics
-
-| Metric | Value |
-|--------|-------|
-| Source Files | 10 |
-| Test Files | 4 |
-| Unit Tests | 10 |
-| Test Coverage | 100% (core modules) |
-| Lines of Code | ~1,500 |
-| Functions | 40+ |
-| Dependencies | 6 (minimal) |
-| Build Time | <1s |
-| Test Time | ~0.4s |
-| Single Photo Analysis | ~5-15s |
-| Batch (20 photos) | ~2-3 min |
-
----
-
-## Deployment Checklist
-
-- [x] All dependencies defined
-- [x] Environment variables configured
-- [x] Error handling comprehensive
-- [x] Tests 100% passing
-- [x] Documentation complete
-- [x] Example data included
-- [x] CLI fully functional
-- [x] Status checker available
-- [x] Ready for production use
-
----
-
-## Support
-
-### Common Issues
-
-**"ANTHROPIC_API_KEY not found"**
+**"Ollama non raggiungibile"**
 ```bash
-export ANTHROPIC_API_KEY=sk-your-key
+ollama serve  # Avvia Ollama
+```
+
+**"Modello non trovato"**
+```bash
+ollama pull llava:7b
 ```
 
 **"No photos found"**
-- Check photos are in `data/open-calls/[project]/photos/`
-- Supported: JPG, PNG, GIF, WebP
-
-**"Test images missing"**
-```bash
-node data/open-calls/nature-wildlife/create-test-images.js
-```
+- Verifica che le foto siano in `data/open-calls/[project]/photos/`
+- Formati supportati: JPG, PNG, GIF, WebP
 
 ---
 
 ## Summary
 
-**You now have a complete, production-ready system for analyzing photography competitions using Claude Vision AI.**
-
-The implementation is:
-- ✅ Fully functional
-- ✅ Thoroughly tested
-- ✅ Well documented
-- ✅ Ready to use immediately
-
-Next step: Set your API key and start analyzing! 🚀
+Hai un sistema completo per analizzare competizioni fotografiche usando **Ollama/LLaVA** - completamente locale e gratuito.
 
 ```bash
-export ANTHROPIC_API_KEY=your-key-here
-npm run analyze data/open-calls/nature-wildlife
+# Inizia subito!
+node src/cli/analyze.js analyze-single ./tua-foto.jpg
 ```
 
 ---
 
-**Implementation by**: GitHub Copilot  
-**Framework**: Node.js + Claude AI  
-**Date**: 2026-01-27  
-**Status**: ✅ Complete & Production Ready
+**Stack**: Node.js + Ollama/LLaVA
+**Status**: ✅ Ready
