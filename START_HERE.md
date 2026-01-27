@@ -2,74 +2,74 @@
 
 ## Status: ✅ READY FOR USE
 
-**Stack**: Node.js + Ollama (LLaVA) - 100% locale e gratuito
+**Stack**: Node.js + Ollama (LLaVA) - 100% local and free
 **Date**: January 2026
 
 ---
 
 ## What You Have
 
-Un sistema AI completo per analizzare foto per competizioni fotografiche, usando **Ollama con LLaVA** (modello vision locale).
+A complete AI system to analyze photos for photography competitions, using **Ollama with LLaVA** (local vision model).
 
 ### Core Features ✓
 
 1. **Ollama/LLaVA Vision Integration**
-   - Analisi immagini locale (nessuna API key richiesta)
-   - Supporto JPG, PNG, GIF, WebP
-   - Scoring intelligente per criterio
+   - Local image analysis (no API key required)
+   - Support for JPG, PNG, GIF, WebP
+   - Intelligent scoring per criterion
 
 2. **Intelligent Analysis Engine**
-   - Analisi automatica open call
-   - Generazione dinamica prompt
-   - Sistema scoring pesato
-   - Feedback dettagliato per ogni foto
+   - Automatic open call analysis
+   - Dynamic prompt generation
+   - Weighted scoring system
+   - Detailed feedback for each photo
 
 3. **Batch Processing**
-   - Processing parallelo
+   - Parallel processing
    - Progress tracking
    - Error handling
-   - Scala da 1 a 100+ foto
+   - Scales from 1 to 100+ photos
 
 4. **Comprehensive Reporting**
    - Markdown reports
-   - JSON per uso programmatico
-   - CSV per spreadsheet
+   - JSON for programmatic use
+   - CSV for spreadsheets
 
 5. **Professional CLI**
-   - Interfaccia command-line completa
-   - Analisi singola foto
-   - Validazione directory
+   - Complete command-line interface
+   - Single photo analysis
+   - Directory validation
 
 ---
 
 ## Quick Start
 
-### 1. Verifica Ollama
+### 1. Verify Ollama
 ```bash
-ollama list  # Deve mostrare llava:7b
+ollama list  # Should show llava:7b
 ```
 
-Se manca:
+If missing:
 ```bash
 ollama pull llava:7b
 ```
 
-### 2. Installa Dipendenze
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 3. Analizza una Foto
+### 3. Analyze a Photo
 ```bash
 node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 ```
 
-### 4. Analizza un Progetto
+### 4. Analyze a Project
 ```bash
 npm run analyze data/open-calls/nature-wildlife
 ```
 
-### 5. Vedi Risultati
+### 5. View Results
 ```bash
 cat results/photo-analysis.md
 ```
@@ -94,14 +94,14 @@ tests/                  # Test suite
 
 ## How to Use
 
-### Analizzare una Competizione
+### Analyze a Photography Competition
 
-1. **Crea directory progetto**:
+1. **Create project directory**:
 ```bash
 mkdir -p data/open-calls/my-competition/photos
 ```
 
-2. **Aggiungi configurazione** (`open-call.json`):
+2. **Add configuration** (`open-call.json`):
 ```json
 {
   "title": "Your Competition Name",
@@ -112,17 +112,17 @@ mkdir -p data/open-calls/my-competition/photos
 }
 ```
 
-3. **Aggiungi foto** nella subdirectory `photos/`
+3. **Add photos** to the `photos/` subdirectory
 
-4. **Lancia analisi**:
+4. **Run analysis**:
 ```bash
 npm run analyze data/open-calls/my-competition
 ```
 
-5. **Risultati** in `results/`:
-- `photo-analysis.md` - Report leggibile
-- `photo-analysis.json` - Dati strutturati
-- `photo-analysis.csv` - Per Excel/Sheets
+5. **Results** in `results/`:
+- `photo-analysis.md` - Human-readable report
+- `photo-analysis.json` - Structured data
+- `photo-analysis.csv` - For Excel/Sheets
 
 ---
 
@@ -140,8 +140,8 @@ node tests/workflow-test.js
 
 ## Documentation
 
-- **[README.md](README.md)** - Documentazione completa
-- **[QUICKSTART.md](QUICKSTART.md)** - Guida rapida
+- **[README.md](README.md)** - Complete documentation
+- **[QUICKSTART.md](QUICKSTART.md)** - Quick guide
 - **[ROADMAP.md](ROADMAP.md)** - Future milestones
 - **[BACKLOG.md](BACKLOG.md)** - Task tracking
 
@@ -149,29 +149,29 @@ node tests/workflow-test.js
 
 ## Troubleshooting
 
-**"Ollama non raggiungibile"**
+**"Ollama not responding"**
 ```bash
-ollama serve  # Avvia Ollama
+ollama serve  # Start Ollama
 ```
 
-**"Modello non trovato"**
+**"Model not found"**
 ```bash
 ollama pull llava:7b
 ```
 
 **"No photos found"**
-- Verifica che le foto siano in `data/open-calls/[project]/photos/`
-- Formati supportati: JPG, PNG, GIF, WebP
+- Verify photos are in `data/open-calls/[project]/photos/`
+- Supported formats: JPG, PNG, GIF, WebP
 
 ---
 
 ## Summary
 
-Hai un sistema completo per analizzare competizioni fotografiche usando **Ollama/LLaVA** - completamente locale e gratuito.
+You have a complete system to analyze photography competitions using **Ollama/LLaVA** - completely local and free.
 
 ```bash
-# Inizia subito!
-node src/cli/analyze.js analyze-single ./tua-foto.jpg
+# Get started right now!
+node src/cli/analyze.js analyze-single ./your-photo.jpg
 ```
 
 ---

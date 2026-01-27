@@ -1,144 +1,144 @@
 # Photo Open Call Analyzer
 
-Un sistema multi-agente basato su AI per analizzare fotografie candidate a open call e generare classifiche intelligenti basate sui criteri specifici di ogni competizione.
+A multi-agent AI system to analyze photographs submitted to open calls and generate intelligent rankings based on competition-specific evaluation criteria.
 
-## Il Problema
+## The Problem
 
-Partecipare a una open call fotografica richiede di:
-1. **Capire cosa cerca la giuria** - Non basta leggere il tema, bisogna interpretare la visione curatoriale
-2. **Selezionare le foto giuste** - Tra decine o centinaia di scatti, quali hanno piu possibilita?
-3. **Essere oggettivi** - E difficile valutare il proprio lavoro senza bias
+Participating in photography open calls requires:
+1. **Understanding what the jury is looking for** - It's not just about reading the theme, but interpreting the curatorial vision
+2. **Selecting the right photos** - Among dozens or hundreds of shots, which have the best chances?
+3. **Being objective** - It's difficult to evaluate your own work without bias
 
-## La Soluzione
+## The Solution
 
-Photo Open Call Analyzer usa **Ollama con LLaVA** (modello vision locale) e un sistema di **5 agenti specializzati** per:
-- Analizzare in profondita i requisiti della open call
-- Studiare i vincitori delle edizioni passate per capire i gusti della giuria
-- Valutare ogni foto candidata con criteri oggettivi e specifici
-- Generare una classifica con feedback dettagliato
+Photo Open Call Analyzer uses **Ollama with LLaVA** (local vision model) and a system of **5 specialized agents** to:
+- Deeply analyze open call requirements
+- Study past winners to understand jury preferences
+- Evaluate each submitted photo with objective, specific criteria
+- Generate a ranking with detailed feedback
 
-**100% locale e gratuito** - Nessuna API key richiesta, nessun costo per analisi.
+**100% local and free** - No API key required, no cost per analysis.
 
 ---
 
-## Come Funziona
+## How It Works
 
-### Il Sistema Multi-Agente
+### The Multi-Agent System
 
-Il progetto utilizza 5 agenti AI specializzati che collaborano:
+The project uses 5 specialized AI agents that collaborate:
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                                                                 │
-│   ┌─────────────┐      Coordina      ┌─────────────┐           │
-│   │   Marco     │◄──────────────────►│  Margherita │           │
-│   │   Project   │                    │  Art Critic │           │
-│   │   Owner     │                    │             │           │
-│   └──────┬──────┘                    └──────┬──────┘           │
-│          │                                  │                   │
-│          │ Assegna task            Criteri di valutazione      │
-│          │                                  │                   │
-│          ▼                                  ▼                   │
-│   ┌─────────────┐    Specifiche    ┌─────────────┐             │
-│   │    Alex     │◄────────────────►│   Sofia     │             │
-│   │    Dev      │                  │   Designer  │             │
-│   └──────┬──────┘                  └─────────────┘             │
-│          │                                                      │
-│          │ Codice da testare                                   │
-│          ▼                                                      │
-│   ┌─────────────┐                                              │
-│   │    Luca     │                                              │
-│   │    QA       │                                              │
-│   └─────────────┘                                              │
-│                                                                 │
+│   ┌─────────────┐    Coordinates   ┌─────────────┐            │
+│   │   Marco     │◄─────────────────►│ Margherita  │            │
+│   │   Project   │                   │ Art Critic  │            │
+│   │   Owner     │                   │             │            │
+│   └──────┬──────┘                   └──────┬──────┘            │
+│          │                                 │                    │
+│          │ Assigns tasks       Evaluation criteria             │
+│          │                                 │                    │
+│          ▼                                 ▼                    │
+│   ┌─────────────┐    Specs        ┌─────────────┐              │
+│   │    Alex     │◄────────────────►│   Sofia     │              │
+│   │    Dev      │                  │  Designer   │              │
+│   └──────┬──────┘                  └─────────────┘              │
+│          │                                                       │
+│          │ Code to test                                         │
+│          ▼                                                       │
+│   ┌─────────────┐                                               │
+│   │    Luca     │                                               │
+│   │    QA       │                                               │
+│   └─────────────┘                                               │
+│                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-| Agente | Ruolo | Responsabilita |
-|--------|-------|----------------|
-| **Margherita** (Art Critic) | Esperta di fotografia e open call | Analizza tema, giuria, vincitori passati. Genera criteri di valutazione |
-| **Marco** (Project Owner) | Coordinatore | Gestisce priorita, assegna task, traccia il progresso |
-| **Alex** (Developer) | Implementazione tecnica | Scrive il codice per l'analisi, batch processing, export |
-| **Sofia** (Designer) | UX/UI | Progetta l'interfaccia per visualizzare i risultati |
-| **Luca** (QA) | Quality Assurance | Testa il sistema, trova bug, valida gli output |
+| Agent | Role | Responsibilities |
+|-------|------|------------------|
+| **Margherita** (Art Critic) | Photography & open call expert | Analyzes theme, jury, past winners. Generates evaluation criteria |
+| **Marco** (Project Owner) | Coordinator | Manages priorities, assigns tasks, tracks progress |
+| **Alex** (Developer) | Technical implementation | Writes analysis code, batch processing, export |
+| **Sofia** (Designer) | UX/UI | Designs interface for displaying results |
+| **Luca** (QA) | Quality Assurance | Tests system, finds bugs, validates output |
 
-### Il Workflow di Analisi
+### The Analysis Workflow
 
 ```
-FASE 1: SETUP                    FASE 2: ANALISI                 FASE 3: RANKING
-─────────────────               ─────────────────               ─────────────────
+PHASE 1: SETUP                  PHASE 2: ANALYSIS              PHASE 3: RANKING
+──────────────                 ──────────────                 ──────────────
 
-1. Raccogli info OC             4. Carica foto                  7. Aggrega score
-   - Tema                          - Validazione                   - Calcola media pesata
-   - Giuria
-   - Vincitori passati          5. Analizza ogni foto           8. Genera classifica
-                                   - LLaVA Vision                  - Ordina per score
-2. Analizza visione                - Applica criteri               - Identifica top picks
-   curatoriale                     - Genera score
-   - Pattern vincitori                                          9. Crea report
-   - Red flags                  6. QA check                        - Feedback dettagliato
-   - Criteri impliciti             - Valida output                 - Suggerimenti
+1. Gather OC info              4. Load photos                 7. Aggregate scores
+   - Theme                        - Validation                   - Calculate weighted avg
+   - Jury
+   - Past winners             5. Analyze each photo          8. Generate ranking
+                                  - LLaVA Vision                 - Sort by score
+2. Analyze curatorial            - Apply criteria               - Identify top picks
+   vision                         - Generate scores
+   - Winner patterns                                          9. Create report
+   - Red flags                6. QA check                        - Detailed feedback
+   - Implicit criteria            - Validate output              - Suggestions
 
-3. Genera prompt
-   - Criteri pesati
-   - Domande specifiche
+3. Generate prompt
+   - Weighted criteria
+   - Specific questions
 ```
 
 ---
 
-## Installazione
+## Installation
 
-### Prerequisiti
+### Prerequisites
 
-- **Node.js** v20 o superiore
-- **Ollama** installato e funzionante
-- **Modello LLaVA** scaricato
+- **Node.js** v20 or higher
+- **Ollama** installed and running
+- **LLaVA model** downloaded
 
-### Setup Ollama
+### Ollama Setup
 
-1. **Installa Ollama**
+1. **Install Ollama**
 
-   Scarica da https://ollama.com/download oppure:
+   Download from https://ollama.com/download or:
    ```bash
    brew install ollama
    ```
 
-2. **Avvia Ollama**
+2. **Start Ollama**
    ```bash
    ollama serve
    ```
 
-3. **Scarica il modello LLaVA**
+3. **Download the LLaVA model**
    ```bash
    ollama pull llava:7b
    ```
 
-   | Modello | Size | Qualita | Velocita |
-   |---------|------|---------|----------|
-   | `moondream` | 1.7GB | ⭐⭐ | Velocissimo |
-   | `llava:7b` | 4.7GB | ⭐⭐⭐ | Buona (consigliato) |
-   | `llava:13b` | 8GB | ⭐⭐⭐⭐ | Media |
-   | `llava-llama3` | 5.5GB | ⭐⭐⭐⭐ | Buona |
+   | Model | Size | Quality | Speed |
+   |-------|------|---------|-------|
+   | `moondream` | 1.7GB | ⭐⭐ | Very fast |
+   | `llava:7b` | 4.7GB | ⭐⭐⭐ | Good (recommended) |
+   | `llava:13b` | 8GB | ⭐⭐⭐⭐ | Slower |
+   | `llava-llama3` | 5.5GB | ⭐⭐⭐⭐ | Good |
 
-### Setup Progetto
+### Project Setup
 
-1. **Vai nella cartella del progetto**
+1. **Navigate to project directory**
    ```bash
    cd ~/Projects/photo-open-call-analyzer
    ```
 
-2. **Installa le dipendenze**
+2. **Install dependencies**
    ```bash
    npm install
    ```
 
-3. **Verifica che tutto funzioni**
+3. **Verify everything works**
    ```bash
    node -e "
    import { checkOllamaStatus } from './src/utils/api-client.js';
    const status = await checkOllamaStatus();
-   console.log(status.connected ? '✓ Ollama connesso' : '✗ Ollama non raggiungibile');
-   console.log('Modello:', status.configuredModel);
+   console.log(status.connected ? '✓ Ollama connected' : '✗ Ollama unreachable');
+   console.log('Model:', status.configuredModel);
    "
    ```
 
@@ -146,99 +146,99 @@ FASE 1: SETUP                    FASE 2: ANALISI                 FASE 3: RANKING
 
 ## Quick Start
 
-### Analizzare una singola foto
+### Analyze a single photo
 
 ```bash
 node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 ```
 
-### Analizzare un batch di foto
+### Analyze a batch of photos
 
-1. **Crea la struttura del progetto**
+1. **Create project structure**
    ```bash
-   mkdir -p data/open-calls/mia-open-call/photos
+   mkdir -p data/open-calls/my-open-call/photos
    ```
 
-2. **Copia le foto da analizzare**
+2. **Copy photos to analyze**
    ```bash
-   cp ~/Pictures/selezione/*.jpg data/open-calls/mia-open-call/photos/
+   cp ~/Pictures/selection/*.jpg data/open-calls/my-open-call/photos/
    ```
 
-3. **Crea il file di configurazione** `data/open-calls/mia-open-call/open-call.json`:
+3. **Create configuration file** `data/open-calls/my-open-call/open-call.json`:
    ```json
    {
      "title": "LensCulture Portrait Awards 2024",
      "theme": "Portraits that Challenge Perception",
      "jury": ["Martin Parr", "Alessia Glaviano"],
-     "pastWinners": "Lavori con forte componente sociale, luce naturale",
-     "context": "Competizione internazionale di ritratto"
+     "pastWinners": "Works with strong social component, natural light",
+     "context": "International portrait competition"
    }
    ```
 
-4. **Lancia l'analisi**
+4. **Run analysis**
    ```bash
-   node src/cli/analyze.js analyze data/open-calls/mia-open-call/
+   node src/cli/analyze.js analyze data/open-calls/my-open-call/
    ```
 
-5. **Visualizza i risultati**
-   I report saranno generati in `./results/`:
-   - `photo-analysis.md` - Report Markdown
-   - `photo-analysis.json` - Dati strutturati
-   - `photo-analysis.csv` - Per Excel/Sheets
+5. **View results**
+   Reports will be generated in `./results/`:
+   - `photo-analysis.md` - Markdown report
+   - `photo-analysis.json` - Structured data
+   - `photo-analysis.csv` - For Excel/Sheets
 
 ---
 
-## Guida all'Uso con Claude Code
+## Guide to Using with Claude Code
 
-Claude Code riconosce automaticamente gli agenti definiti nel progetto.
+Claude Code automatically recognizes the agents defined in the project.
 
-1. **Avvia Claude Code nella cartella del progetto**
+1. **Launch Claude Code in project folder**
    ```bash
    cd ~/Projects/photo-open-call-analyzer
    claude
    ```
 
-2. **Inizia un nuovo progetto di analisi**
+2. **Start a new analysis project**
    ```
-   Usa project-owner per iniziare un nuovo progetto per l'open call
+   Use project-owner to start a new project for the open call
    "LensCulture Portrait Awards 2024"
    ```
 
-3. **Fornisci i dettagli della open call**
+3. **Provide open call details**
    ```
-   Usa art-critic per analizzare questa open call:
+   Use art-critic to analyze this open call:
 
-   Tema: "Portraits that Challenge Perception"
+   Theme: "Portraits that Challenge Perception"
 
-   Giuria:
+   Jury:
    - Martin Parr (Magnum Photos)
    - Alessia Glaviano (Vogue Italia)
 
-   Vincitori 2023:
-   - Lavori con forte componente sociale
-   - Mix di reportage e ritratto ambientato
-   - Preferenza per luce naturale
+   2023 Winners:
+   - Works with strong social component
+   - Mix of reportage and environmental portrait
+   - Natural light preference
    ```
 
-4. **Avvia l'analisi**
+4. **Start analysis**
    ```
-   Usa dev per analizzare tutte le foto nella cartella del progetto
+   Use dev to analyze all photos in the project folder
    ```
 
-5. **Genera la classifica finale**
+5. **Generate final ranking**
    ```
-   Usa art-critic per generare la classifica finale.
-   Devo selezionare le migliori 5 foto da sottomettere.
+   Use art-critic to generate final ranking.
+   I need to select the best 5 photos to submit.
    ```
 
 ---
 
-## Uso Programmatico
+## Programmatic Usage
 
 ```javascript
 import { analyzePhoto } from './src/analysis/photo-analyzer.js';
 
-// Analizza una foto
+// Analyze a photo
 const result = await analyzePhoto('./photos/portrait-01.jpg', {
   title: 'My Competition',
   theme: 'Urban Portraits',
@@ -270,96 +270,96 @@ console.log(result);
 
 ---
 
-## Struttura del Progetto
+## Project Structure
 
 ```
 photo-open-call-analyzer/
 │
-├── .claude/                      # Configurazione agenti Claude Code
-│   ├── agents/                   # Definizioni dei 5 agenti
-│   │   ├── art-critic.md        # Margherita - analisi artistica
-│   │   ├── project-owner.md     # Marco - coordinamento
-│   │   ├── dev.md               # Alex - sviluppo
+├── .claude/                      # Claude Code agent configuration
+│   ├── agents/                   # Definitions of 5 agents
+│   │   ├── art-critic.md        # Margherita - artistic analysis
+│   │   ├── project-owner.md     # Marco - coordination
+│   │   ├── dev.md               # Alex - development
 │   │   ├── designer.md          # Sofia - UX/UI
 │   │   └── qa.md                # Luca - testing
-│   └── workflows/                # Workflow riusabili
+│   └── workflows/                # Reusable workflows
 │       └── analyze-open-call.md
 │
-├── src/                          # Codice sorgente
-│   ├── analysis/                 # Core analisi
-│   │   ├── photo-analyzer.js    # Analisi con Ollama/LLaVA
-│   │   ├── prompt-generator.js  # Generazione criteri
-│   │   └── score-aggregator.js  # Aggregazione score
+├── src/                          # Source code
+│   ├── analysis/                 # Core analysis
+│   │   ├── photo-analyzer.js    # Ollama/LLaVA analysis
+│   │   ├── prompt-generator.js  # Criteria generation
+│   │   └── score-aggregator.js  # Score aggregation
 │   ├── processing/
-│   │   └── batch-processor.js   # Processing multiplo
+│   │   └── batch-processor.js   # Batch processing
 │   ├── output/
-│   │   └── report-generator.js  # Export report
+│   │   └── report-generator.js  # Report export
 │   ├── cli/
-│   │   └── analyze.js           # Comandi CLI
+│   │   └── analyze.js           # CLI commands
 │   └── utils/
-│       ├── api-client.js        # Client Ollama
-│       ├── file-utils.js        # Utility file
+│       ├── api-client.js        # Ollama client
+│       ├── file-utils.js        # File utilities
 │       └── logger.js            # Logging
 │
-├── data/                         # Dati progetto
-│   └── open-calls/               # Un folder per ogni OC
-│       └── {nome-open-call}/
-│           ├── open-call.json        # Configurazione
-│           ├── analysis-prompt.json  # Prompt generato
-│           ├── photos/               # Foto da analizzare
-│           └── results/              # Risultati
+├── data/                         # Project data
+│   └── open-calls/               # One folder per OC
+│       └── {name-open-call}/
+│           ├── open-call.json        # Configuration
+│           ├── analysis-prompt.json  # Generated prompt
+│           ├── photos/               # Photos to analyze
+│           └── results/              # Results
 │
-├── CLAUDE.md                     # Contesto per Claude Code
-├── ROADMAP.md                    # Vision e milestone
-├── BACKLOG.md                    # Task prioritizzati
+├── CLAUDE.md                     # Context for Claude Code
+├── ROADMAP.md                    # Vision and milestones
+├── BACKLOG.md                    # Task tracking
 ├── package.json
-└── README.md                     # Questo file
+└── README.md                     # This file
 ```
 
 ---
 
-## Configurazione
+## Configuration
 
-### Variabili d'Ambiente
+### Environment Variables
 
-| Variabile | Descrizione | Default |
-|-----------|-------------|---------|
-| `OLLAMA_HOST` | URL di Ollama | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Modello vision da usare | `llava:7b` |
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `OLLAMA_HOST` | Ollama URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Vision model to use | `llava:7b` |
 
-### Cambiare Modello
+### Change Model
 
-Per usare un modello diverso:
+To use a different model:
 
 ```bash
-# Scarica il modello
+# Download the model
 ollama pull llava:13b
 
-# Usa il modello
+# Use the model
 OLLAMA_MODEL=llava:13b node src/cli/analyze.js analyze ./my-project/
 ```
 
 ---
 
-## Criteri di Valutazione
+## Evaluation Criteria
 
-Di default, ogni foto viene valutata su 5 criteri:
+By default, each photo is evaluated on 5 criteria:
 
-| Criterio | Peso | Descrizione |
-|----------|------|-------------|
-| **Theme Alignment** | 30% | Quanto la foto risponde al brief della open call |
-| **Technical Quality** | 20% | Esposizione, fuoco, composizione, post-produzione |
-| **Originality** | 25% | Unicita della visione, approccio non convenzionale |
-| **Emotional Impact** | 15% | Capacita di coinvolgere, memorabilita |
-| **Jury Fit** | 10% | Allineamento con i gusti dei giurati |
+| Criterion | Weight | Description |
+|-----------|--------|-------------|
+| **Theme Alignment** | 30% | How well the photo responds to the open call brief |
+| **Technical Quality** | 20% | Exposure, focus, composition, post-production |
+| **Originality** | 25% | Uniqueness of vision, unconventional approach |
+| **Emotional Impact** | 15% | Ability to engage, memorability |
+| **Jury Fit** | 10% | Alignment with jury preferences |
 
-I criteri sono personalizzabili nel file `open-call.json` di ogni progetto.
+Criteria are customizable in each project's `open-call.json` file.
 
 ---
 
-## Output di Esempio
+## Example Output
 
-### Analisi Singola Foto
+### Single Photo Analysis
 
 ```
 === ANALYSIS RESULT ===
@@ -382,103 +382,103 @@ Individual: {
 }
 ```
 
-### Report Markdown
+### Markdown Report
 
-Il report finale include:
-- Classifica ordinata per score
-- Breakdown per criterio
-- Raccomandazioni (Strong Yes / Yes / Maybe / No)
-- Statistiche aggregate
-- Top picks consigliati
+The final report includes:
+- Ranking sorted by score
+- Breakdown by criterion
+- Recommendations (Strong Yes / Yes / Maybe / No)
+- Aggregate statistics
+- Recommended top picks
 
 ---
 
 ## Performance
 
-| Operazione | Tempo Stimato |
-|------------|---------------|
-| Analisi singola foto | 15-30 secondi |
-| Batch 10 foto | 3-5 minuti |
-| Batch 50 foto | 15-25 minuti |
+| Operation | Time |
+|-----------|------|
+| Single photo analysis | 15-30 seconds |
+| Batch 10 photos | 3-5 minutes |
+| Batch 50 photos | 15-25 minutes |
 
-*Tempi basati su MacBook Pro M1 con LLaVA 7B*
+*Times based on MacBook Pro M1 with LLaVA 7B*
 
 ---
 
 ## Troubleshooting
 
-### Ollama non raggiungibile
+### Ollama not responding
 
 ```bash
-# Verifica che Ollama sia in esecuzione
+# Verify Ollama is running
 curl http://localhost:11434/api/tags
 
-# Se non risponde, avvia Ollama
+# If it doesn't respond, start Ollama
 ollama serve
 ```
 
-### Modello non trovato
+### Model not found
 
 ```bash
-# Lista modelli installati
+# List installed models
 ollama list
 
-# Scarica il modello mancante
+# Download missing model
 ollama pull llava:7b
 ```
 
-### Analisi lenta
+### Analysis is slow
 
-- Usa un modello piu leggero: `moondream` invece di `llava:13b`
-- Riduci la risoluzione delle foto prima dell'analisi
-- Aumenta la RAM disponibile per Ollama
+- Use a lighter model: `moondream` instead of `llava:13b`
+- Reduce photo resolution before analysis
+- Increase available RAM for Ollama
 
 ---
 
 ## Roadmap
 
 ### v1.0 - MVP ✅
-- [x] Struttura progetto e agenti
-- [x] Integrazione Ollama/LLaVA
-- [x] Photo analyzer funzionante
-- [x] CLI base
-- [x] Export Markdown/JSON/CSV
+- [x] Project structure and agents
+- [x] Ollama/LLaVA integration
+- [x] Working photo analyzer
+- [x] Basic CLI
+- [x] Markdown/JSON/CSV export
 
-### v1.1 - Miglioramenti
-- [ ] Web UI per risultati
-- [ ] Comparazione side-by-side
-- [ ] Resume analisi interrotta
-- [ ] Supporto RAW files
+### v1.1 - Improvements
+- [ ] Web UI for results
+- [ ] Side-by-side comparison
+- [ ] Resume interrupted analysis
+- [ ] RAW file support
 
-### v2.0 - Avanzato
-- [ ] Memoria storica vincitori
-- [ ] Suggerimenti miglioramento foto
-- [ ] Integrazione piattaforme (Picter, PhotoShelter)
+### v2.0 - Advanced Features
+- [ ] Historical winner memory
+- [ ] Photo improvement suggestions
+- [ ] Platform integration (Picter, PhotoShelter)
 
 ---
 
-## Stack Tecnologico
+## Technology Stack
 
 - **Runtime**: Node.js 20+
 - **AI Vision**: Ollama + LLaVA
 - **CLI**: Commander.js
 - **Logging**: Chalk + Ora
-- **Agenti**: Claude Code custom agents
+- **Agents**: Claude Code custom agents
 
 ---
 
-## Licenza
+## License
 
 MIT License
 
 ---
 
-## Crediti
+## Credits
 
-- Powered by [Ollama](https://ollama.com) e [LLaVA](https://llava-vl.github.io/)
-- Ispirato da [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)
-- Sviluppato con [Claude Code](https://claude.ai/code)
+- Powered by [Ollama](https://ollama.com) and [LLaVA](https://llava-vl.github.io/)
+- Inspired by [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)
+- Built with [Claude Code](https://claude.ai/code)
 
 ---
 
-*Fatto con passione per i fotografi che vogliono massimizzare le loro chance nelle open call.*
+*Made with passion for photographers who want to maximize their chances in open calls.*
