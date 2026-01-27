@@ -9,6 +9,8 @@ Questo tool aiuta fotografi a selezionare le migliori foto da sottomettere a ope
 - I gusti della giuria (basati su vincitori passati)
 - Ogni foto candidata rispetto ai criteri identificati
 
+**Stack**: Node.js + Ollama (LLaVA) per analisi vision locale e gratuita.
+
 ## Agenti Disponibili
 
 | Agente | File | Ruolo |
@@ -25,15 +27,15 @@ Vedi `.claude/workflows/analyze-open-call.md` per il flusso completo.
 
 ```
 1. Setup      → Project Owner inizializza, Art Critic analizza OC
-2. Analysis   → Dev processa foto con Claude Vision
+2. Analysis   → Dev processa foto con Ollama/LLaVA
 3. Ranking    → Art Critic genera classifica finale
 ```
 
 ## Quick Start
 
-### 1. Configura API Key
+### 1. Verifica Ollama
 ```bash
-export ANTHROPIC_API_KEY=your-key-here
+ollama list  # Deve mostrare llava:7b
 ```
 
 ### 2. Installa Dipendenze
@@ -41,27 +43,19 @@ export ANTHROPIC_API_KEY=your-key-here
 npm install
 ```
 
-### 3. Inizia Nuovo Progetto
-```
-Usa project-owner per iniziare un nuovo progetto per l'open call "Nome Open Call"
-```
-
-### 4. Analizza Open Call
-```
-Usa art-critic per analizzare questa open call:
-- Tema: ...
-- Giuria: ...
-- Vincitori passati: ...
+### 3. Analizza una Foto
+```bash
+node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 ```
 
-### 5. Processa Foto
-```
-Usa dev per analizzare le foto in data/open-calls/{nome}/photos/
-```
+### 4. Analizza Batch
+```bash
+# Crea struttura
+mkdir -p data/open-calls/mia-oc/photos
 
-### 6. Genera Ranking
-```
-Usa art-critic per generare la classifica finale
+# Aggiungi foto e config
+# Poi lancia:
+node src/cli/analyze.js analyze data/open-calls/mia-oc/
 ```
 
 ## Struttura Progetto
@@ -81,15 +75,23 @@ photo-open-call-analyzer/
 │       └── analyze-open-call.md
 ├── src/                      # Codice sorgente
 │   ├── analysis/             # Logica analisi foto
+│   │   ├── photo-analyzer.js # Core con Ollama/LLaVA
+│   │   ├── prompt-generator.js
+│   │   └── score-aggregator.js
 │   ├── processing/           # Batch processing
-│   └── output/               # Generazione report
+│   ├── output/               # Generazione report
+│   ├── cli/                  # Comandi CLI
+│   └── utils/
+│       ├── api-client.js     # Client Ollama
+│       ├── file-utils.js
+│       └── logger.js
 ├── data/
 │   ├── open-calls/           # Progetti per open call
 │   │   └── {nome-call}/
+│   │       ├── open-call.json # Config
 │   │       ├── photos/       # Foto da analizzare
-│   │       ├── scores/       # Risultati analisi
-│   │       └── *.md          # Documenti progetto
-│   └── photos/               # Cartella foto generica
+│   │       └── results/      # Risultati
+│   └── test-photos/          # Foto di test
 ├── tests/                    # Test automatici
 └── docs/                     # Documentazione
 ```
@@ -103,10 +105,10 @@ photo-open-call-analyzer/
 - Costanti: UPPER_SNAKE (`MAX_CONCURRENT`)
 
 ### Codice
-- JavaScript/TypeScript con ESM
+- JavaScript con ESM (type: module)
 - Async/await per operazioni asincrone
 - Error handling esplicito
-- Logging strutturato
+- Logging strutturato con chalk
 
 ### Commit
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`
@@ -117,24 +119,31 @@ photo-open-call-analyzer/
 
 ```json
 {
-  "@anthropic-ai/sdk": "Analisi immagini con Claude Vision",
+  "ollama": "Client per Ollama (LLaVA vision)",
   "sharp": "Processing immagini",
-  "exif-reader": "Lettura metadata EXIF",
-  "commander": "CLI"
+  "commander": "CLI",
+  "chalk": "Colored output",
+  "ora": "Spinners"
 }
 ```
+
+## Variabili d'Ambiente
+
+| Variabile | Default | Descrizione |
+|-----------|---------|-------------|
+| `OLLAMA_HOST` | `http://localhost:11434` | URL Ollama |
+| `OLLAMA_MODEL` | `llava:7b` | Modello vision |
 
 ## Comandi Utili
 
 ```bash
-# Sviluppo
-npm run dev          # Avvia in development
-npm run build        # Build produzione
-npm test             # Esegui test
-
 # Analisi
-npm run analyze      # Analizza foto (dopo setup)
-npm run report       # Genera report
+node src/cli/analyze.js analyze-single ./foto.jpg
+node src/cli/analyze.js analyze ./data/open-calls/mia-oc/
+node src/cli/analyze.js validate ./data/open-calls/mia-oc/photos/
+
+# Test
+npm test
 ```
 
 ## Note per gli Agenti
@@ -148,6 +157,7 @@ npm run report       # Genera report
 - Implementare in `src/`
 - Scrivere test per ogni modulo critico
 - Documentare API pubbliche
+- Usare Ollama per analisi immagini
 
 ### Designer
 - Specifiche in `docs/design/`
