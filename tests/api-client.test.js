@@ -6,21 +6,20 @@ describe('API Client', () => {
     resetApiClient();
   });
 
-  test('should initialize API client with valid key', () => {
-    process.env.ANTHROPIC_API_KEY = 'test-key-123';
+  test('should initialize Ollama client', () => {
     const client = getApiClient();
     expect(client).toBeDefined();
     expect(client).not.toBeNull();
   });
 
-  test('should throw error if API key is missing', () => {
-    delete process.env.ANTHROPIC_API_KEY;
+  test('should use default Ollama host if not specified', () => {
+    delete process.env.OLLAMA_HOST;
     resetApiClient();
-    expect(() => getApiClient()).toThrow('ANTHROPIC_API_KEY environment variable is not set');
+    const client = getApiClient();
+    expect(client).toBeDefined();
   });
 
   test('should return same client instance on multiple calls', () => {
-    process.env.ANTHROPIC_API_KEY = 'test-key-123';
     const client1 = getApiClient();
     const client2 = getApiClient();
     expect(client1).toBe(client2);
