@@ -318,24 +318,24 @@ photo-open-call-analyzer/
 
 ---
 
-## Configurazione
+## Configuration
 
-### Variabili d'Ambiente
+### Environment Variables
 
-| Variabile | Descrizione | Default |
-|-----------|-------------|---------|
-| `OLLAMA_HOST` | URL di Ollama | `http://localhost:11434` |
-| `OLLAMA_MODEL` | Modello vision da usare | `llava:7b` |
+| Variable | Description | Default |
+|----------|-------------|----------|
+| `OLLAMA_HOST` | Ollama URL | `http://localhost:11434` |
+| `OLLAMA_MODEL` | Vision model to use | `llava:7b` |
 
-### Cambiare Modello
+### Change Model
 
-Per usare un modello diverso:
+To use a different model:
 
 ```bash
-# Scarica il modello
+# Download the model
 ollama pull llava:13b
 
-# Usa il modello
+# Use the model
 OLLAMA_MODEL=llava:13b node src/cli/analyze.js analyze ./my-project/
 ```
 
@@ -395,90 +395,90 @@ The final report includes:
 
 ## Performance
 
-| Operazione | Tempo Stimato |
-|------------|---------------|
-| Analisi singola foto | 15-30 secondi |
-| Batch 10 foto | 3-5 minuti |
-| Batch 50 foto | 15-25 minuti |
+| Operation | Time |
+|-----------|------|
+| Single photo analysis | 15-30 seconds |
+| Batch 10 photos | 3-5 minutes |
+| Batch 50 photos | 15-25 minutes |
 
-*Tempi basati su MacBook Pro M1 con LLaVA 7B*
+*Times based on MacBook Pro M1 with LLaVA 7B*
 
 ---
 
 ## Troubleshooting
 
-### Ollama non raggiungibile
+### Ollama not responding
 
 ```bash
-# Verifica che Ollama sia in esecuzione
+# Verify Ollama is running
 curl http://localhost:11434/api/tags
 
-# Se non risponde, avvia Ollama
+# If it doesn't respond, start Ollama
 ollama serve
 ```
 
-### Modello non trovato
+### Model not found
 
 ```bash
-# Lista modelli installati
+# List installed models
 ollama list
 
-# Scarica il modello mancante
+# Download missing model
 ollama pull llava:7b
 ```
 
-### Analisi lenta
+### Analysis is slow
 
-- Usa un modello piu leggero: `moondream` invece di `llava:13b`
-- Riduci la risoluzione delle foto prima dell'analisi
-- Aumenta la RAM disponibile per Ollama
+- Use a lighter model: `moondream` instead of `llava:13b`
+- Reduce photo resolution before analysis
+- Increase available RAM for Ollama
 
 ---
 
 ## Roadmap
 
 ### v1.0 - MVP ✅
-- [x] Struttura progetto e agenti
-- [x] Integrazione Ollama/LLaVA
-- [x] Photo analyzer funzionante
-- [x] CLI base
-- [x] Export Markdown/JSON/CSV
+- [x] Project structure and agents
+- [x] Ollama/LLaVA integration
+- [x] Working photo analyzer
+- [x] Basic CLI
+- [x] Markdown/JSON/CSV export
 
-### v1.1 - Miglioramenti
-- [ ] Web UI per risultati
-- [ ] Comparazione side-by-side
-- [ ] Resume analisi interrotta
-- [ ] Supporto RAW files
+### v1.1 - Improvements
+- [ ] Web UI for results
+- [ ] Side-by-side comparison
+- [ ] Resume interrupted analysis
+- [ ] RAW file support
 
-### v2.0 - Avanzato
-- [ ] Memoria storica vincitori
-- [ ] Suggerimenti miglioramento foto
-- [ ] Integrazione piattaforme (Picter, PhotoShelter)
+### v2.0 - Advanced Features
+- [ ] Historical winner memory
+- [ ] Photo improvement suggestions
+- [ ] Platform integration (Picter, PhotoShelter)
 
 ---
 
-## Stack Tecnologico
+## Technology Stack
 
 - **Runtime**: Node.js 20+
 - **AI Vision**: Ollama + LLaVA
 - **CLI**: Commander.js
 - **Logging**: Chalk + Ora
-- **Agenti**: Claude Code custom agents
+- **Agents**: Claude Code custom agents
 
 ---
 
-## Licenza
+## License
 
 MIT License
 
 ---
 
-## Crediti
+## Credits
 
-- Powered by [Ollama](https://ollama.com) e [LLaVA](https://llava-vl.github.io/)
-- Ispirato da [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)
-- Sviluppato con [Claude Code](https://claude.ai/code)
+- Powered by [Ollama](https://ollama.com) and [LLaVA](https://llava-vl.github.io/)
+- Inspired by [BMAD-METHOD](https://github.com/bmad-code-org/BMAD-METHOD)
+- Built with [Claude Code](https://claude.ai/code)
 
 ---
 
-*Fatto con passione per i fotografi che vogliono massimizzare le loro chance nelle open call.*
+*Made with passion for photographers who want to maximize their chances in open calls.*
