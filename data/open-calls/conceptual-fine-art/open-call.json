@@ -1,0 +1,34 @@
+{
+  "title": "Conceptual & Fine Art Photography Biennial 2025",
+  "theme": "Conceptual art, fine art photography, visual poetry, and experimental approaches. Submissions should challenge conventional photography through innovative ideas, metaphor, symbolism, or experimental techniques. Abstractions, manipulated images, staged scenes, and alternative processes are encouraged.",
+  "jury": [
+    "Cindy Sherman (Conceptual Artist & Photographer)",
+    "Trevor Paglen (Contemporary Artist)",
+    "LaTurbo Avedon (Digital Artist)",
+    "Curator, Museum of Modern Art Photography Department"
+  ],
+  "pastWinners": "Winners have demonstrated strong conceptual frameworks and intentional artistic vision. Technically flawless execution of the artist's vision is valued over traditional realism. Previous winners include: surreal compositions with symbolic elements, abstract explorations of color and form, staged narratives revealing social commentary, series exploring identity and perception, digital manipulations that create new realities. Diversity of approach is celebrated - from minimal aesthetics to maximalist compositions, monochromatic to vibrant color, narrative to pure abstraction.",
+  "context": "This biennial celebrates photography as a fine art medium beyond documentation. Heavily manipulated images, AI-assisted compositions, staged photography, and experimental techniques are not only acceptable but encouraged. The strength of the conceptual idea and artistic execution are paramount.",
+  "customCriteria": [
+    {
+      "name": "Conceptual Strength",
+      "description": "Clarity and depth of artistic idea, originality of concept",
+      "weight": 40
+    },
+    {
+      "name": "Visual Execution",
+      "description": "How well the concept is visually realized, composition, aesthetic choices",
+      "weight": 30
+    },
+    {
+      "name": "Innovation",
+      "description": "Experimental techniques, new perspectives, pushing photography boundaries",
+      "weight": 20
+    },
+    {
+      "name": "Impact & Resonance",
+      "description": "Emotional, intellectual, or visceral response from viewer",
+      "weight": 10
+    }
+  ]
+}

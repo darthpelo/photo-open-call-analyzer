@@ -1,0 +1,34 @@
+{
+  "title": "Landscape & Wildlife Photography Award 2025",
+  "theme": "Nature in all its forms: landscapes, wildlife, environmental conservation, and natural wonders. Submissions should showcase the beauty, power, and fragility of the natural world. Climate, ecology, and human impact on nature are relevant themes.",
+  "jury": [
+    "National Geographic Photography Director",
+    "Frans Lanting (Conservation Photographer)",
+    "Jimmy Chin (Adventure & Nature Photographer)",
+    "Cristina Mittermeier (Ocean Advocate)"
+  ],
+  "pastWinners": "Winning entries have featured stunning natural environments with exceptional technical precision and compelling compositional elements. Dynamic skies, dramatic light (golden hour, storm light), and strong sense of place are common in winners. Wildlife images have captured rare behavioral moments with perfect focus and dramatic context. Winners often tell environmental stories - showing ecosystem relationships, seasonal changes, or conservation themes. Large-scale panoramic compositions and intimate nature details have both won.",
+  "context": "This award recognizes photography that celebrates natural beauty while raising awareness about environmental conservation. Images must be unmanipulated captures of real natural environments. Submissions from all geographic regions are encouraged, especially from developing countries and underrepresented regions.",
+  "customCriteria": [
+    {
+      "name": "Environmental Excellence",
+      "description": "Showcases natural beauty, ecosystem, or wildlife authentically",
+      "weight": 35
+    },
+    {
+      "name": "Technical Mastery",
+      "description": "Exposure, focus, composition, image sharpness, color balance",
+      "weight": 30
+    },
+    {
+      "name": "Narrative Impact",
+      "description": "Tells a story about nature, environment, or conservation",
+      "weight": 20
+    },
+    {
+      "name": "Authenticity",
+      "description": "Genuine capture of natural moments, no heavy manipulation or AI",
+      "weight": 15
+    }
+  ]
+}

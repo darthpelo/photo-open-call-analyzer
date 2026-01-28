@@ -2,7 +2,7 @@
 
 ## Overview
 
-**Milestone 1: MVP** del Photo Open Call Analyzer è completo. Il sistema usa **Ollama con LLaVA** per analisi vision locale e gratuita.
+**Milestone 1: MVP** of Photo Open Call Analyzer is complete. The system uses **Ollama with LLaVA** for local, free vision analysis.
 
 **Date**: January 2026
 **Status**: 🟢 READY FOR USE
@@ -14,50 +14,50 @@
 
 ### 1. Core Analysis Engine
 - **photo-analyzer.js** - Ollama/LLaVA integration
-  - Analizza foto con criteri specifici per competizione
-  - Estrae e valuta ogni criterio
-  - Genera feedback dettagliato e raccomandazioni
-  - Supporta JPG, PNG, GIF, WebP
+  - Analyzes photos with competition-specific criteria
+  - Extracts and evaluates each criterion
+  - Generates detailed feedback and recommendations
+  - Supports JPG, PNG, GIF, WebP
 
 - **prompt-generator.js** - Dynamic prompt generation
-  - Analizza dettagli open call per creare framework valutazione
-  - Estrae preferenze giuria dai vincitori passati
-  - Genera criteri pesati
-  - Personalizzabile per ogni tipo di competizione
+  - Analyzes open call details to create evaluation framework
+  - Extracts jury preferences from past winners
+  - Generates weighted criteria
+  - Customizable for each competition type
 
 ### 2. Batch Processing
 - **batch-processor.js** - Parallel photo processing
-  - Processa multiple foto in parallelo
-  - Valida directory e formati file
-  - Progress tracking ed error handling
-  - Scala da 1 a 100+ foto
+  - Processes multiple photos in parallel
+  - Validates directories and file formats
+  - Progress tracking and error handling
+  - Scales from 1 to 100+ photos
 
 ### 3. Scoring & Ranking
 - **score-aggregator.js** - Statistical analysis
-  - Aggrega score individuali in ranking
-  - Calcola medie pesate e classificazioni tier
-  - Genera statistiche (media, mediana, std dev)
-  - Ranking automatico con tier (Strong Yes/Yes/Maybe/No)
+  - Aggregates individual scores into rankings
+  - Calculates weighted averages and tier classifications
+  - Generates statistics (mean, median, std dev)
+  - Automatic ranking with tiers (Strong Yes/Yes/Maybe/No)
 
 ### 4. Report Generation
 - **report-generator.js** - Multi-format export
-  - Markdown reports con tabelle e visual
-  - JSON per uso programmatico
-  - CSV per spreadsheet
-  - Titoli e metadata personalizzabili
+  - Markdown reports with tables and visuals
+  - JSON for programmatic use
+  - CSV for spreadsheet import
+  - Customizable titles and metadata
 
 ### 5. CLI Interface
 - **analyze.js** - Complete command-line interface
   - Main command: `npm run analyze <project-dir>`
   - Single photo: `analyze-single <photo-path>`
   - Validation: `validate <directory>`
-  - Parallel processing configurabile
+  - Configurable parallel processing
 
 ### 6. Utilities
 - **api-client.js** - Ollama client management
-  - Client singleton per Ollama
-  - Check connessione e modelli disponibili
-  - Gestione errori
+  - Singleton Ollama client
+  - Connection and available models checking
+  - Error handling
 
 - **file-utils.js** - File I/O utilities
   - JSON read/write
@@ -65,9 +65,9 @@
   - Directory creation
 
 - **logger.js** - Terminal output styling
-  - Messaggi colorati (info, success, warn, error)
-  - Headers e debug output
-  - Formatting professionale con chalk
+  - Colored messages (info, success, warn, error)
+  - Headers and debug output
+  - Professional formatting with chalk
 
 ---
 
@@ -100,24 +100,24 @@ data/open-calls/                # Sample projects
 ## Key Features
 
 ### Local AI Analysis (No API Key Required)
-✓ Ollama/LLaVA per analisi vision
-✓ 100% locale e gratuito
-✓ Nessuna dipendenza da servizi cloud
+✓ Ollama/LLaVA for vision analysis
+✓ 100% local and free
+✓ No cloud service dependencies
 
 ### Intelligent Scoring
-✓ Multi-criterion evaluation (5 criteri default)
+✓ Multi-criterion evaluation (5 default criteria)
 ✓ Weighted scoring
-✓ Feedback dettagliato per ogni foto
+✓ Detailed feedback for each photo
 
 ### Batch Processing
-✓ Parallel processing configurabile
+✓ Configurable parallel processing
 ✓ Progress tracking
-✓ Error handling robusto
+✓ Robust error handling
 
 ### Comprehensive Reporting
-✓ Markdown leggibile
-✓ JSON per integrazione
-✓ CSV per spreadsheet
+✓ Readable Markdown
+✓ JSON for integration
+✓ CSV for spreadsheet
 
 ---
 
@@ -125,7 +125,7 @@ data/open-calls/                # Sample projects
 
 ### Setup
 ```bash
-ollama pull llava:7b  # Se non già installato
+ollama pull llava:7b  # If not already installed
 npm install
 ```
 
@@ -145,9 +145,9 @@ Output:
 ```
 
 ### Results Generated
-- `results/photo-analysis.md` - Report professionale
-- `results/photo-analysis.json` - Dati programmabili
-- `results/photo-analysis.csv` - Per spreadsheet
+- `results/photo-analysis.md` - Professional report
+- `results/photo-analysis.json` - Programmatic data
+- `results/photo-analysis.csv` - For spreadsheet
 
 ---
 
@@ -160,26 +160,26 @@ Output:
 | Batch (50 photos) | 15-25 minutes |
 | Memory Usage | ~100MB typical |
 
-*Con MacBook Pro M1 e LLaVA 7B*
+*With MacBook Pro M1 and LLaVA 7B*
 
 ---
 
 ## Next Steps (Roadmap)
 
-### Milestone 2: UI
-- [ ] Web dashboard per risultati
-- [ ] Comparazione foto side-by-side
+### Milestone 2: Configuration & Robustness
+- [x] Configuration template system (FR-2.1)
+- [ ] Resume interrupted analysis (FR-2.2)
+- [ ] Edge case robustness (FR-2.3)
+
+### Milestone 3: Web UI
+- [ ] Web dashboard for results
+- [ ] Side-by-side photo comparison
 - [ ] Drag-to-reorder ranking
 
-### Milestone 3: Optimization
+### Milestone 4: Optimization
 - [ ] Result caching
 - [ ] Performance improvements
-- [ ] Supporto altri modelli (moondream, bakllava)
-
-### Milestone 4: Integration
-- [ ] Integrazione piattaforme foto
-- [ ] Export diretto a competizioni
-- [ ] Storico analisi
+- [ ] Support for other models (moondream, bakllava)
 
 ---
 
@@ -205,7 +205,7 @@ Output:
 
 ## Conclusion
 
-**Milestone 1 è completo.** Il Photo Open Call Analyzer MVP fornisce una base robusta per analizzare competizioni fotografiche usando Ollama/LLaVA - completamente locale e gratuito.
+**Milestone 1 is complete.** Photo Open Call Analyzer MVP provides a robust foundation for analyzing photography competitions using Ollama/LLaVA - completely local and free.
 
 ---
 

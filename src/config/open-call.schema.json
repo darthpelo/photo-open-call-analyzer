@@ -1,0 +1,75 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Open Call Configuration Schema",
+  "description": "Schema for validating open-call.json files used in Photo Open Call Analyzer. See ADR-007: Configuration Validation Schema.",
+  "type": "object",
+  "required": ["title", "theme", "jury", "pastWinners"],
+  "additionalProperties": true,
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 3,
+      "maxLength": 200,
+      "description": "Competition title (e.g., 'Sony World Photography Awards 2025')"
+    },
+    "theme": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 1000,
+      "description": "Photography theme or subject description for this competition"
+    },
+    "jury": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 50,
+      "items": {
+        "type": "string",
+        "minLength": 2,
+        "maxLength": 100,
+        "description": "Name or title of jury member"
+      },
+      "description": "List of jury members (their names, roles, or affiliations)"
+    },
+    "pastWinners": {
+      "type": "string",
+      "minLength": 10,
+      "maxLength": 2000,
+      "description": "Description of past winning photos and their characteristics (style, themes, technical quality)"
+    },
+    "context": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Optional additional context for evaluation (e.g., competition mission, special focus areas)"
+    },
+    "customCriteria": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Criterion name (e.g., 'Originality', 'Technical Excellence')"
+          },
+          "description": {
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 500,
+            "description": "Criterion description"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Relative weight/importance (will be normalized to 100%)"
+          }
+        }
+      },
+      "description": "Optional: Custom evaluation criteria (if not provided, AI generates from theme/jury)"
+    }
+  }
+}

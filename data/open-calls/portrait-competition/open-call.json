@@ -1,0 +1,34 @@
+{
+  "title": "Portrait Photography Open Call 2025",
+  "theme": "Human connection, emotion, and character in portraiture. Submissions should capture authentic moments that reveal personality, vulnerability, or powerful human stories. Both environmental portraits and traditional headshots are welcome.",
+  "jury": [
+    "Annie Leibovitz (Portrait Photographer)",
+    "Paolo Roversi (Renowned Fashion Photographer)",
+    "Platon (Documentary Photographer)",
+    "Yousuf Karsh Estate Representative"
+  ],
+  "pastWinners": "Previous winners have featured compelling character studies with strong emotional resonance. Winning portraits typically combine excellent technical execution (sharp focus on eyes, flattering lighting) with genuine human moments. Subjects are often looking directly at camera, creating intimate connection with viewer. Cultural and ethnic diversity has been valued. Experimental approaches to portraiture and unconventional framing have also won recognition.",
+  "context": "This competition seeks to celebrate the power of portraiture to reveal human dignity and complexity. Entries should demonstrate mastery of lighting, composition, and emotional connection. Both studio and location portraits are acceptable. No AI-generated or heavily manipulated images.",
+  "customCriteria": [
+    {
+      "name": "Emotional Impact",
+      "description": "Does the portrait evoke feeling and create connection with the viewer?",
+      "weight": 30
+    },
+    {
+      "name": "Technical Execution",
+      "description": "Lighting quality, focus accuracy, exposure, color grading",
+      "weight": 25
+    },
+    {
+      "name": "Originality",
+      "description": "Unique perspective, composition, or storytelling approach",
+      "weight": 25
+    },
+    {
+      "name": "Subject Dignity",
+      "description": "Respectful representation of subject, cultural sensitivity",
+      "weight": 20
+    }
+  ]
+}

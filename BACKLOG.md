@@ -1,77 +1,77 @@
 # Backlog - Photo Open Call Analyzer
 
-## Priorita
+## Priority Levels
 
-| Livello | Significato |
-|---------|-------------|
-| 🔴 P0 | Critico - Blocca MVP |
-| 🟠 P1 | Alto - Necessario per MVP |
-| 🟡 P2 | Medio - Nice to have |
-| 🟢 P3 | Basso - Futuro |
+| Level | Meaning |
+|-------|---------|
+| 🔴 P0 | Critical - Blocks MVP |
+| 🟠 P1 | High - Required for MVP |
+| 🟡 P2 | Medium - Nice to have |
+| 🟢 P3 | Low - Future |
 
 ---
 
-## Milestone 1: MVP ✅ Completata
+## Milestone 1: MVP ✅ Complete
 
-### 🔴 P0 - Critici
+### 🔴 P0 - Critical
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
 | Setup Ollama client | Dev | ✅ Done | api-client.js |
-| Implementare photo-analyzer.js | Dev | ✅ Done | Ollama/LLaVA integration |
-| Test analisi singola foto | QA | ✅ Done | Tests passing |
+| Implement photo-analyzer.js | Dev | ✅ Done | Ollama/LLaVA integration |
+| Test single photo analysis | QA | ✅ Done | Tests passing |
 
 ### 🟠 P1 - MVP
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Template prompt analisi | Art Critic | ✅ Done | prompt-generator.js |
+| Analysis prompt template | Art Critic | ✅ Done | prompt-generator.js |
 | Batch processor | Dev | ✅ Done | batch-processor.js |
-| Generatore ranking | Dev | ✅ Done | score-aggregator.js |
-| Export Markdown | Dev | ✅ Done | Multi-format support |
-| Export JSON/CSV | Dev | ✅ Done | report-generator.js |
+| Ranking generator | Dev | ✅ Done | score-aggregator.js |
+| Markdown export | Dev | ✅ Done | Multi-format support |
+| JSON/CSV export | Dev | ✅ Done | report-generator.js |
 | CLI commands | Dev | ✅ Done | analyze.js |
 
 ---
 
 ## Milestone 2: Post-MVP 🟡 In Progress
 
-### 🟡 P2 - Miglioramenti
+### 🟡 P2 - Improvements
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Template open-call.json | Dev | Pending | Esempio config |
-| Wireframe UI | Designer | Pending | Visualizzazione risultati |
-| Test edge cases | QA | Pending | Foto corrotte, timeout |
-| Resume analisi interrotta | Dev | Pending | Persistenza stato |
+| Configuration templates (FR-2.1) | Dev | ✅ Done | Validator + 3 templates |
+| Resume interrupted analysis (FR-2.2) | Dev | Pending | State persistence |
+| Edge case robustness (FR-2.3) | QA | Pending | Corrupt photos, timeout handling |
+| UI wireframe (FR-2.4) | Designer | Pending | Results visualization |
 
-### 🟢 P3 - Futuro
+### 🟢 P3 - Future
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Web UI | Dev + Designer | Backlog | React/Svelte |
-| Caching | Dev | Backlog | Performance |
-| Supporto RAW | Dev | Backlog | dcraw integration |
-| Altri modelli | Dev | Backlog | moondream, bakllava |
+| Web UI (Milestone 3) | Dev + Designer | Backlog | React/Svelte |
+| Caching (Milestone 4) | Dev | Backlog | Performance optimization |
+| RAW file support | Dev | Backlog | dcraw integration |
+| Alternative vision models | Dev | Backlog | moondream, bakllava |
 
 ---
 
-## Completati
+## Completed Tasks
 
-| Task | Owner | Data | Note |
+| Task | Owner | Date | Note |
 |------|-------|------|------|
-| Setup progetto | Dev | 2024-01 | Struttura iniziale |
-| Definizione agenti | - | 2024-01 | 5 agenti configurati |
-| Workflow principale | - | 2024-01 | analyze-open-call.md |
-| Migrazione a Ollama | Dev | 2024-01 | Da Anthropic a locale |
-| Test analisi foto | QA | 2024-01 | 7.8/10 su sample |
+| Project setup | Dev | 2024-01 | Initial structure |
+| Agent definitions | - | 2024-01 | 5 agents configured |
+| Main workflow | - | 2024-01 | analyze-open-call.md |
+| Migration to Ollama | Dev | 2024-01 | From Anthropic to local |
+| Photo analysis tests | QA | 2024-01 | 7.8/10 on sample |
 
 ---
 
-## Come Aggiungere Task
+## How to Add Tasks
 
 ```markdown
-| Descrizione task | Owner | Pending | Note aggiuntive |
+| Task description | Owner | Status | Additional note |
 ```
 
-Owners validi: `Art Critic`, `Dev`, `Designer`, `QA`, `Project Owner`
+Valid owners: `Art Critic`, `Dev`, `Designer`, `QA`, `Project Owner`
