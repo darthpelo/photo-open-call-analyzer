@@ -3,7 +3,8 @@
 import { Command } from 'commander';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
 import { processBatch, validatePhotos } from '../processing/batch-processor.js';
-import { aggregateScores, generateTiers, generateStatistics, integrateSmartTiering } from '../analysis/score-aggregator.js';
+import { aggregateScores, generateStatistics, integrateSmartTiering } from '../analysis/score-aggregator.js';
+import { generateTiers } from '../analysis/smart-tiering.js';
 import { exportReports } from '../output/report-generator.js';
 import { displayTierSummary, displayTierDetails, displayTierRecommendations } from './tier-display.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
@@ -124,18 +125,30 @@ program
         logger.warn(`${batchResults.failed} photos failed to process`);
       }
 
+      // DEBUG: Log structure of batchResults
+      logger.debug(`batchResults keys: ${Object.keys(batchResults).join(', ')}`);
+      logger.debug(`batchResults.results type: ${typeof batchResults.results}, length: ${Array.isArray(batchResults.results) ? batchResults.results.length : 'N/A'}`);
+
       // Aggregate scores
       logger.section('AGGREGATION');
       const successfulResults = batchResults.results
         .filter((r) => r.success)
-        .map((r) => r.data);
+        .map((r) => ({
+          photoPath: r.photo,
+          scores: r.scores
+        }));
+
+      if (!Array.isArray(successfulResults)) {
+        logger.error(`Error: successfulResults is not an array. Type: ${typeof successfulResults}, Value: ${JSON.stringify(successfulResults)}`);
+        process.exit(1);
+      }
 
       if (successfulResults.length === 0) {
         logger.error('No successful analyses to aggregate');
         process.exit(1);
       }
 
-      const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria);
+      const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria || []);
       const tiers = generateTiers(aggregation);
       const smartTiers = integrateSmartTiering(aggregation);
       const stats = generateStatistics(aggregation);

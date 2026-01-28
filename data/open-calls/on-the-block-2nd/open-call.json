@@ -1,0 +1,50 @@
+{
+  "title": "On The Block - 2nd Edition",
+  "organizerName": "Lucie Foundation",
+  "organizerWebsite": "https://www.luciefoundation.org",
+  "theme": "Street Photography",
+  "description": "A celebration of unposed, unfiltered, and fleeting moments that define the art of documenting everyday life. Street photography from dense urban streets to sleepy rural towns. Every corner hides unexpected beauty.",
+  "categories": [
+    "Landscape",
+    "Candid",
+    "Portrait",
+    "B/W"
+  ],
+  "jury": [
+    "Paris Chong",
+    "Arturo Soto",
+    "Matt Stuart"
+  ],
+  "pastWinners": "On The Block celebrates photographers who capture unposed moments with technical excellence and emotional authenticity. Winners typically showcase genuine human connection, strong compositional choices, and images that reveal quiet truths beneath everyday moments. The competition appreciates both experimental and traditional street photography approaches.",
+  "juryPreferences": {
+    "overall": "Authentic storytelling, technical mastery, emotional resonance",
+    "paris_chong": "Contemporary aesthetics, gallery-worthy presentation, curated quality, artistic vision",
+    "arturo_soto": "Conceptual depth, social commentary, experimental approaches, fine art perspective",
+    "matt_stuart": "Genuine candid moments, human interaction, minimal intervention, honesty, patience-driven photography"
+  },
+  "prizes": {
+    "grand_prize": {
+      "winners": 1,
+      "cash": 1000,
+      "description": "Featured interview, Online Exhibition, 16x20\" print, Lucie Honoree Poster"
+    },
+    "category_winners": {
+      "winners": 3,
+      "cash": 250,
+      "description": "Part of Online Exhibition, 16x20\" print, Lucie Honoree poster"
+    },
+    "total_featured": 40
+  },
+  "timeline": {
+    "deadline": "2026-03-15",
+    "announcement": "2026-04"
+  },
+  "submission_requirements": {
+    "fee": "$20 per image (20% discount for multiple categories)",
+    "format": "JPG only",
+    "allowed_subjects": "Street photography, urban landscape, candid, experimental approaches",
+    "not_allowed": "AI-generated images",
+    "online_submission": "https://submit.luciefoundation.org/"
+  },
+  "context": "Second edition of a prestigious street photography competition by Lucie Foundation (501c3 non-profit). Features exhibition and significant prizes. Jury includes respected gallery curator, fine art photographer/academic, and legendary street photographer."
+}

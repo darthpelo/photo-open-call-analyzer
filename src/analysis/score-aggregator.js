@@ -3,11 +3,24 @@ import { generateTiers } from './smart-tiering.js';
 
 /**
  * Aggregate scores from multiple photo analyses
- * @param {Array<Object>} analyses - Array of photo analysis results
+ * @param {Array<Object>} analyses - Array of photo analysis results with structure: 
+ *   [{ photoPath: string, scores: { individual: {...}, summary: {...} } }, ...]
  * @param {Object} criteria - Criteria configuration with weights
  * @returns {Object} Aggregated scoring and ranking
+ * @throws {Error} If analyses is not an array or malformed
  */
 export function aggregateScores(analyses, criteria = []) {
+  // Guard clause - validate input is array
+  if (!Array.isArray(analyses)) {
+    const errorMsg = `Invalid aggregateScores input: analyses must be an array. Received type: ${typeof analyses}`;
+    logger.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  if (analyses.length === 0) {
+    throw new Error('No analyses provided to aggregateScores');
+  }
+
   logger.info(`Aggregating scores from ${analyses.length} photos`);
 
   const photoScores = [];
@@ -77,55 +90,6 @@ export function aggregateScores(analyses, criteria = []) {
     photos: photoScores,
     criteria_statistics: criteriaStats,
   };
-}
-
-/**
- * Generate ranking tiers based on scores
- * @param {Object} aggregation - Aggregated scores from aggregateScores()
- * @param {Object} tierConfig - Tier configuration (optional)
- * @returns {Object} Photos organized by tier
- */
-export function generateTiers(aggregation, tierConfig = {}) {
-  const defaultTiers = {
-    strong_yes: { min: 8.0, label: '🟢 Strong Yes' },
-    yes: { min: 7.0, label: '🟡 Yes' },
-    maybe: { min: 6.0, label: '🟠 Maybe' },
-    no: { min: 0, label: '🔴 No' },
-  };
-
-  const tiers = { ...defaultTiers, ...tierConfig };
-
-  const result = {
-    timestamp: aggregation.timestamp,
-    tiers: {},
-    summary: {},
-  };
-
-  // Organize photos into tiers
-  Object.keys(tiers).forEach((tierKey) => {
-    result.tiers[tierKey] = [];
-  });
-
-  aggregation.photos.forEach((photo) => {
-    const score = photo.overall_score || 0;
-
-    for (const [tierKey, tierConfig] of Object.entries(tiers)) {
-      if (score >= tierConfig.min) {
-        result.tiers[tierKey].push(photo);
-        break;
-      }
-    }
-  });
-
-  // Generate summary
-  Object.entries(result.tiers).forEach(([tierKey, photos]) => {
-    result.summary[tierKey] = {
-      count: photos.length,
-      percentage: Math.round((photos.length / aggregation.total_photos) * 100),
-    };
-  });
-
-  return result;
 }
 
 /**

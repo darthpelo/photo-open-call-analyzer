@@ -299,8 +299,6 @@ export function generateTierCsvReport(smartTiers) {
   });
 
   return csv;
-=======
->>>>>>> main
 }
 
 /**
