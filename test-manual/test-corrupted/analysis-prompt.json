@@ -1,0 +1,33 @@
+{
+  "title": "Manual Test - Corrupted Image Handling",
+  "theme": "Test corrupted JPEG detection",
+  "context": " CRITERION: Corrupted Image Detection Accuracy\nDESCRIPTION: The ability of the image to accurately detect corrupted JPEG files. This includes the speed and efficiency of detection as well as the accuracy of identifying which areas of the file are corrupted.\nWEIGHT: 50%\n\nCRITERION: Error Handling\nDESCRIPTION: How effectively the image handles errors in corrupted JPEG files. This includes how well the image can recover from errors and maintain functionality.\nWEIGHT: 25%\n\nCRITERION: User Interface\nDESCRIPTION: The user interface of the image, including its ease of use, clarity, and overall design.\nWEIGHT: 10%\n\nCRITERION: Test Coverage\nDESCRIPTION: The ability of the image to test a wide range of corrupted JPEG files, including different types and levels of corruption.\nWEIGHT: 10%\n\nCRITERION: Documentation\nDESCRIPTION: The quality and clarity of the documentation provided with the image, including its ability to guide users through the testing process.\nWEIGHT: 5%\n\nPast Winners:\n\n* Previous winners have demonstrated a strong focus on accuracy in corrupted JPEG detection, as well as effective error handling.\n* User interface has also been an important consideration for past winners, with a preference for simplicity and ease of use.\n* Test coverage has been a key factor in determining the winner, with previous winners demonstrating the ability to test a wide range of corrupted JPEG files.\n\nSpecific Questions:\n\n1. How accurately does the image detect corrupted JPEG files?\n2. How effectively does the image handle errors in corrupted JPEG files?\n3. Is the user interface of the image easy to use and understand?\n4. Does the image provide clear and concise documentation for users?\n5. Does the image test a wide range of corrupted JPEG files, including different types and levels of corruption? ",
+  "criteria": [
+    {
+      "name": "Corrupted Image Detection Accuracy",
+      "description": "The ability of the image to accurately detect corrupted JPEG files. This includes the speed and efficiency of detection as well as the accuracy of identifying which areas of the file are corrupted.",
+      "weight": 50
+    },
+    {
+      "name": "Error Handling",
+      "description": "How effectively the image handles errors in corrupted JPEG files. This includes how well the image can recover from errors and maintain functionality.",
+      "weight": 25
+    },
+    {
+      "name": "User Interface",
+      "description": "The user interface of the image, including its ease of use, clarity, and overall design.",
+      "weight": 10
+    },
+    {
+      "name": "Test Coverage",
+      "description": "The ability of the image to test a wide range of corrupted JPEG files, including different types and levels of corruption.",
+      "weight": 10
+    },
+    {
+      "name": "Documentation",
+      "description": "The quality and clarity of the documentation provided with the image, including its ability to guide users through the testing process.",
+      "weight": 5
+    }
+  ],
+  "evaluation_questions": []
+}

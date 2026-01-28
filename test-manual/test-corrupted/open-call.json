@@ -1,0 +1,6 @@
+{
+  "title": "Manual Test - Corrupted Image Handling",
+  "theme": "Test corrupted JPEG detection",
+  "jury": ["Test Judge 1", "Test Judge 2"],
+  "pastWinners": "This is a test project for validating error handling of corrupted images"
+}

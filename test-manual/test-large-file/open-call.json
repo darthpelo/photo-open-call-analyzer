@@ -1,0 +1,6 @@
+{
+  "title": "Manual Test - Large File Timeout",
+  "theme": "Test large file handling and timeout",
+  "jury": ["Test Jury"],
+  "pastWinners": "Large file resilience testing"
+}

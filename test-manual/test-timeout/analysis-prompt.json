@@ -1,0 +1,34 @@
+{
+  "title": "Manual Test - Timeout Configuration",
+  "theme": "Test photo timeout functionality",
+  "context": " CRITERION: Technical Quality\nDESCRIPTION: The technical quality of the image, including sharpness, exposure, and focus. This criterion is important for a test photo as it needs to accurately represent the timeout functionality.\nWEIGHT: 40%\n\nCRITERION: Composition\nDESCRIPTION: The composition of the image, including the balance of elements, lines, shapes, and textures. A well-composed image can enhance the overall impact of the test photo.\nWEIGHT: 30%\n\nCRITERION: Relevance to Theme\nDESCRIPTION: The relevance of the image to the theme of testing timeout configuration options. An image that accurately represents the theme will be more effective in validating the functionality.\nWEIGHT: 25%\n\nCRITERION: Originality and Creativity\nDESCRIPTION: The originality and creativity of the image, including the use of color, light, and shadow to create a unique visual experience. This criterion is important for a test photo as it needs to stand out and capture the viewer's attention.\nWEIGHT: 15%\n\nPast Winners:\nKey patterns or themes from past winners include an emphasis on technical quality, composition that accurately represents the theme, and originality and creativity in the use of color and light. The winning images have also effectively communicated the timeout functionality through their visual elements.\n\nSpecific Questions to Ask When Evaluating Each Photo:\n1. Does the image accurately represent the timeout functionality?\n2. Is the technical quality of the image high, with sharpness, exposure, and focus that accurately reflect the test subject?\n3. Does the composition effectively balance the elements in the image?\n4. Are there any unique visual elements or creative use of color, light, and shadow that make the image stand out?\n5. Is the image relevant to the theme of testing timeout configuration options?\n\nPreferred Style/Aesthetics from the Jury:\nThe jury prefers images with high technical quality, a strong composition, and originality and creativity in their use of color, light, and shadow. The winning images will effectively communicate the timeout functionality through their visual elements. ",
+  "criteria": [
+    {
+      "name": "Technical Quality",
+      "description": "The technical quality of the image, including sharpness, exposure, and focus. This criterion is important for a test photo as it needs to accurately represent the timeout functionality.",
+      "weight": 36
+    },
+    {
+      "name": "Composition",
+      "description": "The composition of the image, including the balance of elements, lines, shapes, and textures. A well-composed image can enhance the overall impact of the test photo.",
+      "weight": 27
+    },
+    {
+      "name": "Relevance to Theme",
+      "description": "The relevance of the image to the theme of testing timeout configuration options. An image that accurately represents the theme will be more effective in validating the functionality.",
+      "weight": 23
+    },
+    {
+      "name": "Originality and Creativity",
+      "description": "The originality and creativity of the image, including the use of color, light, and shadow to create a unique visual experience. This criterion is important for a test photo as it needs to stand out and capture the viewer's attention.",
+      "weight": 14
+    }
+  ],
+  "evaluation_questions": [
+    "Does the image accurately represent the timeout functionality?",
+    "Is the technical quality of the image high, with sharpness, exposure, and focus that accurately reflect the test subject?",
+    "Does the composition effectively balance the elements in the image?",
+    "Are there any unique visual elements or creative use of color, light, and shadow that make the image stand out?",
+    "Is the image relevant to the theme of testing timeout configuration options?"
+  ]
+}
