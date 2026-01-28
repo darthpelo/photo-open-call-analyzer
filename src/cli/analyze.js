@@ -34,6 +34,13 @@ program
     try {
       logger.section('PHOTO ANALYSIS');
 
+      // Validate photo timeout (FR-2.3)
+      const photoTimeout = parseInt(options.photoTimeout, 10) * 1000; // Convert to milliseconds
+      if (isNaN(photoTimeout) || photoTimeout < 30000 || photoTimeout > 300000) {
+        logger.error('Invalid --photo-timeout value. Must be between 30 and 300 seconds.');
+        process.exit(1);
+      }
+
       // Check project structure
       const photosDir = join(projectDir, 'photos');
       const promptFile = join(projectDir, 'analysis-prompt.json');
@@ -105,7 +112,8 @@ program
           outputDir: options.output,
           parallel: parseInt(options.parallel),
           checkpointInterval,
-          clearCheckpoint: options.clearCheckpoint || false
+          clearCheckpoint: options.clearCheckpoint || false,
+          photoTimeout // Pass timeout to batch processor (FR-2.3)
         },
         config  // Pass config for checkpoint validation
       );
@@ -139,13 +147,17 @@ program
         basename: 'photo-analysis',
         title: `${analysisPrompt.title} - Analysis Report`,
         theme: analysisPrompt.theme,
-        smartTiers: smartTiers // Pass tier data for tier-specific reports
+        smartTiers: smartTiers, // Pass tier data for tier-specific reports (M3)
+        failedPhotos: batchResults.failedPhotos || [] // Include failed photos in reports (FR-2.3)
       });
 
       // Summary
       logger.section('SUMMARY');
       logger.info(`Total photos: ${aggregation.total_photos}`);
       logger.info(`Successfully analyzed: ${successfulResults.length}`);
+      if (batchResults.failedPhotos && batchResults.failedPhotos.length > 0) {
+        logger.warn(`Failed to analyze: ${batchResults.failedPhotos.length}`);
+      }
       logger.info(`Average score: ${stats.average}/10`);
       logger.info(`Score range: ${stats.min.toFixed(1)} - ${stats.max.toFixed(1)}`);
 

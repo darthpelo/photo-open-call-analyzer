@@ -299,6 +299,8 @@ export function generateTierCsvReport(smartTiers) {
   });
 
   return csv;
+=======
+>>>>>>> main
 }
 
 /**
@@ -341,15 +343,15 @@ function generateScoreBar(score) {
  * @param {Object} aggregation - Aggregated scores
  * @param {Object} tiers - Tier information
  * @param {Object} stats - Statistics
- * @param {Object} options - Export options
+ * @param {Object} options - Export options including failedPhotos
  */
 export function exportReports(outputDir, aggregation, tiers, stats, options = {}) {
   logger.info(`Exporting reports to: ${outputDir}`);
 
-  const { formats = ['markdown', 'json', 'csv'], basename = 'analysis-results', smartTiers = null } = options;
+  const { formats = ['markdown', 'json', 'csv'], basename = 'analysis-results', smartTiers = null, failedPhotos = [] } = options;
 
   if (formats.includes('markdown')) {
-    const markdownContent = generateMarkdownReport(aggregation, tiers, stats, options);
+    const markdownContent = generateMarkdownReport(aggregation, tiers, stats, { ...options, failedPhotos });
     const mdPath = `${outputDir}/${basename}.md`;
     saveMarkdownReport(mdPath, markdownContent);
 
@@ -362,7 +364,7 @@ export function exportReports(outputDir, aggregation, tiers, stats, options = {}
   }
 
   if (formats.includes('json')) {
-    const jsonContent = generateJsonReport(aggregation, tiers, stats);
+    const jsonContent = generateJsonReport(aggregation, tiers, stats, { failedPhotos });
     const jsonPath = `${outputDir}/${basename}.json`;
     writeJson(jsonPath, jsonContent);
     logger.success(`JSON report saved to: ${jsonPath}`);

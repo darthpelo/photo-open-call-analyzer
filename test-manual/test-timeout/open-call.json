@@ -1,0 +1,6 @@
+{
+  "title": "Manual Test - Timeout Configuration",
+  "theme": "Test photo timeout functionality",
+  "jury": ["Test Judge 1", "Test Judge 2"],
+  "pastWinners": "This is a test project for validating timeout configuration options"
+}

@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
-import { analyzePhoto } from '../analysis/photo-analyzer.js';
+import { analyzePhoto, analyzePhotoWithTimeout } from '../analysis/photo-analyzer.js';
 import { logger } from '../utils/logger.js';
 import { writeJson } from '../utils/file-utils.js';
 import {
@@ -11,8 +11,8 @@ import {
   initializeCheckpoint,
   updateCheckpoint
 } from './checkpoint-manager.js';
-
-const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
+import { validatePhoto, SUPPORTED_FORMATS } from './photo-validator.js';
+import { classifyError, ErrorType, getActionableMessage } from '../utils/error-classifier.js';
 
 /**
  * Process a batch of photos in a directory
@@ -91,6 +91,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
 
   const results = [];
   const errors = [];
+  const failedPhotos = []; // Track failed photos with details (FR-2.3)
   let processed = resuming ? analyzedPhotoNames.length : 0;
 
   // If resuming, include previous results
@@ -106,24 +107,95 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
         }
       });
     }
+    
+    // Include previous failed photos
+    if (checkpoint.progress.failedPhotos) {
+      failedPhotos.push(...checkpoint.progress.failedPhotos.map(name => ({
+        photo: name,
+        reason: 'Failed in previous run',
+        type: 'unknown',
+        action: 'Check previous logs'
+      })));
+    }
   }
+
+  // Get timeout from options (FR-2.3)
+  const photoTimeout = options.photoTimeout || 60000; // Default 60s
 
   // Process photos in parallel batches
   for (let i = 0; i < photosToAnalyze.length; i += parallel) {
     const batch = photosToAnalyze.slice(i, i + parallel);
-    const batchPromises = batch.map((photo) =>
-      analyzePhoto(photo.path, analysisPrompt)
-        .then((result) => {
+    const batchPromises = batch.map(async (photo) => {
+      try {
+        // 1. VALIDATE PHOTO (FR-2.3)
+        const validation = await validatePhoto(photo.path);
+        
+        if (!validation.valid) {
+          // Invalid photo - skip with error
+          failedPhotos.push({
+            photo: photo.name,
+            reason: validation.error,
+            type: ErrorType.INVALID_FORMAT,
+            action: 'Convert to supported format or remove from directory'
+          });
+          logger.warn(`⚠️ Skipping ${photo.name}: ${validation.error}`);
+          return { success: false, error: validation.error, photoName: photo.name, skipped: true };
+        }
+
+        // Log warning for large files
+        if (validation.warning) {
+          logger.debug(`⚠️ ${photo.name}: ${validation.warning}`);
+        }
+
+        // 2. ANALYZE WITH TIMEOUT (FR-2.3)
+        const analysisResult = await analyzePhotoWithTimeout(photo.path, analysisPrompt, {
+          timeout: photoTimeout
+        });
+
+        if (analysisResult.success) {
           processed++;
           logger.success(`[${processed}/${photos.length}] Analyzed: ${photo.name}`);
-          return { success: true, data: result, photoName: photo.name };
-        })
-        .catch((error) => {
-          logger.error(`[${processed + 1}/${photos.length}] Failed: ${photo.name}`);
-          errors.push({ photo: photo.name, error: error.message });
-          return { success: false, error: error.message, photoName: photo.name };
-        })
-    );
+          return { success: true, data: analysisResult.data, photoName: photo.name };
+        } else if (analysisResult.timedOut) {
+          // Timeout - add to failed
+          failedPhotos.push({
+            photo: photo.name,
+            reason: analysisResult.error,
+            type: ErrorType.TIMEOUT,
+            action: 'Reduce image size or increase --photo-timeout'
+          });
+          logger.warn(`⚠️ ${photo.name}: ${analysisResult.error}`);
+          return { success: false, error: analysisResult.error, photoName: photo.name, timedOut: true };
+        }
+        
+      } catch (error) {
+        // 3. CLASSIFY ERROR (FR-2.3)
+        const classified = classifyError(error, { photo: photo.name });
+        
+        // 4. HANDLE BASED ON TYPE
+        if (classified.type === ErrorType.OLLAMA_CONNECTION) {
+          // Save checkpoint and exit gracefully
+          logger.error('❌ Ollama connection lost. Saving checkpoint...');
+          if (checkpoint) {
+            await saveCheckpoint(checkpoint, projectDir);
+            logger.info('✓ Progress saved. Restart Ollama and re-run to resume.');
+          }
+          process.exit(1);
+        }
+        
+        // Other errors: add to failed, continue
+        failedPhotos.push({
+          photo: photo.name,
+          reason: classified.message,
+          type: classified.type,
+          action: classified.actionable
+        });
+        
+        logger.error(`[${processed + 1}/${photos.length}] Failed: ${photo.name} - ${classified.message}`);
+        errors.push({ photo: photo.name, error: classified.message });
+        return { success: false, error: classified.message, photoName: photo.name };
+      }
+    });
 
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
@@ -141,6 +213,9 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
         });
         
         updateCheckpoint(checkpoint, newPhotos, newResults, failedInBatch);
+        
+        // Also store failedPhotos details in checkpoint (FR-2.3)
+        checkpoint.progress.failedPhotos = failedPhotos.map(f => f.photo);
         
         // Save checkpoint every N photos (configurable interval)
         if (processed % checkpointInterval === 0 || i + parallel >= photosToAnalyze.length) {
@@ -166,6 +241,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
       failed: results.filter((r) => !r.success).length,
       results: results.map((r) => (r.success ? { success: true, photo: r.data.photoPath, scores: r.data.scores } : { success: false, error: r.error })),
       errors,
+      failedPhotos, // Include detailed failure information (FR-2.3)
     };
 
     writeJson(summaryFile, batchSummary);
@@ -179,6 +255,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     failed: errors.length,
     results,
     errors,
+    failedPhotos, // Include failed photos with details (FR-2.3)
   };
 }
 
