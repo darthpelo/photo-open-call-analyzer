@@ -192,10 +192,10 @@ cat results/photo-analysis.md
 ## Before You Code
 
 **Always check these first:**
-1. [ROADMAP.md](ROADMAP.md) - Understand what milestone/phase you're in
-2. [BACKLOG.md](BACKLOG.md) - See task assignments and priorities
-3. [QUICKSTART.md](QUICKSTART.md) - Project setup & common workflows
-4. [CLAUDE.md](CLAUDE.md) - Multi-agent collaboration context
+1. [ROADMAP.md](docs/development/ROADMAP.md) - Understand what milestone/phase you're in
+2. [BACKLOG.md](docs/development/BACKLOG.md) - See task assignments and priorities
+3. [QUICKSTART.md](docs/guides/QUICKSTART.md) - Project setup & common workflows
+4. [CLAUDE.md](docs/development/CLAUDE.md) - Multi-agent collaboration context
 
 **Environment Setup:**
 - Node.js 20+ required
@@ -281,7 +281,7 @@ Extend [src/output/report-generator.js](src/output/report-generator.js) - add ne
    - Test results
    
    ## Related
-   - Links to ROADMAP.md or issues
+   - Links to docs/development/ROADMAP.md or issues
    EOF
    
    # Create PR with body-file to avoid shell quoting/line break issues
