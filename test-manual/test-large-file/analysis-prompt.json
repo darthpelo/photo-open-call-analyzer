@@ -1,0 +1,39 @@
+{
+  "title": "Manual Test - Large File Timeout",
+  "theme": "Test large file handling and timeout",
+  "context": "",
+  "criteria": [
+    {
+      "name": "Theme Alignment",
+      "description": "How well the photo matches the competition theme",
+      "weight": 30
+    },
+    {
+      "name": "Technical Quality",
+      "description": "Composition, focus, exposure, and color grading",
+      "weight": 20
+    },
+    {
+      "name": "Originality",
+      "description": "Uniqueness of perspective, concept, or execution",
+      "weight": 25
+    },
+    {
+      "name": "Emotional Impact",
+      "description": "Power to engage and move the viewer",
+      "weight": 15
+    },
+    {
+      "name": "Jury Fit",
+      "description": "Alignment with apparent jury preferences",
+      "weight": 10
+    }
+  ],
+  "evaluation_questions": [
+    "Does this photo effectively communicate the theme?",
+    "Is the technical execution professional quality?",
+    "Does this offer a unique perspective?",
+    "Does this photo evoke an emotional response?",
+    "Would this appeal to the jury based on past selections?"
+  ]
+}

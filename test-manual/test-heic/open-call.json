@@ -1,0 +1,6 @@
+{
+  "title": "Manual Test - HEIC Format Support",
+  "theme": "Test iPhone/HEIC photo support",
+  "jury": ["Test Judge 1", "Test Judge 2"],
+  "pastWinners": "This is a test project for validating HEIC format support for iPhone photos"
+}
