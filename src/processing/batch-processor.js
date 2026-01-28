@@ -1,8 +1,16 @@
 import { readdirSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
 import { logger } from '../utils/logger.js';
 import { writeJson } from '../utils/file-utils.js';
+import {
+  loadCheckpoint,
+  saveCheckpoint,
+  validateCheckpoint,
+  deleteCheckpoint,
+  initializeCheckpoint,
+  updateCheckpoint
+} from './checkpoint-manager.js';
 
 const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
 
@@ -11,10 +19,43 @@ const SUPPORTED_FORMATS = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
  * @param {string} photosDirectory - Directory containing photos
  * @param {Object} analysisPrompt - Analysis prompt with criteria
  * @param {Object} options - Processing options
+ * @param {Object} openCallConfig - Open call configuration (for checkpoint validation)
  * @returns {Promise<Object>} Batch processing results
  */
-export async function processBatch(photosDirectory, analysisPrompt, options = {}) {
-  const { outputDir = null, parallel = 3, skipExisting = false } = options;
+export async function processBatch(photosDirectory, analysisPrompt, options = {}, openCallConfig = null) {
+  const { 
+    outputDir = null, 
+    parallel = 3, 
+    skipExisting = false,
+    checkpointInterval = 10,
+    clearCheckpoint = false
+  } = options;
+
+  // Determine project directory (parent of photos directory)
+  const projectDir = dirname(photosDirectory);
+
+  // Handle --clear-checkpoint flag
+  if (clearCheckpoint) {
+    deleteCheckpoint(projectDir);
+    logger.info('Existing checkpoint cleared');
+  }
+
+  // Try to load existing checkpoint
+  let checkpoint = loadCheckpoint(projectDir);
+  let resuming = false;
+  let analyzedPhotoNames = [];
+
+  if (checkpoint && openCallConfig) {
+    const validation = validateCheckpoint(checkpoint, openCallConfig);
+    if (validation.valid) {
+      resuming = true;
+      analyzedPhotoNames = checkpoint.progress.analyzedPhotos;
+      logger.info(`✓ Resuming analysis: ${checkpoint.progress.photosCount} photos already analyzed`);
+    } else {
+      logger.info(`Checkpoint invalid (${validation.reason}), starting fresh analysis`);
+      checkpoint = null;
+    }
+  }
 
   logger.info(`Starting batch processing of photos from: ${photosDirectory}`);
 
@@ -26,31 +67,93 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     return { success: false, processed: 0, failed: 0, results: [] };
   }
 
-  logger.info(`Found ${photos.length} photos to process`);
+  // Filter out already analyzed photos if resuming
+  let photosToAnalyze = photos;
+  if (resuming && analyzedPhotoNames.length > 0) {
+    photosToAnalyze = photos.filter(photo => !analyzedPhotoNames.includes(photo.name));
+    logger.info(`Found ${photos.length} total photos, ${analyzedPhotoNames.length} already analyzed, ${photosToAnalyze.length} remaining`);
+  } else {
+    logger.info(`Found ${photos.length} photos to process`);
+  }
+
+  // Initialize checkpoint if starting fresh and config provided
+  if (!resuming && openCallConfig) {
+    checkpoint = initializeCheckpoint(
+      projectDir,
+      openCallConfig,
+      analysisPrompt,
+      photos.length,
+      parallel,
+      checkpointInterval,
+      photosDirectory
+    );
+  }
 
   const results = [];
   const errors = [];
-  let processed = 0;
+  let processed = resuming ? analyzedPhotoNames.length : 0;
+
+  // If resuming, include previous results
+  if (resuming && checkpoint) {
+    for (const [photoName, scores] of Object.entries(checkpoint.results.scores)) {
+      results.push({
+        success: true,
+        data: {
+          filename: photoName,
+          photoPath: join(photosDirectory, photoName),
+          scores,
+          analysisText: '(resumed from checkpoint)'
+        }
+      });
+    }
+  }
 
   // Process photos in parallel batches
-  for (let i = 0; i < photos.length; i += parallel) {
-    const batch = photos.slice(i, i + parallel);
+  for (let i = 0; i < photosToAnalyze.length; i += parallel) {
+    const batch = photosToAnalyze.slice(i, i + parallel);
     const batchPromises = batch.map((photo) =>
       analyzePhoto(photo.path, analysisPrompt)
         .then((result) => {
           processed++;
           logger.success(`[${processed}/${photos.length}] Analyzed: ${photo.name}`);
-          return { success: true, data: result };
+          return { success: true, data: result, photoName: photo.name };
         })
         .catch((error) => {
           logger.error(`[${processed + 1}/${photos.length}] Failed: ${photo.name}`);
           errors.push({ photo: photo.name, error: error.message });
-          return { success: false, error: error.message };
+          return { success: false, error: error.message, photoName: photo.name };
         })
     );
 
     const batchResults = await Promise.all(batchPromises);
     results.push(...batchResults);
+
+    // Save checkpoint after each batch (if checkpoint enabled)
+    if (checkpoint && openCallConfig) {
+      const successfulInBatch = batchResults.filter(r => r.success);
+      const failedInBatch = batchResults.filter(r => !r.success).map(r => r.photoName);
+      
+      if (successfulInBatch.length > 0) {
+        const newPhotos = successfulInBatch.map(r => r.photoName);
+        const newResults = {};
+        successfulInBatch.forEach(r => {
+          newResults[r.photoName] = r.data.scores;
+        });
+        
+        updateCheckpoint(checkpoint, newPhotos, newResults, failedInBatch);
+        
+        // Save checkpoint every N photos (configurable interval)
+        if (processed % checkpointInterval === 0 || i + parallel >= photosToAnalyze.length) {
+          saveCheckpoint(checkpoint, projectDir);
+        }
+      }
+    }
+  }
+
+  // Delete checkpoint on successful completion
+  if (checkpoint && errors.length === 0) {
+    deleteCheckpoint(projectDir);
+    logger.info('Analysis complete, checkpoint cleaned up');
   }
 
   // Save results to file if output directory specified
