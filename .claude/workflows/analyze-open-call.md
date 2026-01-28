@@ -1,6 +1,6 @@
 # Workflow: Analyze Open Call
 
-Questo workflow guida l'intero processo di analisi di una open call fotografica, dalla raccolta dei metadata alla generazione della classifica finale.
+This workflow guides the entire photo open call analysis process, from metadata collection to final ranking generation.
 
 ## Overview
 
@@ -15,215 +15,215 @@ Questo workflow guida l'intero processo di analisi di una open call fotografica,
    project-brief.md      photo-scores.json      final-ranking.md
 ```
 
-## Fase 1: Setup (Project Owner + Art Critic)
+## Phase 1: Setup (Project Owner + Art Critic)
 
-### Step 1.1: Inizializza Progetto
+### Step 1.1: Initialize Project
 **Owner**: Project Owner
-**Comando**: `[NP] New Project`
+**Command**: `[NP] New Project`
 
 ```
 Input:
-- Nome open call
-- URL (se disponibile)
+- Open call name
+- URL (if available)
 - Deadline
-- Numero foto da analizzare
+- Number of photos to analyze
 
 Output:
-- data/open-calls/{nome}/project-brief.md
+- data/open-calls/{name}/project-brief.md
 ```
 
-### Step 1.2: Raccogli Metadata Open Call
+### Step 1.2: Collect Open Call Metadata
 **Owner**: Art Critic
-**Comando**: `[AO] Analyze Open Call`
+**Command**: `[AO] Analyze Open Call`
 
 ```
-Input (da raccogliere):
-- Tema completo e descrizione
-- Chi sono i giurati
-- Vincitori edizioni precedenti (se disponibili)
-- Organizzatore e tipo di premio
+Input (to collect):
+- Complete theme and description
+- Who are the jurors
+- Previous edition winners (if available)
+- Organizer and prize type
 
 Output:
-- data/open-calls/{nome}/open-call-analysis.md
+- data/open-calls/{name}/open-call-analysis.md
 ```
 
-### Step 1.3: Genera Prompt di Analisi
+### Step 1.3: Generate Analysis Prompt
 **Owner**: Art Critic
-**Comando**: `[GP] Generate Prompt`
+**Command**: `[GP] Generate Prompt`
 
 ```
 Input:
-- Analisi open call (step 1.2)
+- Open call analysis (step 1.2)
 
 Output:
-- data/open-calls/{nome}/photo-analysis-prompt.md
+- data/open-calls/{name}/photo-analysis-prompt.md
 ```
 
-## Fase 2: Analysis (Dev + Art Critic)
+## Phase 2: Analysis (Dev + Art Critic)
 
-### Step 2.1: Setup Tecnico
+### Step 2.1: Technical Setup
 **Owner**: Dev
-**Comando**: `[API] Setup API`
+**Command**: `[API] Setup API`
 
 ```
-Prerequisiti:
-- ANTHROPIC_API_KEY configurata
-- Dipendenze installate (npm install)
+Prerequisites:
+- ANTHROPIC_API_KEY configured
+- Dependencies installed (npm install)
 
-Verifica:
-- Connessione API funzionante
-- Modello vision disponibile
+Verification:
+- Working API connection
+- Vision model available
 ```
 
-### Step 2.2: Carica Foto
+### Step 2.2: Upload Photos
 **Owner**: Dev
 
 ```
 Input:
-- Path cartella foto: data/open-calls/{nome}/photos/
+- Photo folder path: data/open-calls/{name}/photos/
 
-Validazione:
-- Formati supportati (jpg, png, webp)
-- Dimensioni accettabili
-- Nessun file corrotto
+Validation:
+- Supported formats (jpg, png, webp)
+- Acceptable dimensions
+- No corrupted files
 ```
 
-### Step 2.3: Analizza Foto
+### Step 2.3: Analyze Photos
 **Owner**: Dev
-**Comando**: `[IM] Implement` (se non ancora implementato)
+**Command**: `[IM] Implement` (if not already implemented)
 
 ```
-Per ogni foto:
-1. Carica immagine
-2. Invia a Claude Vision con prompt da step 1.3
-3. Parsea risposta JSON
-4. Salva score e feedback
+For each photo:
+1. Load image
+2. Send to Claude Vision with prompt from step 1.3
+3. Parse JSON response
+4. Save scores and feedback
 
 Output:
-- data/open-calls/{nome}/scores/{filename}.json
+- data/open-calls/{name}/scores/{filename}.json
 ```
 
 ### Step 2.4: QA Check
 **Owner**: QA
-**Comando**: `[RT] Run Tests`
+**Command**: `[RT] Run Tests`
 
 ```
-Verifica:
-- Tutte le foto processate
-- Score nel range valido (1-10)
-- Nessun errore silenzioso
-- Feedback coerente con score
+Verification:
+- All photos processed
+- Scores in valid range (1-10)
+- No silent errors
+- Feedback consistent with scores
 ```
 
-## Fase 3: Ranking (Art Critic + Dev)
+## Phase 3: Ranking (Art Critic + Dev)
 
-### Step 3.1: Aggrega Risultati
+### Step 3.1: Aggregate Results
 **Owner**: Dev
 
 ```
 Input:
-- Tutti i file scores/*.json
+- All scores/*.json files
 
 Output:
-- data/open-calls/{nome}/aggregated-scores.json
+- data/open-calls/{name}/aggregated-scores.json
 ```
 
-### Step 3.2: Genera Classifica
+### Step 3.2: Generate Ranking
 **Owner**: Art Critic
-**Comando**: `[CR] Create Ranking`
+**Command**: `[CR] Create Ranking`
 
 ```
 Input:
 - aggregated-scores.json
-- Numero di foto da selezionare per submission
+- Number of photos to select for submission
 
 Output:
-- data/open-calls/{nome}/final-ranking.md
+- data/open-calls/{name}/final-ranking.md
 ```
 
 ### Step 3.3: Export Report
 **Owner**: Dev
 
 ```
-Formati disponibili:
+Available formats:
 - Markdown (default)
 - JSON
 - CSV
 
 Output:
-- data/open-calls/{nome}/report.{format}
+- data/open-calls/{name}/report.{format}
 ```
 
-## File Structure Finale
+## Final File Structure
 
 ```
-data/open-calls/{nome-call}/
-├── project-brief.md           # Setup iniziale
-├── open-call-analysis.md      # Analisi Art Critic
-├── photo-analysis-prompt.md   # Prompt per Claude Vision
-├── photos/                    # Foto da analizzare
+data/open-calls/{call-name}/
+├── project-brief.md           # Initial setup
+├── open-call-analysis.md      # Art Critic analysis
+├── photo-analysis-prompt.md   # Prompt for Claude Vision
+├── photos/                    # Photos to analyze
 │   ├── photo1.jpg
 │   ├── photo2.jpg
 │   └── ...
-├── scores/                    # Score individuali
+├── scores/                    # Individual scores
 │   ├── photo1.json
 │   ├── photo2.json
 │   └── ...
-├── aggregated-scores.json     # Score aggregati
-├── final-ranking.md           # Classifica finale
-└── report.md                  # Report esportabile
+├── aggregated-scores.json     # Aggregated scores
+├── final-ranking.md           # Final ranking
+└── report.md                  # Exportable report
 ```
 
-## Checklist Completa
+## Complete Checklist
 
 ### Setup
-- [ ] Progetto inizializzato (Project Owner)
-- [ ] Metadata open call raccolti (Art Critic)
-- [ ] Prompt analisi generato (Art Critic)
-- [ ] API configurata (Dev)
-- [ ] Foto caricate nella cartella corretta
+- [ ] Project initialized (Project Owner)
+- [ ] Open call metadata collected (Art Critic)
+- [ ] Analysis prompt generated (Art Critic)
+- [ ] API configured (Dev)
+- [ ] Photos uploaded to correct folder
 
 ### Analysis
-- [ ] Tutte le foto validate
-- [ ] Analisi completata senza errori
-- [ ] Score salvati correttamente
-- [ ] QA check passato
+- [ ] All photos validated
+- [ ] Analysis completed without errors
+- [ ] Scores saved correctly
+- [ ] QA check passed
 
 ### Ranking
-- [ ] Risultati aggregati
-- [ ] Classifica generata
-- [ ] Report esportato
-- [ ] Review finale completata
+- [ ] Results aggregated
+- [ ] Ranking generated
+- [ ] Report exported
+- [ ] Final review completed
 
-## Comandi Rapidi
+## Quick Commands
 
 ```bash
-# Inizia nuovo progetto
-claude "Usa project-owner per iniziare un nuovo progetto per l'open call X"
+# Start new project
+claude "Use project-owner to start a new project for open call X"
 
-# Analizza open call
-claude "Usa art-critic per analizzare questa open call: [dettagli]"
+# Analyze open call
+claude "Use art-critic to analyze this open call: [details]"
 
-# Processa foto
-claude "Usa dev per analizzare le foto in data/open-calls/X/photos/"
+# Process photos
+claude "Use dev to analyze photos in data/open-calls/X/photos/"
 
-# Genera ranking
-claude "Usa art-critic per generare la classifica finale"
+# Generate ranking
+claude "Use art-critic to generate final ranking"
 ```
 
 ## Troubleshooting
 
-### Errore: API Timeout
-- Aumenta timeout in config
-- Riduci concurrency
-- Riprova foto fallite singolarmente
+### Error: API Timeout
+- Increase timeout in config
+- Reduce concurrency
+- Retry failed photos individually
 
-### Errore: Score Inconsistenti
-- Verifica prompt analisi con Art Critic
-- Controlla se criterio e ambiguo
-- Rigenera prompt se necessario
+### Error: Inconsistent Scores
+- Verify analysis prompt with Art Critic
+- Check if criterion is ambiguous
+- Regenerate prompt if necessary
 
-### Errore: Foto Non Processata
-- Verifica formato supportato
-- Controlla dimensione file
-- Valida che immagine non sia corrotta
+### Error: Photo Not Processed
+- Verify supported format
+- Check file size
+- Validate that image is not corrupted

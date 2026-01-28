@@ -72,63 +72,63 @@ export async function analyzePhoto(photoPath, analysisPrompt) {
  * @returns {string} Complete prompt
  */
 function buildAnalysisPrompt(analysisPrompt) {
-  let prompt = `Sei un esperto critico fotografico e giurato di competizioni. Analizza questa fotografia per una open call.
+  let prompt = `You are an expert photography critic and competition juror. Analyze this photograph for a photography open call.
 
 `;
 
   if (analysisPrompt.title) {
-    prompt += `**Competizione**: ${analysisPrompt.title}\n`;
+    prompt += `**Competition**: ${analysisPrompt.title}\n`;
   }
 
   if (analysisPrompt.theme) {
-    prompt += `**Tema**: ${analysisPrompt.theme}\n`;
+    prompt += `**Theme**: ${analysisPrompt.theme}\n`;
   }
 
   if (analysisPrompt.criteria && analysisPrompt.criteria.length > 0) {
-    prompt += '\n**Criteri di Valutazione**:\n';
+    prompt += '\n**Evaluation Criteria**:\n';
     analysisPrompt.criteria.forEach((criterion) => {
       const weight = criterion.weight ? ` (${criterion.weight}%)` : '';
       prompt += `- ${criterion.name}${weight}: ${criterion.description}\n`;
     });
   } else {
     prompt += `
-**Criteri di Valutazione**:
-- Theme Alignment (30%): Quanto la foto corrisponde al tema della competizione
-- Technical Quality (20%): Composizione, fuoco, esposizione, colore
-- Originality (25%): Unicità della prospettiva e del concetto
-- Emotional Impact (15%): Capacità di coinvolgere ed emozionare
-- Jury Fit (10%): Allineamento con le preferenze della giuria
+**Evaluation Criteria**:
+- Theme Alignment (30%): How well the photo matches the competition theme
+- Technical Quality (20%): Composition, focus, exposure, color
+- Originality (25%): Uniqueness of perspective and concept
+- Emotional Impact (15%): Ability to engage and move the viewer
+- Jury Fit (10%): Alignment with jury preferences
 `;
   }
 
   prompt += `
-**ISTRUZIONI IMPORTANTI**:
-1. Valuta ogni criterio con un punteggio da 1 a 10
-2. Usa il formato ESATTO: "SCORE: [nome criterio]: [numero]/10"
-3. Fornisci una breve motivazione per ogni punteggio
-4. Identifica i punti di forza principali
-5. Suggerisci aree di miglioramento
-6. Concludi con una raccomandazione: Strong Yes / Yes / Maybe / No
+**IMPORTANT INSTRUCTIONS**:
+1. Evaluate each criterion with a score from 1 to 10
+2. Use EXACT format: "SCORE: [criterion name]: [number]/10"
+3. Provide a brief justification for each score
+4. Identify the main strengths
+5. Suggest areas for improvement
+6. Conclude with a recommendation: Strong Yes / Yes / Maybe / No
 
-**FORMATO RISPOSTA**:
+**RESPONSE FORMAT**:
 
 OVERALL ASSESSMENT:
-[Breve valutazione complessiva in 2-3 frasi]
+[Brief overall assessment in 2-3 sentences]
 
 SCORES:
-SCORE: Theme Alignment: [X]/10 - [motivazione]
-SCORE: Technical Quality: [X]/10 - [motivazione]
-SCORE: Originality: [X]/10 - [motivazione]
-SCORE: Emotional Impact: [X]/10 - [motivazione]
-SCORE: Jury Fit: [X]/10 - [motivazione]
+SCORE: Theme Alignment: [X]/10 - [justification]
+SCORE: Technical Quality: [X]/10 - [justification]
+SCORE: Originality: [X]/10 - [justification]
+SCORE: Emotional Impact: [X]/10 - [justification]
+SCORE: Jury Fit: [X]/10 - [justification]
 
 STRENGTHS:
-- [punto di forza 1]
-- [punto di forza 2]
+- [strength 1]
+- [strength 2]
 
 IMPROVEMENTS:
-- [suggerimento 1]
-- [suggerimento 2]
+- [suggestion 1]
+- [suggestion 2]
 
 Final recommendation: [Strong Yes / Yes / Maybe / No]
 `;

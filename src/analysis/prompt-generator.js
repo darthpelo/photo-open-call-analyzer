@@ -12,25 +12,25 @@ export async function generateAnalysisPrompt(openCallData) {
   const client = getApiClient();
   const model = getModelName();
 
-  const prompt = `Sei un esperto analista di competizioni fotografiche.
-Analizza questa open call e crea un framework di valutazione strutturato.
+  const prompt = `You are an expert photography competition analyst.
+Analyze this open call and create a structured evaluation framework.
 
-**Titolo Competizione**: ${openCallData.title || 'Non specificato'}
-**Tema**: ${openCallData.theme || 'Non specificato'}
-**Membri Giuria**: ${openCallData.jury?.join(', ') || 'Non specificato'}
-**Vincitori Passati**: ${openCallData.pastWinners || 'Nessuna informazione'}
-**Contesto Aggiuntivo**: ${openCallData.context || 'Nessuno'}
+**Competition Title**: ${openCallData.title || 'Not specified'}
+**Theme**: ${openCallData.theme || 'Not specified'}
+**Jury Members**: ${openCallData.jury?.join(', ') || 'Not specified'}
+**Past Winners**: ${openCallData.pastWinners || 'No information'}
+**Additional Context**: ${openCallData.context || 'None'}
 
-Fornisci:
-1. I 5 criteri di valutazione principali per questa competizione (nome, descrizione, peso %)
-2. Pattern o temi chiave dai vincitori passati
-3. 5 domande specifiche da porsi quando si valuta ogni foto
-4. Stile/estetica preferiti dalla giuria
+Provide:
+1. The 5 main evaluation criteria for this competition (name, description, weight %)
+2. Key patterns or themes from past winners
+3. 5 specific questions to ask when evaluating each photo
+4. Preferred style/aesthetics from the jury
 
-Formatta i criteri così:
-CRITERION: [nome]
-DESCRIPTION: [descrizione]
-WEIGHT: [percentuale numerica]
+Format the criteria like this:
+CRITERION: [name]
+DESCRIPTION: [description]
+WEIGHT: [numeric percentage]
 ---`;
 
   try {
