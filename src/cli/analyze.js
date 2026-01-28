@@ -28,6 +28,7 @@ program
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
+  .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
   .option('--show-tiers', 'Display tier breakdown in terminal')
   .action(async (projectDir, options) => {
     try {
