@@ -76,6 +76,27 @@ Found 100 total photos, 35 already analyzed, 65 remaining
 node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 ```
 
+### Analyze with Custom Photo Timeout (NEW in M2)
+
+For large images or slow connections, increase the per-photo timeout:
+
+```bash
+npm run analyze data/open-calls/my-project -- --photo-timeout 120
+```
+
+**Options**:
+- Default: 60 seconds
+- Range: 30-300 seconds
+- Timeout example: If a photo takes longer than specified, it's skipped and marked as failed
+
+### Supported Photo Formats (NEW in M2)
+
+- ✅ JPEG (.jpg, .jpeg)
+- ✅ PNG (.png)
+- ✅ GIF (.gif)
+- ✅ WebP (.webp)
+- ✅ HEIC (.heic) - *iPhone and iOS photos*
+
 ### Validate Photos
 
 ```bash
@@ -139,6 +160,8 @@ Results will be in the `results/` directory.
 ✓ **Smart Criteria Generation** - Automatically generates evaluation criteria
 ✓ **Batch Processing** - Process multiple photos in parallel
 ✓ **Resume Support (M2)** - Automatically resume interrupted long-running batches
+✓ **Error Handling (M2)** - Graceful handling of corrupted files, timeouts, and connection loss
+✓ **HEIC Support (M2)** - iPhone and iOS photo support
 ✓ **Detailed Scoring** - Individual criterion scores plus weighted overall
 ✓ **Multi-Format Export** - Markdown, JSON, and CSV reports
 ✓ **Ranking System** - Automatic ranking with tier classification
@@ -218,7 +241,40 @@ ollama pull llava:7b
 ### No Photos Found
 Check that photos are in the correct directory:
 - `data/open-calls/[project]/photos/`
-- Supported formats: JPG, PNG, GIF, WebP
+- Supported formats: JPG, PNG, GIF, WebP, HEIC
+
+### Common Errors (NEW in M2)
+
+**Error: "Invalid image file"**
+- Cause: Corrupted or unsupported image format
+- Solution: Check that the file is a valid image, convert to JPEG/PNG, or remove from directory
+
+**Error: "TIMEOUT" (in Failed Photos report)**
+- Cause: Image analysis took longer than timeout limit
+- Solution: Increase timeout with `--photo-timeout 120` or reduce image resolution
+
+**Error: "Ollama connection lost"**
+- Cause: Ollama server stopped or became unavailable
+- Solution: Restart Ollama (`ollama serve`) and re-run - analysis will resume from last checkpoint
+
+**Error: "File system error"**
+- Cause: Permission denied, disk full, or file removed during analysis
+- Solution: Check file permissions, free up disk space, or restore the photo file
+
+### Failed Photos Report
+
+If analysis completes with some failed photos, check the **Failed Photos** section in the report:
+
+```markdown
+## Failed Photos
+
+| Photo | Error Type | Reason | Suggested Action |
+|-------|-----------|--------|------------------|
+| photo1.jpg | TIMEOUT | Timeout after 60s | Reduce image size or increase --photo-timeout |
+| photo2.jpg | INVALID_FORMAT | Corrupted file | Check file integrity or convert to JPEG |
+```
+
+All successfully analyzed photos are still ranked and included in the report.
 
 ## Performance
 
