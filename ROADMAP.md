@@ -1,53 +1,53 @@
 # Roadmap - Photo Open Call Analyzer
 
 ## Vision
-Creare un tool che aiuti i fotografi a selezionare le foto migliori per le open call, usando AI locale (Ollama/LLaVA) per analizzare sia i criteri della competizione che le foto candidate.
+Create a tool to help photographers select their best photos for open calls, using local AI (Ollama/LLaVA) to analyze both competition criteria and candidate photos.
 
 ---
 
-## Milestone 1: MVP - Analisi Base
+## Milestone 1: MVP - Basic Analysis
 **Status**: ✅ COMPLETED
-**Target**: Prima open call analizzata end-to-end
+**Target**: First open call analyzed end-to-end
 
-### Deliverable
-- [x] Agenti configurati e funzionanti
-- [x] Workflow analisi open call completo
-- [x] Analisi foto con Ollama/LLaVA
-- [x] Generazione classifica base
+### Deliverables
+- [x] Agents configured and functional
+- [x] Complete open call analysis workflow
+- [x] Photo analysis with Ollama/LLaVA
+- [x] Basic ranking generation
 
 ### Success Criteria
-- [x] Analizzare foto con score 1-10
-- [x] Generare classifica ordinata con score
-- [x] Feedback testuale per ogni foto
+- [x] Analyze photos with 1-10 scoring
+- [x] Generate ordered ranking with scores
+- [x] Provide text feedback for each photo
 
 ### Implemented Features
-- **photo-analyzer.js**: Ollama/LLaVA integration per analisi foto
-- **batch-processor.js**: Elaborazione batch in parallelo
-- **score-aggregator.js**: Aggregazione score, ranking, tier generation
-- **prompt-generator.js**: Dynamic prompt generation da open call
+- **photo-analyzer.js**: Ollama/LLaVA integration for photo analysis
+- **batch-processor.js**: Parallel batch processing
+- **score-aggregator.js**: Score aggregation, ranking, tier generation
+- **prompt-generator.js**: Dynamic prompt generation from open call
 - **report-generator.js**: Multi-format export (Markdown, JSON, CSV)
 - **CLI Interface**: Full command-line with analyze, validate commands
-- **api-client.js**: Client Ollama con check connessione
+- **api-client.js**: Ollama client with connection verification
 
 ---
 
-## Milestone 2: Automazione
-**Status**: 🟡 Partially Done
+## Milestone 2: Automation
+**Status**: 🟡 In Progress
 
-### Deliverable
-- [x] CLI per batch processing
-- [ ] Config file per open call (template)
-- [x] Export in multipli formati (MD, JSON, CSV)
-- [ ] Resume analisi interrotta
+### Deliverables
+- [x] CLI for batch processing
+- [x] Configuration file for open call (template) - FR-2.1 COMPLETE
+- [x] Export in multiple formats (MD, JSON, CSV)
+- [ ] Resume interrupted analysis - FR-2.2 Planned
 
 ---
 
-## Milestone 3: UI Visualizzazione
+## Milestone 3: Web UI & Visualization
 **Status**: ⚪ Planned
 
-### Deliverable
-- [ ] Web UI per visualizzare risultati
-- [ ] Comparazione side-by-side
+### Deliverables
+- [ ] Web UI for visualization of results
+- [ ] Side-by-side comparison
 - [ ] Drag & drop per riordinare
 - [ ] Dark mode
 
