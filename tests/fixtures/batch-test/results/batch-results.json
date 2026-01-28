@@ -1,0 +1,94 @@
+{
+  "timestamp": "2026-01-28T13:56:10.239Z",
+  "total": 2,
+  "successful": 2,
+  "failed": 0,
+  "results": [
+    {
+      "success": true,
+      "photo": "tests/fixtures/batch-test/photos/photo1.jpg",
+      "scores": {
+        "individual": {
+          "Theme Alignment": {
+            "score": 5,
+            "weight": 20
+          },
+          "Technical Quality": {
+            "score": 7,
+            "weight": 20
+          },
+          "Originality": {
+            "score": 6,
+            "weight": 20
+          },
+          "Emotional Impact": {
+            "score": 4,
+            "weight": 20
+          },
+          "Jury Fit": {
+            "score": 7,
+            "weight": 20
+          }
+        },
+        "summary": {
+          "weighted_average": 5.8,
+          "average": 5.8,
+          "recommendation": "Maybe - The image has potential but could benefit from refinements in both composition and emotional impact to make it more compelling for a competition jury."
+        },
+        "strengths": [
+          "The central subject is in sharp focus and contrasts sharply with the blurred background, creating a visually striking effect.",
+          "The use of light and dark elements adds depth and interest to the image."
+        ],
+        "improvements": [
+          "To enhance the theme alignment, consider adding additional layers or elements to create a more complex narrative.",
+          "Introduce elements that evoke emotion or tell a story, which would increase the emotional impact."
+        ],
+        "full_analysis": " OVERALL ASSESSMENT:\nThis image presents a simple yet intriguing composition, with a focus on the contrast between light and dark elements. The subject is centered and appears to be in sharp focus, while the background is blurred, drawing attention to the central figure.\n\nSCORES:\nSCORE: Theme Alignment: 5/10 - The image aligns well with the theme of contrasting elements, but it could benefit from a more nuanced or complex narrative to enhance its impact.\nSCORE: Technical Quality: 7/10 - The lighting and focus are well executed, creating a strong visual effect. However, the composition could be improved by considering additional elements or layers to add depth and interest.\nSCORE: Originality: 6/10 - The image has a unique quality due to its contrasting elements, but it does not stand out significantly from other similar images.\nSCORE: Emotional Impact: 4/10 - The emotional impact of the image is limited, as there are no clear indicators of emotion or narrative.\nSCORE: Jury Fit: 7/10 - The image fits well within the context of a photography competition, but it may not be as compelling as other entries due to its simplicity.\n\nSTRENGTHS:\n- The central subject is in sharp focus and contrasts sharply with the blurred background, creating a visually striking effect.\n- The use of light and dark elements adds depth and interest to the image.\n\nIMPROVEMENTS:\n- To enhance the theme alignment, consider adding additional layers or elements to create a more complex narrative.\n- Introduce elements that evoke emotion or tell a story, which would increase the emotional impact.\n\nFinal recommendation: Maybe - The image has potential but could benefit from refinements in both composition and emotional impact to make it more compelling for a competition jury. "
+      }
+    },
+    {
+      "success": true,
+      "photo": "tests/fixtures/batch-test/photos/photo2.jpg",
+      "scores": {
+        "individual": {
+          "Theme Alignment": {
+            "score": 5,
+            "weight": 20
+          },
+          "Technical Quality": {
+            "score": 7,
+            "weight": 20
+          },
+          "Originality": {
+            "score": 6,
+            "weight": 20
+          },
+          "Emotional Impact": {
+            "score": 4,
+            "weight": 20
+          },
+          "Jury Fit": {
+            "score": 5,
+            "weight": 20
+          }
+        },
+        "summary": {
+          "weighted_average": 5.4,
+          "average": 5.4,
+          "recommendation": "Maybe / No - While the photograph has some strengths, it lacks depth and originality that would make it stand out in an open call competition. It might be better suited for a more general photography category rather than one focused on theme or emotional impact."
+        },
+        "strengths": [
+          "The lighting and color balance are well executed, creating a visually appealing image.",
+          "The subject is clear and focused, which helps the viewer to quickly understand what the photograph is about."
+        ],
+        "improvements": [
+          "To enhance theme alignment, consider adding more context or narrative elements to the image. This could be achieved through additional props, lighting, or composition adjustments.",
+          "To improve emotional impact, try to add layers of meaning or a deeper story behind the subject. This could involve capturing the subject in different situations or environments, or using post-processing techniques to create a more dramatic effect."
+        ],
+        "full_analysis": " OVERALL ASSESSMENT:\nThis photograph appears to be a simple yet effective composition, with a clear focus on the subject. The lighting and color balance seem well executed, contributing to an appealing visual effect. However, there is room for improvement in terms of composition and emotional impact.\n\nSCORES:\nSCORE: Theme Alignment: 5/10 - The photograph does not have a strong theme or narrative that immediately stands out. It could benefit from a clearer concept or story to enhance its appeal.\nSCORE: Technical Quality: 7/10 - The technical aspects of the image, such as lighting and color balance, are well executed. However, there is room for improvement in terms of composition and emotional impact.\nSCORE: Originality: 6/10 - The photograph does not seem to be overly original or innovative, but it presents a subject that could be explored more deeply.\nSCORE: Emotional Impact: 4/10 - The image does not evoke a strong emotional response from the viewer. It lacks depth and context that would allow for a deeper connection with the viewer.\nSCORE: Jury Fit: 5/10 - The photograph may fit well within certain categories of photography, but it might not be as compelling or unique as some other entries in an open call.\n\nSTRENGTHS:\n- The lighting and color balance are well executed, creating a visually appealing image.\n- The subject is clear and focused, which helps the viewer to quickly understand what the photograph is about.\n\nIMPROVEMENTS:\n- To enhance theme alignment, consider adding more context or narrative elements to the image. This could be achieved through additional props, lighting, or composition adjustments.\n- To improve emotional impact, try to add layers of meaning or a deeper story behind the subject. This could involve capturing the subject in different situations or environments, or using post-processing techniques to create a more dramatic effect.\n\nFinal recommendation: Maybe / No - While the photograph has some strengths, it lacks depth and originality that would make it stand out in an open call competition. It might be better suited for a more general photography category rather than one focused on theme or emotional impact. "
+      }
+    }
+  ],
+  "errors": [],
+  "failedPhotos": []
+}
