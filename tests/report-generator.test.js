@@ -1,4 +1,3 @@
-import { describe, test, expect } from '@jest/globals';
 import { generateMarkdownReport, generateJsonReport, generateCsvReport } from '../src/output/report-generator.js';
 
 describe('Report Generator', () => {

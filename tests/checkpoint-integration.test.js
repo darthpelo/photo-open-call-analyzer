@@ -1,4 +1,3 @@
-/**
  * Integration Tests for Checkpoint Resume Workflows
  * 
  * Tests end-to-end resume functionality with batch-processor.js

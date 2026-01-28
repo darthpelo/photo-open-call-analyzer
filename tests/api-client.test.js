@@ -1,4 +1,3 @@
-import { describe, test, expect, beforeEach, afterEach } from '@jest/globals';
 import { getApiClient, resetApiClient } from '../src/utils/api-client.js';
 
 describe('API Client', () => {

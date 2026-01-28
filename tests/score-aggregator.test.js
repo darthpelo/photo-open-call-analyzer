@@ -1,4 +1,3 @@
-import { describe, test, expect } from '@jest/globals';
 import { aggregateScores, generateTiers, generateStatistics } from '../src/analysis/score-aggregator.js';
 
 describe('Score Aggregator', () => {
