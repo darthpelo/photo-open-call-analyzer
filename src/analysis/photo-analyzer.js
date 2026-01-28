@@ -257,4 +257,68 @@ function getDefaultCriteria() {
   ];
 }
 
+/**
+ * Analyzes a photo with timeout protection
+ * 
+ * Wraps analyzePhoto() with a timeout to prevent hanging on
+ * large images or slow Ollama responses.
+ * 
+ * Part of FR-2.3: Edge Case Robustness
+ * 
+ * @param {string} photoPath - Path to photo file
+ * @param {Object} analysisPrompt - Analysis prompt
+ * @param {Object} options - Options
+ * @param {number} options.timeout - Timeout in milliseconds (default 60000)
+ * @returns {Promise<Object>} Analysis result or timeout error
+ *   - success: boolean
+ *   - data: Object - Analysis result if successful
+ *   - error: string - Error message if failed
+ *   - timedOut: boolean - True if timeout occurred
+ * 
+ * @example
+ * const result = await analyzePhotoWithTimeout('photo.jpg', prompt, { timeout: 90000 });
+ * if (result.success) {
+ *   console.log(result.data);
+ * } else if (result.timedOut) {
+ *   console.log('Timeout:', result.error);
+ * }
+ */
+export async function analyzePhotoWithTimeout(photoPath, analysisPrompt, options = {}) {
+  const timeout = options.timeout || 60000; // 60s default
+  const timeoutSeconds = Math.floor(timeout / 1000);
+
+  try {
+    const result = await Promise.race([
+      // Actual analysis
+      analyzePhoto(photoPath, analysisPrompt).then(data => ({ data })),
+      
+      // Timeout promise
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error('TIMEOUT')), timeout)
+      )
+    ]);
+
+    // Analysis completed before timeout
+    return {
+      success: true,
+      data: result.data,
+      timedOut: false
+    };
+
+  } catch (error) {
+    // Check if it was a timeout
+    if (error.message === 'TIMEOUT') {
+      logger.warn(`⚠️ Analysis timeout after ${timeoutSeconds}s: ${photoPath}`);
+      return {
+        success: false,
+        error: `Analysis timeout after ${timeoutSeconds}s`,
+        timedOut: true
+      };
+    }
+
+    // Other error - re-throw
+    throw error;
+  }
+}
+
 export { getDefaultCriteria };
