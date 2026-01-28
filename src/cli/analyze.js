@@ -8,6 +8,7 @@ import { exportReports } from '../output/report-generator.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
 import { logger } from '../utils/logger.js';
 import { readJson, fileExists, writeJson, projectPath } from '../utils/file-utils.js';
+import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { join } from 'path';
 import ora from 'ora';
 
@@ -31,11 +32,32 @@ program
       // Check project structure
       const photosDir = join(projectDir, 'photos');
       const promptFile = join(projectDir, 'analysis-prompt.json');
+      const configFile = join(projectDir, 'open-call.json');
 
       if (!fileExists(photosDir)) {
         logger.error(`Photos directory not found: ${photosDir}`);
         process.exit(1);
       }
+
+      if (!fileExists(configFile)) {
+        logger.error(`Configuration file not found: ${configFile}`);
+        logger.info('Please create open-call.json with competition details');
+        logger.info('Use: npm run analyze validate <project-dir> --config');
+        process.exit(1);
+      }
+
+      // Validate configuration
+      logger.info('Validating configuration...');
+      const configResult = await loadOpenCallConfig(configFile);
+
+      if (!configResult.success) {
+        logger.error('Configuration validation failed:');
+        const formattedErrors = formatValidationErrors(configResult.validation.errors);
+        console.log(formattedErrors);
+        process.exit(1);
+      }
+
+      const config = configResult.data;
 
       // Load or generate analysis prompt
       let analysisPrompt;
@@ -44,14 +66,6 @@ program
         logger.info('Loading existing analysis prompt');
         analysisPrompt = readJson(promptFile);
       } else {
-        const configFile = join(projectDir, 'open-call.json');
-        if (!fileExists(configFile)) {
-          logger.error(`Configuration file not found: ${configFile}`);
-          logger.info('Please create open-call.json with competition details');
-          process.exit(1);
-        }
-
-        const config = readJson(configFile);
         logger.info(`Generating analysis prompt for: ${config.title}`);
         analysisPrompt = await generateAnalysisPrompt(config);
 
@@ -181,12 +195,43 @@ program
  */
 program
   .command('validate <directory>')
-  .description('Validate photos in a directory')
-  .action((directory) => {
+  .description('Validate photos in a directory or open-call.json configuration')
+  .option('--config', 'Validate open-call.json configuration instead of photos')
+  .action(async (directory, options) => {
     try {
       logger.section('VALIDATION');
-      const results = validatePhotos(directory);
-      logger.success(`Validation complete: ${results.valid.length} valid photos`);
+
+      if (options.config) {
+        // Validate configuration file
+        const configPath = join(directory, 'open-call.json');
+
+        if (!fileExists(configPath)) {
+          logger.error(`Configuration file not found: ${configPath}`);
+          logger.info('Expected location: <project-dir>/open-call.json');
+          process.exit(1);
+        }
+
+        const result = await loadOpenCallConfig(configPath);
+
+        if (!result.validation.valid) {
+          logger.error('Configuration validation failed:');
+          const formattedErrors = formatValidationErrors(result.validation.errors);
+          console.log(formattedErrors);
+          process.exit(1);
+        }
+
+        logger.success('✅ Configuration is valid!');
+        logger.info(`Title: ${result.data.title}`);
+        logger.info(`Theme: ${result.data.theme}`);
+        logger.info(`Jury members: ${result.data.jury.length}`);
+        if (result.data.customCriteria) {
+          logger.info(`Custom criteria: ${result.data.customCriteria.length}`);
+        }
+      } else {
+        // Validate photos
+        const results = validatePhotos(directory);
+        logger.success(`Validation complete: ${results.valid.length} valid photos`);
+      }
     } catch (error) {
       logger.error(error.message);
       process.exit(1);
