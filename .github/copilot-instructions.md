@@ -267,7 +267,33 @@ Extend [src/output/report-generator.js](src/output/report-generator.js) - add ne
    git push origin feature/[milestone]-[feature-name]
    ```
 
-4. **Create Pull Request** on GitHub and request review
+4. **Create Pull Request** using body-file method (REQUIRED):
+   ```bash
+   # Create PR description file first
+   cat > .pr-body.txt << 'EOF'
+   ## Summary
+   Brief description of changes
+   
+   ## Implementation
+   - Key changes made
+   
+   ## Testing
+   - Test results
+   
+   ## Related
+   - Links to ROADMAP.md or issues
+   EOF
+   
+   # Create PR with body-file to avoid shell quoting/line break issues
+   gh pr create --base main --head feature/[milestone]-[feature-name] \
+     --title "feat(scope): description" \
+     --body-file .pr-body.txt
+   
+   # Clean up temporary file
+   rm .pr-body.txt
+   ```
+   
+   **IMPORTANT**: Always use `--body-file` instead of `--body` to avoid shell quoting and line break issues with complex PR descriptions.
 
 5. **Merge only via PR** (never direct commits to main)
 

@@ -143,8 +143,33 @@ photo-open-call-analyzer/
 2. Make changes and test: `npm test`
 3. Commit: `git commit -m "feat(scope): description"`
 4. Push: `git push origin feature/m2-task-name`
-5. Create PR on GitHub
+5. Create PR using body-file method (see below)
 6. After approval, merge via PR (never merge directly to main)
+
+**Creating Pull Requests** (REQUIRED method):
+```bash
+# Create PR description file
+cat > .pr-body.txt << 'EOF'
+## Summary
+Brief description of changes
+
+## Implementation
+- Key changes
+
+## Testing
+- Test results
+EOF
+
+# Create PR with body-file (avoids line break issues)
+gh pr create --base main --head feature/m2-task-name \
+  --title "feat(scope): description" \
+  --body-file .pr-body.txt
+
+# Clean up
+rm .pr-body.txt
+```
+
+**IMPORTANT**: Always use `--body-file` instead of `--body` to avoid shell quoting issues with complex descriptions.
 
 **See COPILOT.md for detailed workflow.**
 

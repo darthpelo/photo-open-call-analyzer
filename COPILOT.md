@@ -232,8 +232,35 @@ Fixes: #123 (if applicable)
 #### 4. Push & Create Pull Request
 ```bash
 git push origin feature/m2-config-templates
-# Then create PR on GitHub with description linking to ROADMAP.md
+
+# Create PR using body-file method (REQUIRED - avoids line break issues)
+# 1. Create PR description file
+cat > .pr-body.txt << 'EOF'
+## Summary
+Brief description of changes
+
+## Implementation
+- Key changes made
+- Files affected
+
+## Testing
+- Test results
+- Coverage metrics
+
+## Related
+- Links to ROADMAP.md or issues
+EOF
+
+# 2. Create PR with body-file
+gh pr create --base main --head feature/m2-config-templates \
+  --title "feat(config): add open-call.json templates" \
+  --body-file .pr-body.txt
+
+# 3. Clean up
+rm .pr-body.txt
 ```
+
+**IMPORTANT**: Always use `--body-file` instead of `--body` to avoid shell quoting and line break issues with complex PR descriptions.
 
 #### 5. After Approval, Merge via GitHub
 - Do NOT merge locally to main
