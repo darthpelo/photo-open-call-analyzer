@@ -55,35 +55,37 @@ describe('Score Aggregator', () => {
     const aggregation = aggregateScores(mockAnalyses, mockCriteria);
 
     expect(aggregation.total_photos).toBe(3);
-    expect(aggregation.photos.length).toBe(3);
-    expect(aggregation.photos[0].rank).toBe(1);
-    expect(aggregation.photos[0].overall_score).toBe(8.3);
+    expect(aggregation.ranking.length).toBe(3);
+    expect(aggregation.ranking[0].rank).toBe(1);
+    expect(aggregation.ranking[0].overall_score).toBe(8.3);
   });
 
   test('should sort photos by score in descending order', () => {
     const aggregation = aggregateScores(mockAnalyses, mockCriteria);
 
-    expect(aggregation.photos[0].overall_score).toBeGreaterThan(aggregation.photos[1].overall_score);
-    expect(aggregation.photos[1].overall_score).toBeGreaterThan(aggregation.photos[2].overall_score);
+    expect(aggregation.ranking[0].overall_score).toBeGreaterThan(aggregation.ranking[1].overall_score);
+    expect(aggregation.ranking[1].overall_score).toBeGreaterThan(aggregation.ranking[2].overall_score);
   });
 
   test('should generate tiers', () => {
     const aggregation = aggregateScores(mockAnalyses, mockCriteria);
-    const tiers = generateTiers(aggregation);
 
-    expect(tiers.tiers).toBeDefined();
-    expect(tiers.summary).toBeDefined();
-    expect(Object.keys(tiers.tiers).length).toBeGreaterThan(0);
+    expect(aggregation.tiers).toBeDefined();
+    expect(aggregation.tiers.tier1).toBeDefined();
+    expect(aggregation.tiers.tier2).toBeDefined();
+    expect(aggregation.tiers.tier3).toBeDefined();
+    expect(aggregation.tiers.summary).toBeDefined();
+    expect(aggregation.tiers.tier1.length + aggregation.tiers.tier2.length + aggregation.tiers.tier3.length).toBe(3);
   });
 
   test('should generate statistics', () => {
     const aggregation = aggregateScores(mockAnalyses, mockCriteria);
-    const stats = generateStatistics(aggregation);
 
-    expect(stats.average).toBeDefined();
-    expect(stats.median).toBeDefined();
-    expect(stats.min).toBeLessThanOrEqual(stats.max);
-    expect(stats.count).toBe(3);
+    expect(aggregation.statistics).toBeDefined();
+    expect(aggregation.statistics.average).toBeDefined();
+    expect(aggregation.statistics.median).toBeDefined();
+    expect(aggregation.statistics.min).toBeLessThanOrEqual(aggregation.statistics.max);
+    expect(aggregation.statistics.count).toBe(3);
   });
 
   test('should integrate smart tiering with aggregated scores', () => {

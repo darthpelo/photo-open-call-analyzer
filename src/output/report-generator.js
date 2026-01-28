@@ -52,7 +52,8 @@ export function generateMarkdownReport(aggregation, tiers, stats, options = {}) 
   // Add top recommendations
   report += `## Top Recommendations\n\n`;
 
-  const topPhotos = aggregation.photos.slice(0, Math.min(10, aggregation.photos.length));
+  const photos = aggregation.ranking || aggregation.photos || [];
+  const topPhotos = photos.slice(0, Math.min(10, photos.length));
   topPhotos.forEach((photo, index) => {
     const photoName = photo.photo.split('/').pop();
     report += `### ${index + 1}. ${photoName}\n`;
@@ -73,7 +74,7 @@ export function generateMarkdownReport(aggregation, tiers, stats, options = {}) 
   report += `| Rank | Photo | Score | Recommendation |\n`;
   report += `|------|-------|-------|----------------|\n`;
 
-  aggregation.photos.forEach((photo) => {
+  photos.forEach((photo) => {
     const photoName = photo.photo.split('/').pop();
     const score = photo.overall_score || 'N/A';
     const recommendation = photo.summary?.recommendation || '—';
@@ -133,7 +134,7 @@ export function generateJsonReport(aggregation, tiers, stats, options = {}) {
     },
     statistics: stats,
     tiers: tiers,
-    ranking: aggregation.photos.map((photo) => ({
+    ranking: (aggregation.ranking || aggregation.photos || []).map((photo) => ({
       rank: photo.rank,
       photo: photo.photo,
       overall_score: photo.overall_score,
@@ -309,7 +310,8 @@ export function generateTierCsvReport(smartTiers) {
 export function generateCsvReport(aggregation) {
   let csv = 'Rank,Photo,Overall Score,Recommendation\n';
 
-  aggregation.photos.forEach((photo) => {
+  const photos = aggregation.ranking || aggregation.photos || [];
+  photos.forEach((photo) => {
     const photoName = photo.photo.split('/').pop();
     const score = photo.overall_score || '';
     const recommendation = photo.summary?.recommendation || '';

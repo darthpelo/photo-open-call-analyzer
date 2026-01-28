@@ -3,8 +3,7 @@
 import { Command } from 'commander';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
 import { processBatch, validatePhotos } from '../processing/batch-processor.js';
-import { aggregateScores, generateStatistics, integrateSmartTiering } from '../analysis/score-aggregator.js';
-import { generateTiers } from '../analysis/smart-tiering.js';
+import { aggregateScores, integrateSmartTiering } from '../analysis/score-aggregator.js';
 import { exportReports } from '../output/report-generator.js';
 import { displayTierSummary, displayTierDetails, displayTierRecommendations } from './tier-display.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
@@ -149,13 +148,11 @@ program
       }
 
       const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria || []);
-      const tiers = generateTiers(aggregation);
       const smartTiers = integrateSmartTiering(aggregation);
-      const stats = generateStatistics(aggregation);
 
       // Generate and export reports
       logger.section('REPORT GENERATION');
-      exportReports(options.output, aggregation, tiers, stats, {
+      exportReports(options.output, aggregation, aggregation.tiers, aggregation.statistics, {
         formats: ['markdown', 'json', 'csv'],
         basename: 'photo-analysis',
         title: `${analysisPrompt.title} - Analysis Report`,
@@ -171,8 +168,8 @@ program
       if (batchResults.failedPhotos && batchResults.failedPhotos.length > 0) {
         logger.warn(`Failed to analyze: ${batchResults.failedPhotos.length}`);
       }
-      logger.info(`Average score: ${stats.average}/10`);
-      logger.info(`Score range: ${stats.min.toFixed(1)} - ${stats.max.toFixed(1)}`);
+      logger.info(`Average score: ${aggregation.statistics.average}/10`);
+      logger.info(`Score range: ${aggregation.statistics.min.toFixed(1)} - ${aggregation.statistics.max.toFixed(1)}`);
 
       // Display tier breakdown if requested
       if (options.showTiers && smartTiers) {
