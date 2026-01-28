@@ -653,6 +653,237 @@ if (failed.length > 0) {
 
 ---
 
+### ADR-008: Checkpoint Invalidation Strategy (Resume Support)
+
+**Decision**: Validate checkpoint via config hash; auto-discard on mismatch  
+**Status**: 🔲 Planned (M2)
+
+**Context**:
+- Problem: Long-running batches (100–500 photos, 2–8 hours) risk failure from interruption
+- Users need: Resume capability without re-analyzing photos already processed
+- Risk: Invalid checkpoint (stale config, corrupted file) could cause incorrect results
+
+**Checkpoint Design**:
+- **Location**: `.analysis-checkpoint.json` in project root (same level as open-call.json)
+- **Trigger**: Saved every N photos (default 10, configurable 1–50)
+- **Contents**: Analyzed photo list, partial results, config hash, batch metadata
+- **Validation**: SHA256 hash of open-call.json to detect config changes
+
+**Alternatives Considered**:
+
+1. **Silent discard on any change** ← **CHOSEN**
+   - ✅ User doesn't see noise; checkpoint "just works"
+   - ✅ Prevents analyzing photos with stale criteria
+   - ✅ Simple implementation (hash comparison)
+   - ❌ User won't know checkpoint was discarded
+   - Mitigation: Log at DEBUG level for visibility
+
+2. **Warn user on config change**
+   - ✅ Transparent: user knows checkpoint discarded
+   - ❌ Extra CLI interaction for batch workflows
+   - ❌ Annoying for repeated runs
+
+3. **Allow resume with new config** (analyze new criteria on old photos)
+   - ✅ Maximizes results reuse
+   - ❌ Results inconsistent: some photos analyzed with old config, new ones with new config
+   - ❌ Confusing for users
+
+4. **Timestamp-based expiration**
+   - ✅ Automatic cleanup after N days
+   - ❌ Users can't customize
+   - Decision: Not implementing; let user manage via `--clear-checkpoint` flag
+
+**Implementation Strategy**:
+
+```javascript
+// Checkpoint validation flow
+1. Load checkpoint from .analysis-checkpoint.json
+2. Compute SHA256 hash of current open-call.json
+3. Compare hash with checkpoint.configHash
+4. If match: Resume from checkpoint
+   If mismatch: Discard checkpoint, start fresh (log: "Config changed")
+
+// Atomic write strategy
+- Write to temp file first: .analysis-checkpoint.json.tmp
+- Atomic rename on success (fs.renameSync)
+- Prevents corruption if process dies mid-write
+
+// CLI flags
+--checkpoint-interval N  (default 10, range 1-50)
+  Save checkpoint every N photos
+--clear-checkpoint
+  Discard any existing checkpoint before run
+```
+
+**Checkpoint Schema**:
+
+```json
+{
+  "version": "1.0",
+  "projectDir": "data/open-calls/nature-wildlife/",
+  
+  "configHash": "sha256:abc123def456...",
+  
+  "analysisPrompt": {
+    "criteria": [
+      {"name": "Composition", "description": "...", "weight": 25},
+      {"name": "Lighting", "description": "...", "weight": 20}
+    ],
+    "evaluationInstructions": "..."
+  },
+  
+  "batchMetadata": {
+    "parallelSetting": 3,
+    "checkpointInterval": 10,
+    "totalPhotosInBatch": 120,
+    "photoDirectory": "data/open-calls/nature-wildlife/photos/"
+  },
+  
+  "progress": {
+    "analyzedPhotos": ["photo-001.jpg", "photo-002.jpg", "..."],
+    "photosCount": 45,
+    "failedPhotos": [],
+    "status": "in_progress"
+  },
+  
+  "results": {
+    "scores": {
+      "photo-001.jpg": {"Composition": 8.5, "Lighting": 7.2, ...},
+      "photo-002.jpg": {"Composition": 9.0, "Lighting": 8.1, ...}
+    },
+    "statistics": null,
+    "lastUpdateTime": "2026-01-28T15:45:00Z"
+  },
+  
+  "metadata": {
+    "createdAt": "2026-01-28T15:00:00Z",
+    "lastResumedAt": "2026-01-28T15:45:00Z",
+    "resumeCount": 2
+  }
+}
+```
+
+**Validation Rules**:
+- `configHash`: Must match SHA256 hash of current open-call.json (else discard)
+- `totalPhotosInBatch`: Must equal actual photo count in directory (else warn, continue)
+- `analyzedPhotos`: Must be proper subset of all photos (else warn, sync)
+- `parallelSetting`: Must match original batch setting (restored from checkpoint)
+- `checkpointInterval`: Must match original setting (restored from checkpoint)
+
+**Error Handling Scenarios**:
+
+| Scenario | Action | Rationale |
+|----------|--------|-----------|
+| Checkpoint file corrupted (invalid JSON) | Log warning, discard, start fresh | Safer than crash |
+| Config changed (hash mismatch) | Log info, discard, start fresh | New criteria = must re-analyze |
+| Checkpoint from different project | Detect via projectDir, log error, ask user | Prevent wrong photos |
+| Photo deleted since checkpoint | Skip in checkpoint list, continue | User may have cleaned up |
+| New photos added since checkpoint | Include in batch, continue | User wants new photos analyzed |
+| Checkpoint incomplete + one photo fails | Update checkpoint with failed photo marked | User can retry; preserves progress |
+| Disk full during checkpoint write | Catch error, log, continue analysis | Don't stop batch for checkpoint |
+
+**Integration with batch-processor.js**:
+
+```
+processBatch(batchConfig)
+  │
+  ├─ 1. Load checkpoint (if exists)
+  │     checkpoint = loadCheckpoint(projectDir)
+  │
+  ├─ 2. Validate checkpoint
+  │     if (checkpoint && validateCheckpoint(checkpoint, config)) {
+  │       resume = true
+  │       skip these photos: checkpoint.progress.analyzedPhotos
+  │     } else {
+  │       resume = false
+  │       checkpoint = null
+  │     }
+  │
+  ├─ 3. Get photo list
+  │     allPhotos = getPhotoFiles(projectDir)
+  │     toAnalyze = allPhotos - checkpoint.analyzed (if resuming)
+  │
+  ├─ 4. Report progress
+  │     if (resume) log "Resuming: 45/120 done, 75 remaining"
+  │
+  ├─ 5. Process in batches
+  │     for each photo in toAnalyze:
+  │       result = analyzePhoto(photo)
+  │       if (photosProcessed % checkpointInterval == 0):
+  │         saveCheckpoint(updatedState, projectDir)
+  │
+  └─ 6. On success
+        deleteCheckpoint(projectDir)
+        aggregateScores(allResults)
+```
+
+**Trade-offs Accepted**:
+- **Disk writes**: Checkpoint saves add I/O every N photos (acceptable, configurable)
+- **Storage**: One checkpoint file per project (~5KB typical) (acceptable)
+- **Complexity**: New module (checkpoint-manager.js) with validation logic (manageable)
+- **No parallelism change**: Resuming always uses original `--parallel` setting (for determinism)
+
+**Future Enhancements**:
+- Checkpoint history: Keep last 3 checkpoints for recovery options
+- Compression: Gzip checkpoint for large batches to save storage
+- Cross-session cleanup: Auto-delete checkpoints older than 30 days
+
+---
+
+## Checkpoint System: Complete Design
+
+### Module Structure
+
+**New File**: `src/processing/checkpoint-manager.js`
+```javascript
+export function computeConfigHash(openCallConfig)
+  // SHA256 hash of config object (keys sorted)
+
+export function loadCheckpoint(projectDir)
+  // Load .analysis-checkpoint.json, return object or null
+
+export function saveCheckpoint(checkpoint, projectDir)
+  // Write checkpoint atomically (via temp file + rename)
+
+export function validateCheckpoint(checkpoint, currentConfig)
+  // Validate schema, config hash, required fields
+  // Return: {valid: bool, reason: string}
+
+export function deleteCheckpoint(projectDir)
+  // Delete .analysis-checkpoint.json after completion
+
+export function initializeCheckpoint(projectDir, config, analysisPrompt, ...)
+  // Create new checkpoint for batch start
+
+export function updateCheckpoint(checkpoint, newPhotos, newResults)
+  // Add new analyzed photos and results to checkpoint
+```
+
+### Integration Points
+
+**batch-processor.js changes**:
+1. Import checkpoint-manager functions
+2. Call `loadCheckpoint()` at batch start
+3. Call `validateCheckpoint()` to verify
+4. Filter photos: skip `checkpoint.progress.analyzedPhotos`
+5. Call `saveCheckpoint()` every N photos
+6. Call `deleteCheckpoint()` on success
+
+**analyze.js changes**:
+1. Add `--checkpoint-interval N` flag (default 10)
+2. Add `--clear-checkpoint` flag (boolean)
+3. Pass options to processBatch()
+
+### Testing Strategy
+
+From Phase 3 (@QA):
+- 10 unit tests: saveCheckpoint, loadCheckpoint, validateCheckpoint, hash computation
+- 5 integration tests: resume workflow, config change detection, error recovery
+- 8 edge case tests: large batches, disk failure, corrupted files
+- 5 manual scenarios: real-world resume workflows
+
+---
+
 ## 5. Scalability & Performance
 
 ### 5.1 Horizontal Scalability
@@ -774,13 +1005,14 @@ DEBUG=*                               # Optional: verbose logging
 - ✅ ADR-005: Error handling strategy
 
 ### Milestone 2 (Planned 🔴)
-- 🔲 ADR-006: Resume checkpoint format (M2)
-- 🔲 ADR-007: Configuration validation schema (M2)
-- 🔲 ADR-008: Caching strategy for analysis results (M4, planned M2)
+- ✅ ADR-007: Configuration validation schema (M2)
+- 🔲 ADR-008: Checkpoint invalidation strategy (M2, Resume support)
+- 🔲 ADR-009: Edge case robustness (M2, timeout handling)
 
 ### Milestone 3–4 (Future)
-- 🔲 ADR-009: Web server architecture (Express.js vs. alternative)
-- 🔲 ADR-010: Database choice for caching (SQLite vs. file-based)
+- 🔲 ADR-010: Web server architecture (Express.js vs. alternative)
+- 🔲 ADR-011: Database choice for caching (SQLite vs. file-based)
+- 🔲 ADR-012: Caching strategy for analysis results (M4 optimization)
 
 ---
 
@@ -798,3 +1030,4 @@ DEBUG=*                               # Optional: verbose logging
 | Date | Section | Change | Author |
 |------|---------|--------|--------|
 | 2026-01-28 | All | Initial architecture document with 5 ADRs | Dev |
+| 2026-01-28 | ADR-008 + Checkpoint System | Added checkpoint invalidation strategy, schema, and integration design for FR-2.2 | Architect |
