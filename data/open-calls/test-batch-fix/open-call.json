@@ -1,0 +1,11 @@
+{
+  "title": "Batch Aggregation Fix Validation Test",
+  "theme": "Mixed Photography Styles - Testing pipeline with varied compositions",
+  "jury": [
+    "AI Photography Analyst",
+    "Pipeline Validator",
+    "Data Integration Expert"
+  ],
+  "pastWinners": "Test winners demonstrate consistent scoring patterns, clear differentiation between quality levels (high 8-9, medium 6-7, low 4-5), and proper ranking aggregation across multiple evaluation criteria.",
+  "context": "This test open call validates the batch aggregation bug fix by ensuring photos are processed through the complete pipeline: batch processing → score aggregation → tier classification → report generation."
+}

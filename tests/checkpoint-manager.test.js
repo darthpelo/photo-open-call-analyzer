@@ -1,3 +1,4 @@
+/**
  * Unit Tests for Checkpoint Manager
  * 
  * Tests all 7 checkpoint functions from checkpoint-manager.js
@@ -14,7 +15,7 @@
  * - UT-CP-006: deleteCheckpoint() cleanup
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
