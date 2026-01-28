@@ -1,4 +1,3 @@
-import { describe, it, expect, beforeAll } from '@jest/globals';
 import { validateOpenCall, loadOpenCallConfig, formatValidationErrors } from '../src/config/validator.js';
 import { writeFileSync, unlinkSync, mkdirSync } from 'fs';
 import { join } from 'path';

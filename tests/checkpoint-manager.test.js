@@ -1,4 +1,3 @@
-/**
  * Unit Tests for Checkpoint Manager
  * 
  * Tests all 7 checkpoint functions from checkpoint-manager.js

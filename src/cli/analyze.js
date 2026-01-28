@@ -3,8 +3,9 @@
 import { Command } from 'commander';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
 import { processBatch, validatePhotos } from '../processing/batch-processor.js';
-import { aggregateScores, generateTiers, generateStatistics } from '../analysis/score-aggregator.js';
+import { aggregateScores, generateTiers, generateStatistics, integrateSmartTiering } from '../analysis/score-aggregator.js';
 import { exportReports } from '../output/report-generator.js';
+import { displayTierSummary, displayTierDetails, displayTierRecommendations } from './tier-display.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
 import { logger } from '../utils/logger.js';
 import { readJson, fileExists, writeJson, projectPath } from '../utils/file-utils.js';
@@ -28,6 +29,7 @@ program
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
   .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
+  .option('--show-tiers', 'Display tier breakdown in terminal')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -135,6 +137,7 @@ program
 
       const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria);
       const tiers = generateTiers(aggregation);
+      const smartTiers = integrateSmartTiering(aggregation);
       const stats = generateStatistics(aggregation);
 
       // Generate and export reports
@@ -144,6 +147,7 @@ program
         basename: 'photo-analysis',
         title: `${analysisPrompt.title} - Analysis Report`,
         theme: analysisPrompt.theme,
+        smartTiers: smartTiers, // Pass tier data for tier-specific reports (M3)
         failedPhotos: batchResults.failedPhotos || [] // Include failed photos in reports (FR-2.3)
       });
 
@@ -156,6 +160,14 @@ program
       }
       logger.info(`Average score: ${stats.average}/10`);
       logger.info(`Score range: ${stats.min.toFixed(1)} - ${stats.max.toFixed(1)}`);
+
+      // Display tier breakdown if requested
+      if (options.showTiers && smartTiers) {
+        logger.section('TIER BREAKDOWN');
+        displayTierSummary(smartTiers);
+        displayTierDetails(smartTiers);
+        displayTierRecommendations(smartTiers);
+      }
 
       logger.success(`Analysis complete! Results saved to: ${options.output}`);
     } catch (error) {

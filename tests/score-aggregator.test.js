@@ -1,5 +1,4 @@
-import { describe, test, expect } from '@jest/globals';
-import { aggregateScores, generateTiers, generateStatistics } from '../src/analysis/score-aggregator.js';
+import { aggregateScores, generateTiers, generateStatistics, integrateSmartTiering } from '../src/analysis/score-aggregator.js';
 
 describe('Score Aggregator', () => {
   const mockAnalyses = [
@@ -85,5 +84,33 @@ describe('Score Aggregator', () => {
     expect(stats.median).toBeDefined();
     expect(stats.min).toBeLessThanOrEqual(stats.max);
     expect(stats.count).toBe(3);
+  });
+
+  test('should integrate smart tiering with aggregated scores', () => {
+    const aggregation = aggregateScores(mockAnalyses, mockCriteria);
+    const tiered = integrateSmartTiering(aggregation);
+
+    expect(tiered).toHaveProperty('tier1');
+    expect(tiered).toHaveProperty('tier2');
+    expect(tiered).toHaveProperty('tier3');
+    expect(tiered).toHaveProperty('summary');
+    expect(tiered.summary.total).toBe(3);
+  });
+
+  test('should respect custom tier thresholds in integration', () => {
+    const aggregation = aggregateScores(mockAnalyses, mockCriteria);
+    const tiered = integrateSmartTiering(aggregation, { high: 8.0, medium: 7.0 });
+
+    expect(tiered.summary.tier1_count + tiered.summary.tier2_count + tiered.summary.tier3_count).toBe(3);
+  });
+
+  test('should handle empty aggregation in tiering', () => {
+    const emptyAggregation = { photos: [], total_photos: 0 };
+    const tiered = integrateSmartTiering(emptyAggregation);
+
+    expect(tiered.summary.total).toBe(0);
+    expect(tiered.tier1).toEqual([]);
+    expect(tiered.tier2).toEqual([]);
+    expect(tiered.tier3).toEqual([]);
   });
 });
