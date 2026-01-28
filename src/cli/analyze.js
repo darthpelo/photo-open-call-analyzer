@@ -150,12 +150,6 @@ program
       const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria || []);
       const smartTiers = integrateSmartTiering(aggregation);
 
-      // DEBUG: Log structures
-      logger.info(`[DEBUG] aggregation keys: ${Object.keys(aggregation).join(', ')}`);
-      logger.info(`[DEBUG] aggregation.tiers: ${typeof aggregation.tiers}, summary: ${aggregation.tiers?.summary ? 'defined' : 'undefined'}`);
-      logger.info(`[DEBUG] smartTiers keys: ${smartTiers ? Object.keys(smartTiers).join(', ') : 'null'}`);
-      logger.info(`[DEBUG] smartTiers.summary: ${smartTiers?.summary ? 'defined' : 'undefined'}`);
-
       // Generate and export reports
       logger.section('REPORT GENERATION');
       exportReports(options.output, aggregation, aggregation.tiers, aggregation.statistics, {
