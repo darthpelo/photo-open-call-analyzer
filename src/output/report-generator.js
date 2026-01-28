@@ -39,13 +39,14 @@ export function generateMarkdownReport(aggregation, tiers, stats, options = {}) 
   report += `| Score Range | ${stats.min.toFixed(1)} - ${stats.max.toFixed(1)} |\n`;
   report += `| Std. Deviation | ${stats.std_dev.toFixed(2)} |\n\n`;
 
-  // Add tier summary
+  // Add tier summary (if tiers provided)
   if (tiers && tiers.summary) {
     report += `## Results by Tier\n\n`;
-    Object.entries(tiers.summary).forEach(([tierKey, tierData]) => {
-      const tierLabel = tiers.tiers[tierKey]?.[0] ? 'Unknown' : tierKey.replace(/_/g, ' ').toUpperCase();
-      report += `- **${tierLabel}**: ${tierData.count} photos (${tierData.percentage}%)\n`;
-    });
+    // tiers is from generateTiers() which returns {tier1, tier2, tier3, summary}
+    // Don't try to access tiers.tiers - that doesn't exist
+    report += '- **Tier 1**: ' + (tiers.tier1?.length || 0) + ' photos\n';
+    report += '- **Tier 2**: ' + (tiers.tier2?.length || 0) + ' photos\n';
+    report += '- **Tier 3**: ' + (tiers.tier3?.length || 0) + ' photos\n';
     report += '\n';
   }
 
@@ -163,6 +164,11 @@ export function generateJsonReport(aggregation, tiers, stats, options = {}) {
 export function generateTierMarkdownReport(smartTiers, stats, options = {}) {
   const { title = 'Smart Tiering Report', theme = '', competitionName = '' } = options;
 
+  // Handle missing smartTiers
+  if (!smartTiers || !smartTiers.summary) {
+    return '# Smart Tiering Report\n\nNo tiering data available.\n';
+  }
+
   let report = `# ${title}\n\n`;
 
   if (competitionName) {
@@ -242,6 +248,20 @@ export function generateTierMarkdownReport(smartTiers, stats, options = {}) {
  * @returns {Object} JSON structure with tier breakdown
  */
 export function generateTierJsonReport(smartTiers, stats) {
+  // Handle missing smartTiers
+  if (!smartTiers || !smartTiers.summary) {
+    return {
+      metadata: {
+        generated: new Date().toISOString(),
+        total_photos: 0,
+        report_version: '2.0',
+      },
+      summary: { total: 0, tier1_count: 0, tier2_count: 0, tier3_count: 0 },
+      statistics: stats,
+      tiers: { tier1: [], tier2: [], tier3: [] }
+    };
+  }
+
   return {
     metadata: {
       generated: new Date().toISOString(),
@@ -280,6 +300,11 @@ export function generateTierJsonReport(smartTiers, stats) {
  * @returns {string} CSV content with tier assignments
  */
 export function generateTierCsvReport(smartTiers) {
+  // Handle missing smartTiers
+  if (!smartTiers) {
+    return 'Filename,Score,Tier,Label,Recommendation\n';
+  }
+
   let csv = 'Filename,Score,Tier,Label,Recommendation\n';
 
   const tierData = [
@@ -346,52 +371,58 @@ function generateScoreBar(score) {
  * @param {Object} options - Export options including failedPhotos
  */
 export function exportReports(outputDir, aggregation, tiers, stats, options = {}) {
-  logger.info(`Exporting reports to: ${outputDir}`);
+  try {
+    logger.info(`Exporting reports to: ${outputDir}`);
 
-  const { formats = ['markdown', 'json', 'csv'], basename = 'analysis-results', smartTiers = null, failedPhotos = [] } = options;
+    const { formats = ['markdown', 'json', 'csv'], basename = 'analysis-results', smartTiers = null, failedPhotos = [] } = options;
 
-  if (formats.includes('markdown')) {
-    const markdownContent = generateMarkdownReport(aggregation, tiers, stats, { ...options, failedPhotos });
-    const mdPath = `${outputDir}/${basename}.md`;
-    saveMarkdownReport(mdPath, markdownContent);
+    if (formats.includes('markdown')) {
+      const markdownContent = generateMarkdownReport(aggregation, tiers, stats, { ...options, failedPhotos });
+      const mdPath = `${outputDir}/${basename}.md`;
+      saveMarkdownReport(mdPath, markdownContent);
 
-    // Also export tier-specific markdown if smartTiers provided
-    if (smartTiers) {
-      const tierMarkdownContent = generateTierMarkdownReport(smartTiers, stats, options);
-      const tierMdPath = `${outputDir}/${basename}-tiers.md`;
-      saveMarkdownReport(tierMdPath, tierMarkdownContent);
+      // Also export tier-specific markdown if smartTiers provided
+      if (smartTiers) {
+        const tierMarkdownContent = generateTierMarkdownReport(smartTiers, stats, options);
+        const tierMdPath = `${outputDir}/${basename}-tiers.md`;
+        saveMarkdownReport(tierMdPath, tierMarkdownContent);
+      }
     }
-  }
 
-  if (formats.includes('json')) {
-    const jsonContent = generateJsonReport(aggregation, tiers, stats, { failedPhotos });
-    const jsonPath = `${outputDir}/${basename}.json`;
-    writeJson(jsonPath, jsonContent);
-    logger.success(`JSON report saved to: ${jsonPath}`);
+    if (formats.includes('json')) {
+      const jsonContent = generateJsonReport(aggregation, tiers, stats, { failedPhotos });
+      const jsonPath = `${outputDir}/${basename}.json`;
+      writeJson(jsonPath, jsonContent);
+      logger.success(`JSON report saved to: ${jsonPath}`);
 
-    // Also export tier-specific JSON if smartTiers provided
-    if (smartTiers) {
-      const tierJsonContent = generateTierJsonReport(smartTiers, stats);
-      const tierJsonPath = `${outputDir}/${basename}-tiers.json`;
-      writeJson(tierJsonPath, tierJsonContent);
-      logger.success(`Tier JSON report saved to: ${tierJsonPath}`);
+      // Also export tier-specific JSON if smartTiers provided
+      if (smartTiers) {
+        const tierJsonContent = generateTierJsonReport(smartTiers, stats);
+        const tierJsonPath = `${outputDir}/${basename}-tiers.json`;
+        writeJson(tierJsonPath, tierJsonContent);
+        logger.success(`Tier JSON report saved to: ${tierJsonPath}`);
+      }
     }
-  }
 
-  if (formats.includes('csv')) {
-    const csvContent = generateCsvReport(aggregation);
-    const csvPath = `${outputDir}/${basename}.csv`;
-    writeText(csvPath, csvContent);
-    logger.success(`CSV report saved to: ${csvPath}`);
+    if (formats.includes('csv')) {
+      const csvContent = generateCsvReport(aggregation);
+      const csvPath = `${outputDir}/${basename}.csv`;
+      writeText(csvPath, csvContent);
+      logger.success(`CSV report saved to: ${csvPath}`);
 
-    // Also export tier-specific CSV if smartTiers provided
-    if (smartTiers) {
-      const tierCsvContent = generateTierCsvReport(smartTiers);
-      const tierCsvPath = `${outputDir}/${basename}-tiers.csv`;
-      writeText(tierCsvPath, tierCsvContent);
-      logger.success(`Tier CSV report saved to: ${tierCsvPath}`);
+      // Also export tier-specific CSV if smartTiers provided
+      if (smartTiers) {
+        const tierCsvContent = generateTierCsvReport(smartTiers);
+        const tierCsvPath = `${outputDir}/${basename}-tiers.csv`;
+        writeText(tierCsvPath, tierCsvContent);
+        logger.success(`Tier CSV report saved to: ${tierCsvPath}`);
+      }
     }
-  }
 
-  logger.success('All reports exported successfully');
+    logger.success('All reports exported successfully');
+  } catch (error) {
+    logger.error(`Report export failed: ${error.message}`);
+    logger.error(`Stack: ${error.stack}`);
+    throw error;
+  }
 }
