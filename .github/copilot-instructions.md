@@ -247,6 +247,41 @@ Extend [src/output/report-generator.js](src/output/report-generator.js) - add ne
 - **Scores all zeros?** Verify LLM parsing in `parseAnalysisResponse()` matches actual response format
 - **Batch timeout?** Reduce `parallel` option in [src/cli/analyze.js](src/cli/analyze.js#L26)
 
+## Git Workflow & Branch Protection
+
+### Branch Protection Rules
+**CRITICAL**: Direct commits to `main` are NOT permitted.
+
+**All changes must follow this workflow:**
+
+1. **Create feature branch** from `main`:
+   ```bash
+   git checkout -b feature/[milestone]-[feature-name]
+   # Example: feature/m2-config-validation
+   ```
+
+2. **Make changes** on the feature branch
+
+3. **Push to remote**:
+   ```bash
+   git push origin feature/[milestone]-[feature-name]
+   ```
+
+4. **Create Pull Request** on GitHub and request review
+
+5. **Merge only via PR** (never direct commits to main)
+
+### Branch Naming Conventions
+
+| Type | Pattern | Example |
+|------|---------|-------------|
+| Feature | `feature/[milestone]-[feature]` | `feature/m2-resume-analysis` |
+| Bug Fix | `fix/[issue-name]` | `fix/timeout-handling` |
+| Documentation | `docs/[topic]` | `docs/test-design` |
+| BMAD | `bmad/[opportunity]` | `bmad/prd-architecture` |
+
+**See COPILOT.md for detailed git workflow.**
+
 ## Language Guidelines
 
 **IMPORTANT**: All documentation and code comments MUST be in English only.
