@@ -39,7 +39,7 @@ git push origin feature/m2-your-feature
 
 **Branch naming**: `feature/m2-task`, `fix/bug-name`, `refactor/module-name`
 
-**See COPILOT.md for detailed git workflow.**
+**See [docs/development/COPILOT.md](../../docs/development/COPILOT.md) for detailed git workflow.**
 
 ## Preferred Technology Stack
 

@@ -87,7 +87,7 @@ Assigns a task to a specific agent.
 - Priority (high, medium, low)
 
 **Output**:
-- Task documented in `TASKS.md`
+- Task documented in project management files
 - Notification to agent
 
 ### [ST] Status
@@ -106,15 +106,16 @@ Reorders the backlog by priority.
 - Criteria (value, urgency, dependencies)
 
 **Output**:
-- Updated backlog in `BACKLOG.md`
+- Updated backlog in [docs/development/BACKLOG.md](../../docs/development/BACKLOG.md)
 
 ## Files I Manage
 
 ```
 project-root/
-├── ROADMAP.md          # Vision and milestones
-├── BACKLOG.md          # Prioritized tasks
-├── TASKS.md            # Active tasks and assignments
+├── docs/
+│   └── development/
+│       ├── ROADMAP.md   # Vision and milestones
+│       └── BACKLOG.md   # Prioritized tasks
 └── data/open-calls/
     └── {call-name}/
         └── project-brief.md  # Specific brief

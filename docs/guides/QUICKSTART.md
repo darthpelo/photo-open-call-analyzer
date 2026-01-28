@@ -33,6 +33,43 @@ This will:
 5. Aggregate scores and generate rankings
 6. Export reports in Markdown, JSON, and CSV formats
 
+### Resume Interrupted Analysis (NEW in M2)
+
+If analysis is interrupted (Ctrl+C, system crash, timeout), simply re-run the same command:
+
+```bash
+npm run analyze data/open-calls/nature-wildlife
+```
+
+**What happens**:
+- ✅ Automatically detects existing checkpoint
+- ✅ Validates config hasn't changed (SHA256 hash)
+- ✅ Skips already-analyzed photos
+- ✅ Continues from where you left off
+- ✅ Cleans up checkpoint on completion
+
+**Options**:
+```bash
+# Save checkpoint every 5 photos instead of default 10
+npm run analyze data/open-calls/nature-wildlife -- --checkpoint-interval 5
+
+# Force fresh analysis (ignore existing checkpoint)
+npm run analyze data/open-calls/nature-wildlife -- --clear-checkpoint
+```
+
+**Example**:
+```
+Analyzing 100 photos...
+[Progress: 35/100 photos analyzed]
+<Ctrl+C - process interrupted>
+
+$ npm run analyze data/open-calls/nature-wildlife
+✓ Resuming analysis: 35 photos already analyzed
+Found 100 total photos, 35 already analyzed, 65 remaining
+[Analysis continues from photo 36...]
+✓ Analysis complete, checkpoint cleaned up
+```
+
 ### Analyze a Single Photo
 
 ```bash
@@ -101,6 +138,7 @@ Results will be in the `results/` directory.
 ✓ **Ollama/LLaVA Integration** - Local AI vision analysis (free, no API key)
 ✓ **Smart Criteria Generation** - Automatically generates evaluation criteria
 ✓ **Batch Processing** - Process multiple photos in parallel
+✓ **Resume Support (M2)** - Automatically resume interrupted long-running batches
 ✓ **Detailed Scoring** - Individual criterion scores plus weighted overall
 ✓ **Multi-Format Export** - Markdown, JSON, and CSV reports
 ✓ **Ranking System** - Automatic ranking with tier classification

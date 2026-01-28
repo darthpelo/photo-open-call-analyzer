@@ -1,0 +1,200 @@
+# Backlog - Photo Open Call Analyzer
+
+## Priority Levels
+
+| Level | Meaning |
+|-------|---------|
+| 🔴 P0 | Critical - Blocks MVP |
+| 🟠 P1 | High - Required for MVP |
+| 🟡 P2 | Medium - Nice to have |
+| 🟢 P3 | Low - Future |
+
+---
+
+## Milestone 1: MVP ✅ Complete
+
+### 🔴 P0 - Critical
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| Setup Ollama client | Dev | ✅ Done | api-client.js |
+| Implement photo-analyzer.js | Dev | ✅ Done | Ollama/LLaVA integration |
+| Test single photo analysis | QA | ✅ Done | Tests passing |
+
+### 🟠 P1 - MVP
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| Analysis prompt template | Art Critic | ✅ Done | prompt-generator.js |
+| Batch processor | Dev | ✅ Done | batch-processor.js |
+| Ranking generator | Dev | ✅ Done | score-aggregator.js |
+| Markdown export | Dev | ✅ Done | Multi-format support |
+| JSON/CSV export | Dev | ✅ Done | report-generator.js |
+| CLI commands | Dev | ✅ Done | analyze.js |
+
+---
+
+## Milestone 2: Post-MVP 🟡 In Progress
+
+### 🟡 P2 - Improvements
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| Configuration templates (FR-2.1) | Dev | ✅ Done | Validator + 3 templates |
+| Resume interrupted analysis (FR-2.2) | Dev | 🟡 In Progress | Phase 1: Requirements (Owner) |
+| Edge case robustness (FR-2.3) | QA | Pending | Corrupt photos, timeout handling |
+| UI wireframe (FR-2.4) | Designer | Pending | Results visualization |
+
+### 🟢 P3 - Future
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| Web UI (Milestone 3) | Dev + Designer | Backlog | React/Svelte |
+| Caching (Milestone 4) | Dev | Backlog | Performance optimization |
+| RAW file support | Dev | Backlog | dcraw integration |
+| Alternative vision models | Dev | Backlog | moondream, bakllava |
+
+---
+
+## Completed Tasks
+
+| Task | Owner | Date | Note |
+|------|-------|------|------|
+| Project setup | Dev | 2024-01 | Initial structure |
+| Agent definitions | - | 2024-01 | 5 agents configured |
+| Main workflow | - | 2024-01 | analyze-open-call.md |
+| Migration to Ollama | Dev | 2024-01 | From Anthropic to local |
+| Photo analysis tests | QA | 2024-01 | 7.8/10 on sample |
+
+---
+
+## How to Add Tasks
+
+```markdown
+| Task description | Owner | Status | Additional note |
+```
+
+Valid owners: `Art Critic`, `Dev`, `Designer`, `QA`, `Project Owner`
+
+---
+
+## FR-2.2: Resume Interrupted Analysis (PHASE 1 - REQUIREMENTS)
+
+### Current Status: Requirements Finalization
+
+**Phase 1 Owner**: @Project Owner  
+**Estimated Duration**: 1 day  
+**Start Date**: 2026-01-28
+
+### Requirements to Finalize
+
+#### 1. Checkpoint Interval
+- **Question**: How frequently should analysis progress be saved?
+- **Options**:
+  - Option A: Every 5 photos (more frequent saves, more disk I/O)
+  - Option B: Every 10 photos (balanced, recommended default)
+  - Option C: Every 25 photos (fewer saves, less overhead)
+  - Option D: User configurable via `--checkpoint-interval` flag
+- **Decision**: Recommend **Option D** with default=10, range 1-50
+- **Rationale**: Large batches (100-500 photos) benefit from granular resumption; small batches (5-20) don't need frequent saves
+
+#### 2. Checkpoint File Location
+- **Question**: Where should checkpoint file be stored?
+- **Options**:
+  - Option A: Hidden file `.analysis-checkpoint.json` in project root (alongside open-call.json)
+  - Option B: Explicit file `analysis-checkpoint.json` in results directory
+  - Option C: Both locations with preference
+- **Decision**: Recommend **Option A** (hidden in project root)
+- **Rationale**: Project-level checkpoint persists across analyses; results directory is for final outputs only
+
+#### 3. Config Change Behavior
+- **Question**: What happens if user modifies open-call.json and resumes?
+- **Options**:
+  - Option A: Automatically discard checkpoint (always re-analyze from scratch)
+  - Option B: Warn user and ask for confirmation
+  - Option C: Validate config hash; discard checkpoint if config changed
+  - Option D: Continue analysis with new config on checkpoint photos
+- **Decision**: Recommend **Option C** (validate config hash, auto-discard on mismatch)
+- **Rationale**: Prevents analyzing photos with old criteria; improves user experience by not requiring manual cleanup
+
+#### 4. Progress Reporting UI
+- **Question**: How should CLI display resume progress?
+- **Options**:
+  - Option A: "Resuming analysis: 45 of 120 photos done, 75 remaining"
+  - Option B: "Progress: 45/120 (37.5%) | Estimated time: 15 mins"
+  - Option C: Show both progress bar and percentage
+- **Decision**: Recommend **Option A** with progress bar for visual feedback
+- **Rationale**: Clear, simple messaging; progress bar for long batches
+
+#### 5. Checkpoint Cleanup
+- **Question**: When should checkpoint file be deleted?
+- **Options**:
+  - Option A: Manual deletion required (user runs with `--clear-checkpoint` flag)
+  - Option B: Auto-delete after successful completion
+  - Option C: Both (auto-delete by default, manual flag to keep)
+  - Option D: Never delete (keeps analysis history)
+- **Decision**: Recommend **Option B** (auto-delete on completion, manual `--clear-checkpoint` to reset)
+- **Rationale**: Prevents stale checkpoints; user can manually clear if needed
+
+#### 6. Parallel Processing During Resume
+- **Question**: Should resume use same parallelism as original run?
+- **Options**:
+  - Option A: Resume with same parallelism (stored in checkpoint)
+  - Option B: Resume with current user setting (`--parallel` flag)
+  - Option C: Configurable (user choice)
+- **Decision**: Recommend **Option A** (use original setting)
+- **Rationale**: Ensures deterministic resumption; prevents mixing different concurrency levels
+
+### Checkpoint File Format (Proposed)
+
+```json
+{
+  "version": "1.0",
+  "projectDir": "data/open-calls/nature-wildlife/",
+  "openCallConfigHash": "sha256:abc123...",
+  "analysisPrompt": {
+    "criteria": [{"name": "Composition", "weight": 25}],
+    "evaluationInstructions": "..."
+  },
+  "analyzedPhotos": ["photo-001.jpg", "photo-002.jpg", ...],
+  "partialResults": {
+    "scores": {...},
+    "statistics": {...}
+  },
+  "parallelSetting": 3,
+  "checkpointInterval": 10,
+  "timestamp": "2026-01-28T15:30:00Z",
+  "status": "in_progress"
+}
+```
+
+### CLI Flags (Proposed)
+
+```bash
+# Run with checkpoint resume (auto-detects checkpoint)
+npm run analyze data/open-calls/nature-wildlife/
+
+# Set checkpoint interval (default 10)
+npm run analyze data/open-calls/nature-wildlife/ --checkpoint-interval 15
+
+# Clear stale checkpoint before running
+npm run analyze data/open-calls/nature-wildlife/ --clear-checkpoint
+
+# View checkpoint status (info only)
+npm run analyze data/open-calls/nature-wildlife/ --checkpoint-info
+```
+
+### Definition of Done (Phase 1)
+
+- [ ] All 6 requirements finalized and documented
+- [ ] Checkpoint file format approved
+- [ ] CLI flags defined and documented
+- [ ] Test acceptance criteria ready for @QA
+- [ ] BACKLOG.md updated with finalized spec
+
+### Next Phase
+
+Once Phase 1 requirements are finalized:
+- @Architect designs solution (ADR + checkpoint schema)
+- @QA designs test strategy (15+ test cases)
+- @Dev implements feature branch

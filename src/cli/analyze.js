@@ -25,6 +25,8 @@ program
   .option('-o, --output <dir>', 'Output directory for results', './results')
   .option('-p, --parallel <n>', 'Number of parallel analyses', '3')
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
+  .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
+  .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -87,10 +89,23 @@ program
       logger.section('BATCH PROCESSING');
       const spinner = ora('Processing photos...').start();
 
-      const batchResults = await processBatch(photosDir, analysisPrompt, {
-        outputDir: options.output,
-        parallel: parseInt(options.parallel),
-      });
+      // Parse and validate checkpoint interval
+      const checkpointInterval = Math.max(1, Math.min(50, parseInt(options.checkpointInterval) || 10));
+      if (checkpointInterval !== parseInt(options.checkpointInterval)) {
+        logger.warn(`Checkpoint interval clamped to valid range: ${checkpointInterval}`);
+      }
+
+      const batchResults = await processBatch(
+        photosDir, 
+        analysisPrompt, 
+        {
+          outputDir: options.output,
+          parallel: parseInt(options.parallel),
+          checkpointInterval,
+          clearCheckpoint: options.clearCheckpoint || false
+        },
+        config  // Pass config for checkpoint validation
+      );
 
       spinner.stop();
 

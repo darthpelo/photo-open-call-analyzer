@@ -457,6 +457,25 @@ ollama pull llava:7b
 
 ---
 
+## Documentation
+
+📚 **Complete documentation is organized in the `docs/` directory:**
+
+- **[Quick Start Guide](docs/guides/README.md)** - Get started in 5 minutes
+- **[User Guides](docs/guides/)** - QUICKSTART, CONFIG, and usage examples
+- **[Development](docs/development/)** - ROADMAP, BACKLOG, agent collaboration (COPILOT, CLAUDE)
+- **[BMAD Process](docs/bmad/)** - BMAD implementation and governance
+- **[Milestones](docs/milestones/)** - Feature completion summaries and phase documentation
+
+### Key Documents
+- [QUICKSTART.md](docs/guides/QUICKSTART.md) - Detailed setup and usage
+- [ROADMAP.md](docs/development/ROADMAP.md) - Project timeline and milestones
+- [BACKLOG.md](docs/development/BACKLOG.md) - Current tasks and priorities
+- [COPILOT.md](docs/development/COPILOT.md) - GitHub Copilot integration guide
+- [CLAUDE.md](docs/development/CLAUDE.md) - Multi-agent system documentation
+
+---
+
 ## Technology Stack
 
 - **Runtime**: Node.js 20+
