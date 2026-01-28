@@ -1,0 +1,33 @@
+{
+  "title": "Manual Test - Performance Batch (50 photos)",
+  "theme": "Test performance with large batch",
+  "context": " 1. The 5 main evaluation criteria for this competition are:\n\nCRITERION: Technical Quality (TQ)\nDESCRIPTION: Assesses the technical aspects of the photo, such as focus, exposure, and sharpness.\nWEIGHT: 40%\n\nCRITERION: Composition (C)\nDESCRIPTION: Evaluates the arrangement of elements within the frame, including balance, lines, and space.\nWEIGHT: 30%\n\nCRITERION: Creativity (Cr)\nDESCRIPTION: Judges the originality and innovation in the photo's concept, execution, or presentation.\nWEIGHT: 20%\n\nCRITERION: Emotional Impact (EI)\nDESCRIPTION: Measures the ability of the photo to evoke emotions or tell a story.\nWEIGHT: 10%\n\nCRITERION: Adherence to Theme (AT)\nDESCRIPTION: Evaluates how well the photo aligns with the competition's theme, in this case, \"Test performance with large batch.\"\nWEIGHT: 10%\n\n2. Key patterns or themes from past winners may include:\n* High-performance cameras or equipment under load\n* Techniques to optimize camera settings for large batches\n* Creative ways of testing camera capabilities\n3. 5 specific questions to ask when evaluating each photo are:\n\na) How well does the photo demonstrate technical quality, considering factors like focus, exposure, and sharpness?\nb) What is the composition of the photo, and how effectively does it utilize balance, lines, and space?\nc) Is the photo creative in its concept, execution, or presentation, and how original is it compared to other works?\nd) How well does the photo evoke emotions or tell a story, and what is the emotional impact of the image?\ne) Does the photo adhere to the theme \"Test performance with large batch,\" and if so, how effectively does it convey this message?\n\n4. Preferred style/aesthetics from the jury may include:\n* High-resolution images that showcase camera performance under challenging conditions\n* Unique or innovative techniques for testing camera capabilities\n* Strong storytelling elements within the composition of the photo ",
+  "criteria": [
+    {
+      "name": "Technical Quality (TQ)",
+      "description": "Assesses the technical aspects of the photo, such as focus, exposure, and sharpness.",
+      "weight": 36
+    },
+    {
+      "name": "Composition (C)",
+      "description": "Evaluates the arrangement of elements within the frame, including balance, lines, and space.",
+      "weight": 27
+    },
+    {
+      "name": "Creativity (Cr)",
+      "description": "Judges the originality and innovation in the photo's concept, execution, or presentation.",
+      "weight": 18
+    },
+    {
+      "name": "Emotional Impact (EI)",
+      "description": "Measures the ability of the photo to evoke emotions or tell a story.",
+      "weight": 9
+    },
+    {
+      "name": "Adherence to Theme (AT)",
+      "description": "Evaluates how well the photo aligns with the competition's theme, in this case, \"Test performance with large batch.\"",
+      "weight": 9
+    }
+  ],
+  "evaluation_questions": []
+}
