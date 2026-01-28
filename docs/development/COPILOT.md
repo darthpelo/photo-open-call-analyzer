@@ -23,9 +23,9 @@ When communicating with Copilot, you can:
 
 ```bash
 # Reference markdown files for context
-"Based on CLAUDE.md..."
-"According to ROADMAP.md..."
-"See QUICKSTART.md for..."
+"Based on docs/development/CLAUDE.md..."
+"According to docs/development/ROADMAP.md..."
+"See docs/guides/QUICKSTART.md for..."
 
 # Reference specific agents
 "Art Critic should..."
@@ -109,13 +109,13 @@ describe('Feature', () => {
 When Copilot executes tasks, it should check:
 
 ```
-✓ CLAUDE.md          → General context, agents
-✓ ROADMAP.md         → Milestone target, timeline
-✓ BACKLOG.md         → Priority, task assignment
-✓ QUICKSTART.md      → Setup, usage
-✓ package.json       → Current dependencies
-✓ src/               → Code architecture
-✓ tests/             → Test coverage
+✓ docs/development/CLAUDE.md      → General context, agents
+✓ docs/development/ROADMAP.md     → Milestone target, timeline
+✓ docs/development/BACKLOG.md     → Priority, task assignment
+✓ docs/guides/QUICKSTART.md       → Setup, usage
+✓ package.json                    → Current dependencies
+✓ src/                            → Code architecture
+✓ tests/                          → Test coverage
 ```
 
 ## When to Use Copilot
@@ -150,7 +150,7 @@ When Copilot executes tasks, it should check:
 "Add a feature"
 
 ### ✅ Specific
-"Based on ROADMAP.md Milestone 2, implement the config file system for `open-call.json` with schema validation, include tests, update QUICKSTART.md"
+"Based on docs/development/ROADMAP.md Milestone 2, implement the config file system for `open-call.json` with schema validation, include tests, update docs/guides/QUICKSTART.md"
 
 ---
 
@@ -217,7 +217,7 @@ git commit -m "feat(config): add open-call.json templates
 Creates 3 example templates for photo competitions.
 Includes validation and documentation.
 
-Relates-to: ROADMAP.md Milestone 2"
+Relates-to: docs/development/ROADMAP.md Milestone 2"
 ```
 
 **Format**:
@@ -225,7 +225,7 @@ Relates-to: ROADMAP.md Milestone 2"
 type(scope): brief description
 
 Optional longer explanation.
-Relates-to: ROADMAP.md Milestone X
+Relates-to: docs/development/ROADMAP.md Milestone X
 Fixes: #123 (if applicable)
 ```
 
@@ -248,7 +248,7 @@ Brief description of changes
 - Coverage metrics
 
 ## Related
-- Links to ROADMAP.md or issues
+- Links to docs/development/ROADMAP.md or issues
 EOF
 
 # 2. Create PR with body-file
@@ -270,9 +270,9 @@ rm .pr-body.txt
 ### GitHub Integration
 
 When working with Git:
-- Read BACKLOG.md for task assignment
+- Read [BACKLOG.md](BACKLOG.md) for task assignment
 - Create branch: `feature/m2-config-validation`
-- Commit message: `feat(scope): description` with ROADMAP.md reference
+- Commit message: `feat(scope): description` with [ROADMAP.md](ROADMAP.md) reference
 - Pull request required for all changes (no direct main commits)
 - All tests must pass (\u226580% coverage) before merge
 - See above for detailed step-by-step workflow

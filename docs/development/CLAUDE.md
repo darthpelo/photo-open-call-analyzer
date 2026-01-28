@@ -204,17 +204,17 @@ npm test
 - Use Ollama for image analysis
 
 ### Designer
-- Specifications in `docs/design/`
+- Specifications in `../design/` (when created)
 - Do not write code, only specifications
 - Focus on results visualization
 
 ### QA
-- Tests in `tests/`
-- Bug reports in `docs/bugs/`
+- Tests in `tests/` (project root)
+- Bug reports in `../bugs/` (when needed)
 - Coverage target: 80%+
 
 ### Project Owner
-- Tracking in `ROADMAP.md`, `BACKLOG.md`
+- Tracking in [ROADMAP.md](ROADMAP.md), [BACKLOG.md](BACKLOG.md)
 - Coordinate between agents
 - Document decisions
 
