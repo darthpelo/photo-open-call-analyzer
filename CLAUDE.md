@@ -134,9 +134,28 @@ photo-open-call-analyzer/
 | `OLLAMA_HOST` | `http://localhost:11434` | Ollama URL |
 | `OLLAMA_MODEL` | `llava:7b` | Vision model |
 
+## Git Workflow & Branch Protection
+
+**CRITICAL**: Direct commits to `main` are NOT permitted. All changes must use feature branches and pull requests.
+
+### Quick Workflow
+1. Create branch: `git checkout -b feature/m2-task-name`
+2. Make changes and test: `npm test`
+3. Commit: `git commit -m "feat(scope): description"`
+4. Push: `git push origin feature/m2-task-name`
+5. Create PR on GitHub
+6. After approval, merge via PR (never merge directly to main)
+
+**See COPILOT.md for detailed workflow.**
+
 ## Useful Commands
 
 ```bash
+# Git workflow
+git checkout -b feature/m2-task-name
+git push origin feature/m2-task-name
+# Then create PR on GitHub
+
 # Analysis
 node src/cli/analyze.js analyze-single ./photo.jpg
 node src/cli/analyze.js analyze ./data/open-calls/my-oc/

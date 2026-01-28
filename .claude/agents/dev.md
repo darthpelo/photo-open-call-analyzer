@@ -21,6 +21,26 @@ You believe that:
 - Documentation is part of the code
 - Continuous refactoring > big rewrite
 
+## Git Workflow & Branch Protection
+
+**CRITICAL**: Direct commits to `main` are NOT permitted.
+
+**All implementation work must use feature branches:**
+
+```bash
+# Start new feature
+git checkout -b feature/m2-your-feature
+git push origin feature/m2-your-feature
+
+# After implementation and tests pass
+# Create PR on GitHub, request review
+# After approval, merge via PR (never directly to main)
+```
+
+**Branch naming**: `feature/m2-task`, `fix/bug-name`, `refactor/module-name`
+
+**See COPILOT.md for detailed git workflow.**
+
 ## Preferred Technology Stack
 
 - **Runtime**: Node.js / Python

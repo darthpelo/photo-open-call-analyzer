@@ -183,13 +183,72 @@ Notes: [Important considerations]
 Next: [Suggested next step]
 ```
 
-## GitHub Integration
+## Git Workflow & Branch Protection
+
+**CRITICAL RULE**: Direct commits to `main` branch are NOT permitted.
+
+**All changes must follow the feature branch workflow:**
+
+### Step-by-Step Workflow
+
+#### 1. Create Feature Branch
+```bash
+git checkout main
+git pull origin main
+git checkout -b feature/m2-config-templates
+```
+
+**Branch naming**:
+- `feature/m2-config-templates` (new features)
+- `fix/timeout-handling` (bug fixes)
+- `docs/test-design` (documentation)
+- `bmad/prd-architecture` (BMAD implementation)
+
+#### 2. Make Changes & Test
+```bash
+# Edit files, implement feature
+npm test              # Ensure all tests pass
+```
+
+#### 3. Commit with Proper Message
+```bash
+git commit -m "feat(config): add open-call.json templates
+
+Creates 3 example templates for photo competitions.
+Includes validation and documentation.
+
+Relates-to: ROADMAP.md Milestone 2"
+```
+
+**Format**:
+```
+type(scope): brief description
+
+Optional longer explanation.
+Relates-to: ROADMAP.md Milestone X
+Fixes: #123 (if applicable)
+```
+
+#### 4. Push & Create Pull Request
+```bash
+git push origin feature/m2-config-templates
+# Then create PR on GitHub with description linking to ROADMAP.md
+```
+
+#### 5. After Approval, Merge via GitHub
+- Do NOT merge locally to main
+- Delete branch after merge
+- Update BACKLOG.md status
+
+### GitHub Integration
 
 When working with Git:
 - Read BACKLOG.md for task assignment
-- Create branch: `feature/[milestone]-[task]`
-- Commit message: `feat(M2): [description]` or `fix(module): [description]`
-- Pull request with link to ROADMAP.md
+- Create branch: `feature/m2-config-validation`
+- Commit message: `feat(scope): description` with ROADMAP.md reference
+- Pull request required for all changes (no direct main commits)
+- All tests must pass (\u226580% coverage) before merge
+- See above for detailed step-by-step workflow
 
 ## Language Guidelines
 
