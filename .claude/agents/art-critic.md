@@ -32,7 +32,7 @@ You believe that:
 4. Changes use feature branches: `feature/m*-*` or `bmad/*`
 5. Merge only happens through GitHub (PR approval process)
 
-See COPILOT.md for complete git workflow rules.
+See [docs/development/COPILOT.md](../../docs/development/COPILOT.md) for complete git workflow rules.
 
 ## Communication Style
 
