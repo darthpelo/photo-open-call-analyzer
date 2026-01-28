@@ -561,7 +561,430 @@ jobs:
 
 ---
 
-## 10. Known Testing Limitations
+## 10. FR-2.2: Resume Interrupted Analysis - Test Design
+
+**Feature**: Allow users to resume long-running batches after interruption (100-500 photos)  
+**Risk Level**: P1 - Important for usability, but not critical path  
+**Test Target**: ≥85% coverage on checkpoint-manager.js  
+
+### 10.1 Unit Tests (Checkpoint Functions)
+
+#### UT-CP-001: Compute Config Hash
+**Module**: `src/processing/checkpoint-manager.js`  
+**Function**: `computeConfigHash(openCallConfig)`  
+**Risk**: P1 - Hash validation prevents stale checkpoints  
+
+```javascript
+✓ Hash consistency: Same config → same hash
+✓ Hash uniqueness: Different config → different hash
+✓ Hash format: SHA256 format (64 hex chars)
+✓ Field order independence: Unordered JSON → consistent hash
+✓ Special characters: Handle unicode, emoji in jury names
+```
+
+**Acceptance Criteria**:
+- ✅ Hash matches SHA256(JSON.stringify(sorted config))
+- ✅ Repeated hashing produces identical output
+- ✅ Different configs produce different hashes
+
+#### UT-CP-002: Save & Load Checkpoint
+**Module**: `src/processing/checkpoint-manager.js`  
+**Functions**: `saveCheckpoint()`, `loadCheckpoint()`  
+**Risk**: P0 - Round-trip data loss would be critical  
+
+```javascript
+✓ Save checkpoint with 50 analyzed photos
+✓ Load checkpoint from disk
+✓ Checkpoint round-trip: save → load → data matches
+✓ File created at correct location (.analysis-checkpoint.json)
+✓ Checkpoint overwrites existing file (idempotent)
+✓ Handle missing directory (create parent dirs)
+```
+
+**Acceptance Criteria**:
+- ✅ Saved JSON matches original object (structure + values)
+- ✅ Checkpoint file readable as valid JSON
+- ✅ No data loss in round-trip
+- ✅ Handles 1000+ photo arrays without corruption
+
+#### UT-CP-003: Validate Checkpoint
+**Module**: `src/processing/checkpoint-manager.js`  
+**Function**: `validateCheckpoint(checkpoint, currentConfig)`  
+**Risk**: P0 - Invalid checkpoint could cause incorrect results  
+
+```javascript
+✓ Valid checkpoint (matching config) passes validation
+✓ Stale checkpoint (config changed) fails validation
+✓ Corrupted checkpoint (missing fields) fails validation
+✓ Checkpoint with different parallelSetting detected
+✓ Checkpoint older than 7 days rejected
+✓ Checkpoint from different projectDir detected
+```
+
+**Acceptance Criteria**:
+- ✅ Config hash mismatch → invalid
+- ✅ Missing required fields → invalid
+- ✅ Old timestamp → invalid
+- ✅ Return reason string for each failure
+
+#### UT-CP-004: Initialize Checkpoint
+**Module**: `src/processing/checkpoint-manager.js`  
+**Function**: `initializeCheckpoint(...)`  
+**Risk**: Low - Initialization only, no user-facing impact  
+
+```javascript
+✓ Create checkpoint for batch start
+✓ All required fields initialized
+✓ Config hash computed correctly
+✓ Metadata timestamps set (createdAt, lastResumedAt)
+✓ Progress initialized (0 analyzed, empty results)
+```
+
+**Acceptance Criteria**:
+- ✅ Checkpoint structure matches schema exactly
+- ✅ All required fields present
+
+#### UT-CP-005: Update Checkpoint
+**Module**: `src/processing/checkpoint-manager.js`  
+**Function**: `updateCheckpoint(checkpoint, newPhotos, newResults)`  
+**Risk**: Low - Incremental update logic  
+
+```javascript
+✓ Add new analyzed photos to list
+✓ Update results with new scores
+✓ Update lastResumedAt timestamp
+✓ Preserve previous data (no overwrite)
+✓ Handle large result objects (250+ photos)
+```
+
+**Acceptance Criteria**:
+- ✅ analyzedPhotos list grows (no duplicates)
+- ✅ Results merged correctly
+- ✅ Checkpoint file still valid JSON
+
+#### UT-CP-006: Delete Checkpoint
+**Module**: `src/processing/checkpoint-manager.js`  
+**Function**: `deleteCheckpoint(projectDir)`  
+**Risk**: Low - Cleanup only  
+
+```javascript
+✓ Delete existing checkpoint file
+✓ Handle missing checkpoint (no error)
+✓ Confirm file deleted (doesn't exist after call)
+```
+
+**Acceptance Criteria**:
+- ✅ File removed successfully
+- ✅ No crash if file doesn't exist
+
+### 10.2 Integration Tests (Checkpoint + Batch Processing)
+
+#### IT-CP-001: Full Resume Workflow
+**Scenario**: Start batch → interrupt at 25 photos → resume → complete  
+**Risk**: P0 - This is the core feature  
+**Setup**:
+1. Start analyzing 50-photo batch with `--checkpoint-interval 10`
+2. Kill process after ~25 photos analyzed (checkpoint exists)
+3. Re-run same command
+4. Verify: All 50 analyzed, final results correct
+
+```javascript
+✓ First run saves checkpoint at photo 10, 20
+✓ Process killed, checkpoint preserved
+✓ Second run detects checkpoint
+✓ Second run skips photos 1-25
+✓ Second run analyzes photos 26-50
+✓ Final results identical to non-interrupted run
+```
+
+**Acceptance Criteria**:
+- ✅ Resumed batch completes successfully
+- ✅ No photos re-analyzed
+- ✅ Final scores match expected values
+- ✅ Checkpoint deleted after completion
+
+#### IT-CP-002: Config Change Detection
+**Scenario**: Analyze with config v1 → change config → resume (should restart)  
+**Risk**: P0 - Config change could cause incorrect results  
+**Setup**:
+1. Start analyzing 30-photo batch
+2. Kill after ~15 photos
+3. Modify open-call.json (change theme)
+4. Re-run analysis
+
+```javascript
+✓ Config hash computed from new config
+✓ Hash mismatch detected (old checkpoint invalid)
+✓ Checkpoint discarded (logged)
+✓ All 30 photos re-analyzed with new criteria
+```
+
+**Acceptance Criteria**:
+- ✅ Checkpoint detected as invalid
+- ✅ No checkpoint after run (fresh start)
+- ✅ All photos analyzed with new config
+
+#### IT-CP-003: Error Recovery During Resume
+**Scenario**: Checkpoint exists → one photo fails → checkpoint updated  
+**Risk**: P1 - Error handling during resume  
+**Setup**:
+1. Checkpoint with 25 photos analyzed
+2. Run resume
+3. Photo 30 fails (corrupted or timeout)
+4. Batch continues
+
+```javascript
+✓ Photo failure doesn't stop batch
+✓ Checkpoint updated with photo 30 in failedPhotos
+✓ Analysis continues with photo 31+
+✓ Final report shows photo 30 failed
+✓ Checkpoint preserved (can retry)
+```
+
+**Acceptance Criteria**:
+- ✅ Batch continues after photo failure
+- ✅ Error tracked in checkpoint
+- ✅ User can retry without re-analyzing successful photos
+
+#### IT-CP-004: Checkpoint with Different Parallelism
+**Scenario**: Start with `--parallel 2` → interrupt → resume with `--parallel 4`  
+**Risk**: Low - Parallelism shouldn't change resume  
+**Setup**:
+1. Start with `--parallel 2`, analyze 20 photos
+2. Interrupt, save checkpoint
+3. Re-run with `--parallel 4` (user tries different setting)
+
+```javascript
+✓ Checkpoint loaded (parallelSetting=2 stored)
+✓ Resume uses original parallelSetting=2
+✓ User's `--parallel 4` flag ignored (log warning)
+✓ Batch completes with deterministic result
+```
+
+**Acceptance Criteria**:
+- ✅ Original parallelism restored from checkpoint
+- ✅ User's new flag overridden (for consistency)
+
+#### IT-CP-005: Checkpoint Cleanup After Success
+**Scenario**: Complete batch analysis successfully  
+**Risk**: Low - Cleanup  
+**Setup**:
+1. Run batch to completion (no interruption)
+
+```javascript
+✓ Checkpoint created during run
+✓ Checkpoint saved every 10 photos
+✓ After final photo analyzed
+✓ Checkpoint deleted (doesn't exist)
+✓ Results written to results/ directory
+```
+
+**Acceptance Criteria**:
+- ✅ No .analysis-checkpoint.json file remains
+- ✅ Results exported normally
+
+### 10.3 Edge Case Tests
+
+#### EC-CP-001: Corrupted Checkpoint File
+**Setup**: Create invalid JSON in .analysis-checkpoint.json  
+**Risk**: P1 - Graceful degradation  
+
+```javascript
+✓ Load corrupted checkpoint → null returned
+✓ Log warning (file corrupted)
+✓ Start fresh analysis (no crash)
+```
+
+**Acceptance Criteria**:
+- ✅ No exception thrown
+- ✅ Analysis starts fresh
+
+#### EC-CP-002: Missing Required Fields
+**Setup**: Checkpoint missing `configHash` field  
+**Risk**: P1 - Validation must catch incomplete checkpoints  
+
+```javascript
+✓ Validate checkpoint detects missing field
+✓ Returns {valid: false, reason: "Missing configHash"}
+✓ Checkpoint discarded
+```
+
+**Acceptance Criteria**:
+- ✅ Validation fails with clear reason
+
+#### EC-CP-003: Very Large Batch (250+ photos)
+**Setup**: 250-photo batch with `--checkpoint-interval 25`  
+**Risk**: P1 - Performance and stability  
+
+```javascript
+✓ 10 checkpoint saves during batch
+✓ Checkpoint file size remains < 100KB
+✓ No disk I/O blocking analysis
+✓ Resume from checkpoint mid-batch
+✓ Complete final 125 photos
+```
+
+**Acceptance Criteria**:
+- ✅ Batch completes without memory issues
+- ✅ Checkpoint saves don't exceed 50ms each
+
+#### EC-CP-004: Resume After Directory Change
+**Setup**: Photos moved between checkpoints  
+**Risk**: P2 - User may reorganize photos  
+
+```javascript
+✓ Checkpoint has photo-001.jpg
+✓ Directory now missing photo-001.jpg
+✓ Resume detects missing photo
+✓ Skip missing photo, continue with others
+```
+
+**Acceptance Criteria**:
+- ✅ Batch doesn't crash
+- ✅ Missing photo logged
+
+#### EC-CP-005: New Photos Added to Directory
+**Setup**: Checkpoint analyzed 30 photos, directory now has 35  
+**Risk**: P2 - User may add photos after checkpoint  
+
+```javascript
+✓ Resume loads checkpoint (30 analyzed)
+✓ Directory now has 35 total
+✓ 5 new photos included in batch
+✓ All 35 analyzed at completion
+```
+
+**Acceptance Criteria**:
+- ✅ New photos analyzed
+- ✅ No duplicate analysis
+
+#### EC-CP-006: Disk Full During Checkpoint Save
+**Setup**: Simulate disk full when writing checkpoint  
+**Risk**: P1 - Graceful error handling  
+
+```javascript
+✓ saveCheckpoint() catches write error
+✓ Error logged (warn level)
+✓ Batch continues (don't stop for checkpoint)
+✓ Analysis completes (just without checkpoint saved)
+```
+
+**Acceptance Criteria**:
+- ✅ No exception thrown
+- ✅ Batch continues despite checkpoint write failure
+
+#### EC-CP-007: Checkpoint Older Than 7 Days
+**Setup**: Checkpoint.metadata.createdAt is 8 days old  
+**Risk**: P2 - Stale checkpoint handling  
+
+```javascript
+✓ Validate checkpoint detects old timestamp
+✓ Checkpoint marked invalid
+✓ Analysis starts fresh (log info)
+```
+
+**Acceptance Criteria**:
+- ✅ Validation fails with age reason
+
+#### EC-CP-008: Concurrent Resume Attempts
+**Setup**: Two processes try to resume same checkpoint  
+**Risk**: P1 - Race conditions  
+
+```javascript
+✓ Process A loads checkpoint
+✓ Process B loads same checkpoint
+✓ Process A saves updated checkpoint
+✓ Process B saves updated checkpoint
+✓ No data corruption in final checkpoint
+```
+
+**Acceptance Criteria**:
+- ✅ No file corruption
+- ✅ Checkpoint is valid JSON after concurrent writes
+
+### 10.4 Manual Test Scenarios
+
+#### MT-CP-001: Interactive Resume Experience
+**Steps**:
+1. `npm run analyze data/open-calls/nature-wildlife/` (100-photo batch)
+2. After ~30 seconds, Ctrl+C
+3. `npm run analyze data/open-calls/nature-wildlife/`
+4. Observe: "Resuming: 10/100 done, 90 remaining"
+5. Batch completes
+
+**Verify**:
+- ✅ Progress reported accurately
+- ✅ No re-analysis of first 10 photos
+- ✅ Final results correct
+
+#### MT-CP-002: Config Modification Scenario
+**Steps**:
+1. Analyze 50 photos in batch
+2. Kill after 25 photos
+3. Edit open-call.json (change theme description)
+4. Re-run analysis
+
+**Verify**:
+- ✅ Checkpoint detected as stale
+- ✅ All 50 re-analyzed (not just remaining 25)
+- ✅ Final results use new criteria
+
+#### MT-CP-003: Large Batch (250 photos)
+**Steps**:
+1. Prepare 250-photo batch
+2. `npm run analyze ... --checkpoint-interval 25`
+3. Interrupt at various points (after photo 30, 80, 150)
+4. Resume each time
+
+**Verify**:
+- ✅ Each resume works correctly
+- ✅ Final results consistent
+- ✅ Performance acceptable (no slowdown)
+
+#### MT-CP-004: Checkpoint Cleanup
+**Steps**:
+1. Analyze batch to completion (no interruption)
+2. Check for `.analysis-checkpoint.json`
+
+**Verify**:
+- ✅ Checkpoint file deleted after success
+- ✅ Results/ directory contains final outputs
+
+#### MT-CP-005: Custom Checkpoint Interval
+**Steps**:
+1. `npm run analyze ... --checkpoint-interval 5` (save every 5 photos)
+2. Interrupt after photo 7
+3. Count checkpoint saves in logs
+
+**Verify**:
+- ✅ Checkpoint saved at photos 5 (and 10 if continued)
+- ✅ Resume works with custom interval
+
+---
+
+## 10.5 Test Execution Checklist
+
+### Before Implementation
+- [ ] Phase 2 architecture design reviewed (@QA + @Architect)
+- [ ] Checkpoint schema understood (JSON fields, validation rules)
+- [ ] Function signatures reviewed (7 functions in checkpoint-manager.js)
+- [ ] Test data prepared (small/medium/large batches)
+
+### During Implementation
+- [ ] Unit tests written first (checkpoin functions isolated)
+- [ ] Integration tests for resume workflow
+- [ ] Edge case tests for resilience
+- [ ] Manual tests documented (steps above)
+
+### Before Merge
+- [ ] All 23+ tests passing (UT-CP-001 through EC-CP-008 + MT-001-005)
+- [ ] Code coverage ≥85% on checkpoint-manager.js
+- [ ] No regression in existing M1 tests
+- [ ] Manual tests verified by @QA
+
+---
+
+## 11. Known Testing Limitations
 
 ### Limitations with Real Ollama
 - **Latency variability**: 10–60 sec per photo (environment-dependent)
@@ -578,7 +1001,7 @@ jobs:
 
 ---
 
-## 11. Test Approval & Sign-Off
+## 12. Test Approval & Sign-Off
 
 | Role | Name | Date | Status |
 |------|------|------|--------|
@@ -588,8 +1011,9 @@ jobs:
 
 ---
 
-## 12. Change Log
+## 13. Change Log
 
 | Date | Section | Change | Author |
 |------|---------|--------|--------|
 | 2026-01-28 | All | Initial test design with risk analysis and test categories | QA |
+| 2026-01-28 | Section 10 (FR-2.2) | Added comprehensive test design for Resume feature (23+ test cases) | QA |
