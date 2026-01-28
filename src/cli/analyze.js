@@ -136,6 +136,7 @@ program
         basename: 'photo-analysis',
         title: `${analysisPrompt.title} - Analysis Report`,
         theme: analysisPrompt.theme,
+        smartTiers: smartTiers // Pass tier data for tier-specific reports
       });
 
       // Summary
