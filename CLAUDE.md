@@ -1,175 +1,187 @@
 # Photo Open Call Analyzer
 
-Sistema multi-agente per analizzare foto candidate a open call fotografiche e generare una classifica basata sui criteri specifici della competizione.
+Multi-agent system to analyze photos submitted to photography open calls and generate rankings based on competition-specific evaluation criteria.
 
-## Descrizione Progetto
+## Project Description
 
-Questo tool aiuta fotografi a selezionare le migliori foto da sottomettere a open call, analizzando:
-- Il tema e i requisiti della open call
-- I gusti della giuria (basati su vincitori passati)
-- Ogni foto candidata rispetto ai criteri identificati
+This tool helps photographers select their best photos to submit to open calls by analyzing:
+- The open call theme and requirements
+- Jury preferences (based on past winners)
+- Each submitted photo against identified criteria
 
-**Stack**: Node.js + Ollama (LLaVA) per analisi vision locale e gratuita.
+**Stack**: Node.js + Ollama (LLaVA) for local, free vision analysis.
 
-## Agenti Disponibili
+## Available Agents
 
-| Agente | File | Ruolo |
-|--------|------|-------|
-| **Art Critic** | `.claude/agents/art-critic.md` | Analizza open call, genera criteri, valuta foto |
-| **Project Owner** | `.claude/agents/project-owner.md` | Coordina progetto, gestisce priorita |
-| **Dev** | `.claude/agents/dev.md` | Implementa logica analisi, API, automazione |
-| **Designer** | `.claude/agents/designer.md` | UX/UI per visualizzazione risultati |
-| **QA** | `.claude/agents/qa.md` | Testing, validazione, quality assurance |
+| Agent | File | Role |
+|-------|------|------|
+| **Art Critic** | `.claude/agents/art-critic.md` | Analyzes open calls, generates criteria, evaluates photos |
+| **Project Owner** | `.claude/agents/project-owner.md` | Coordinates project, manages priorities |
+| **Dev** | `.claude/agents/dev.md` | Implements analysis logic, APIs, automation |
+| **Designer** | `.claude/agents/designer.md` | UX/UI for results visualization |
+| **QA** | `.claude/agents/qa.md` | Testing, validation, quality assurance |
 
-## Workflow Principale
+## Main Workflow
 
-Vedi `.claude/workflows/analyze-open-call.md` per il flusso completo.
+See `.claude/workflows/analyze-open-call.md` for the complete flow.
 
 ```
-1. Setup      → Project Owner inizializza, Art Critic analizza OC
-2. Analysis   → Dev processa foto con Ollama/LLaVA
-3. Ranking    → Art Critic genera classifica finale
+1. Setup      → Project Owner initializes, Art Critic analyzes open call
+2. Analysis   → Dev processes photos with Ollama/LLaVA
+3. Ranking    → Art Critic generates final ranking
 ```
 
 ## Quick Start
 
-### 1. Verifica Ollama
+### 1. Verify Ollama
 ```bash
-ollama list  # Deve mostrare llava:7b
+ollama list  # Should show llava:7b
 ```
 
-### 2. Installa Dipendenze
+### 2. Install Dependencies
 ```bash
 npm install
 ```
 
-### 3. Analizza una Foto
+### 3. Analyze a Single Photo
 ```bash
 node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 ```
 
-### 4. Analizza Batch
+### 4. Analyze a Batch
 ```bash
-# Crea struttura
-mkdir -p data/open-calls/mia-oc/photos
+# Create structure
+mkdir -p data/open-calls/my-oc/photos
 
-# Aggiungi foto e config
-# Poi lancia:
-node src/cli/analyze.js analyze data/open-calls/mia-oc/
+# Add photos and config
+# Then run:
+node src/cli/analyze.js analyze data/open-calls/my-oc/
 ```
 
-## Struttura Progetto
+## Project Structure
 
 ```
 photo-open-call-analyzer/
-├── CLAUDE.md                 # Questo file
-├── package.json              # Dipendenze Node.js
+├── CLAUDE.md                 # This file
+├── package.json              # Node.js dependencies
 ├── .claude/
-│   ├── agents/               # Definizioni agenti
+│   ├── agents/               # Agent definitions
 │   │   ├── art-critic.md
 │   │   ├── project-owner.md
 │   │   ├── dev.md
 │   │   ├── designer.md
 │   │   └── qa.md
-│   └── workflows/            # Workflow riusabili
+│   └── workflows/            # Reusable workflows
 │       └── analyze-open-call.md
-├── src/                      # Codice sorgente
-│   ├── analysis/             # Logica analisi foto
-│   │   ├── photo-analyzer.js # Core con Ollama/LLaVA
+├── src/                      # Source code
+│   ├── analysis/             # Photo analysis logic
+│   │   ├── photo-analyzer.js # Core with Ollama/LLaVA
 │   │   ├── prompt-generator.js
 │   │   └── score-aggregator.js
 │   ├── processing/           # Batch processing
-│   ├── output/               # Generazione report
-│   ├── cli/                  # Comandi CLI
+│   ├── output/               # Report generation
+│   ├── cli/                  # CLI commands
 │   └── utils/
-│       ├── api-client.js     # Client Ollama
+│       ├── api-client.js     # Ollama client
 │       ├── file-utils.js
 │       └── logger.js
 ├── data/
-│   ├── open-calls/           # Progetti per open call
-│   │   └── {nome-call}/
+│   ├── open-calls/           # Open call projects
+│   │   └── {call-name}/
 │   │       ├── open-call.json # Config
-│   │       ├── photos/       # Foto da analizzare
-│   │       └── results/      # Risultati
-│   └── test-photos/          # Foto di test
-├── tests/                    # Test automatici
-└── docs/                     # Documentazione
+│   │       ├── photos/       # Photos to analyze
+│   │       └── results/      # Results
+│   └── test-photos/          # Test photos
+├── tests/                    # Automated tests
+└── docs/                     # Documentation
 ```
 
-## Convenzioni
+## Conventions
 
 ### Naming
-- File: kebab-case (`photo-analyzer.js`)
-- Variabili/funzioni: camelCase (`analyzePhoto`)
-- Classi: PascalCase (`PhotoAnalyzer`)
-- Costanti: UPPER_SNAKE (`MAX_CONCURRENT`)
+- Files: kebab-case (`photo-analyzer.js`)
+- Variables/functions: camelCase (`analyzePhoto`)
+- Classes: PascalCase (`PhotoAnalyzer`)
+- Constants: UPPER_SNAKE (`MAX_CONCURRENT`)
 
-### Codice
-- JavaScript con ESM (type: module)
-- Async/await per operazioni asincrone
-- Error handling esplicito
-- Logging strutturato con chalk
+### Code
+- JavaScript with ESM (type: module)
+- Async/await for asynchronous operations
+- Explicit error handling
+- Structured logging with chalk
 
-### Commit
+### Commits
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`
-- Messaggi in inglese
-- Reference issue se applicabile
+- Messages in English
+- Reference issue if applicable
 
-## Dipendenze Principali
+## Main Dependencies
 
 ```json
 {
-  "ollama": "Client per Ollama (LLaVA vision)",
-  "sharp": "Processing immagini",
+  "ollama": "Client for Ollama (LLaVA vision)",
+  "sharp": "Image processing",
   "commander": "CLI",
   "chalk": "Colored output",
   "ora": "Spinners"
 }
 ```
 
-## Variabili d'Ambiente
+## Environment Variables
 
-| Variabile | Default | Descrizione |
-|-----------|---------|-------------|
-| `OLLAMA_HOST` | `http://localhost:11434` | URL Ollama |
-| `OLLAMA_MODEL` | `llava:7b` | Modello vision |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `OLLAMA_HOST` | `http://localhost:11434` | Ollama URL |
+| `OLLAMA_MODEL` | `llava:7b` | Vision model |
 
-## Comandi Utili
+## Useful Commands
 
 ```bash
-# Analisi
-node src/cli/analyze.js analyze-single ./foto.jpg
-node src/cli/analyze.js analyze ./data/open-calls/mia-oc/
-node src/cli/analyze.js validate ./data/open-calls/mia-oc/photos/
+# Analysis
+node src/cli/analyze.js analyze-single ./photo.jpg
+node src/cli/analyze.js analyze ./data/open-calls/my-oc/
+node src/cli/analyze.js validate ./data/open-calls/my-oc/photos/
 
-# Test
+# Tests
 npm test
 ```
 
-## Note per gli Agenti
+## Notes for Agents
 
 ### Art Critic
-- Focus su analisi qualitativa e criteri
-- Non modificare codice
-- Salvare output in `data/open-calls/{nome}/`
+- Focus on qualitative analysis and criteria
+- Do not modify code
+- Save output to `data/open-calls/{name}/`
 
 ### Dev
-- Implementare in `src/`
-- Scrivere test per ogni modulo critico
-- Documentare API pubbliche
-- Usare Ollama per analisi immagini
+- Implement in `src/`
+- Write tests for each critical module
+- Document public APIs
+- Use Ollama for image analysis
 
 ### Designer
-- Specifiche in `docs/design/`
-- Non scrivere codice, solo specifiche
-- Focus su visualizzazione risultati
+- Specifications in `docs/design/`
+- Do not write code, only specifications
+- Focus on results visualization
 
 ### QA
-- Test in `tests/`
-- Bug report in `docs/bugs/`
+- Tests in `tests/`
+- Bug reports in `docs/bugs/`
 - Coverage target: 80%+
 
 ### Project Owner
 - Tracking in `ROADMAP.md`, `BACKLOG.md`
-- Coordinare tra agenti
-- Decisioni documentate
+- Coordinate between agents
+- Document decisions
+
+## Language Guidelines
+
+**IMPORTANT**: All documentation and code comments MUST be in English only.
+
+- ✅ **DO**: Write all documentation in English
+- ✅ **DO**: Write all inline code comments in English
+- ✅ **DO**: Use English for commit messages
+- ✅ **DO**: Use English for issue descriptions
+- ❌ **DON'T**: Use Italian or any other language in documentation
+- ❌ **DON'T**: Use Italian in code comments
+- ❌ **DON'T**: Use Italian in variable/function names
