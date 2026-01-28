@@ -1,4 +1,5 @@
 import { logger } from '../utils/logger.js';
+import { generateTiers } from './smart-tiering.js';
 
 /**
  * Aggregate scores from multiple photo analyses
@@ -158,4 +159,39 @@ export function generateStatistics(aggregation) {
     q1: overallScores[Math.floor(overallScores.length / 4)],
     q3: overallScores[Math.floor((overallScores.length * 3) / 4)],
   };
+}
+
+/**
+ * Integrate Smart Tiering with aggregated scores
+ * Classifies ranked photos into confidence tiers
+ * 
+ * @param {Object} aggregation - Aggregated scores from aggregateScores()
+ * @param {Object} tierThresholds - Custom tier thresholds {high, medium}
+ * @returns {Object} Tiered classification with metadata
+ */
+export function integrateSmartTiering(aggregation, tierThresholds = null) {
+  if (!aggregation || !aggregation.photos || aggregation.photos.length === 0) {
+    logger.warn('No photos available for tiering');
+    return {
+      tier1: [],
+      tier2: [],
+      tier3: [],
+      summary: { total: 0, tier1_count: 0, tier2_count: 0, tier3_count: 0 }
+    };
+  }
+
+  // Convert aggregated photos to tiering format
+  const photoData = aggregation.photos.map(photo => ({
+    filename: photo.photo || photo.photoPath,
+    score: photo.overall_score || 0,
+    // Preserve original metadata for downstream processing
+    _original: photo
+  }));
+
+  // Generate tiers using smart-tiering module
+  const tiers = generateTiers(photoData, tierThresholds);
+
+  logger.info(`Tiering complete: ${tiers.summary.tier1_count} tier1, ${tiers.summary.tier2_count} tier2, ${tiers.summary.tier3_count} tier3`);
+
+  return tiers;
 }

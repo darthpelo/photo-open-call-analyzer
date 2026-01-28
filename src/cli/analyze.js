@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
 import { processBatch, validatePhotos } from '../processing/batch-processor.js';
-import { aggregateScores, generateTiers, generateStatistics } from '../analysis/score-aggregator.js';
+import { aggregateScores, generateTiers, generateStatistics, integrateSmartTiering } from '../analysis/score-aggregator.js';
 import { exportReports } from '../output/report-generator.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
 import { logger } from '../utils/logger.js';
@@ -126,6 +126,7 @@ program
 
       const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria);
       const tiers = generateTiers(aggregation);
+      const smartTiers = integrateSmartTiering(aggregation);
       const stats = generateStatistics(aggregation);
 
       // Generate and export reports
