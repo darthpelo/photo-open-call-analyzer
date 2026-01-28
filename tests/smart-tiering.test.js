@@ -358,4 +358,105 @@ describe('Smart Tiering - M3 Feature', () => {
       expect(isValid).toBe(false);
     });
   });
+
+  describe('Statistical Edge Cases', () => {
+    it('should handle bimodal distribution (two distinct clusters)', () => {
+      const photos = [
+        { filename: 'high1.jpg', score: 9.5 },
+        { filename: 'high2.jpg', score: 9.3 },
+        { filename: 'low1.jpg', score: 2.5 },
+        { filename: 'low2.jpg', score: 2.3 }
+      ];
+
+      const result = generateTiers(photos);
+
+      expect(result.tier1.length + result.tier2.length + result.tier3.length).toBe(4);
+      expect(result.summary.total).toBe(4);
+    });
+
+    it('should handle uniform distribution (all same score)', () => {
+      const photos = [
+        { filename: 'a.jpg', score: 7.0 },
+        { filename: 'b.jpg', score: 7.0 },
+        { filename: 'c.jpg', score: 7.0 }
+      ];
+
+      const result = generateTiers(photos);
+
+      expect(result.tier1.length + result.tier2.length + result.tier3.length).toBe(3);
+      expect(result.tier2).toHaveLength(3);
+    });
+
+    it('should handle normal distribution curve correctly', () => {
+      const photos = [
+        { filename: 'p1.jpg', score: 9.0 },
+        { filename: 'p2.jpg', score: 7.5 },
+        { filename: 'p3.jpg', score: 7.0 },
+        { filename: 'p4.jpg', score: 7.0 },
+        { filename: 'p5.jpg', score: 7.0 },
+        { filename: 'p6.jpg', score: 6.5 },
+        { filename: 'p7.jpg', score: 5.0 }
+      ];
+
+      const result = generateTiers(photos);
+
+      expect(result.summary.total).toBe(7);
+      expect(result.summary.average_score).toBeDefined();
+    });
+
+    it('should preserve average_score precision', () => {
+      const photos = [
+        { filename: 'a.jpg', score: 8.3 },
+        { filename: 'b.jpg', score: 8.7 }
+      ];
+
+      const result = generateTiers(photos);
+
+      const avg = (8.3 + 8.7) / 2;
+      expect(result.summary.average_score).toBe(Math.round(avg * 10) / 10);
+    });
+  });
+
+  describe('Performance & Stability', () => {
+    it('should maintain deterministic order across multiple runs', () => {
+      const photos = [
+        { filename: 'z.jpg', score: 7.5 },
+        { filename: 'a.jpg', score: 7.5 },
+        { filename: 'm.jpg', score: 7.5 }
+      ];
+
+      const result1 = generateTiers(photos);
+      const result2 = generateTiers(photos);
+
+      const order1 = result1.tier2.map(p => p.filename).join(',');
+      const order2 = result2.tier2.map(p => p.filename).join(',');
+
+      expect(order1).toBe(order2);
+    });
+
+    it('should handle memory efficiently with 1000 photos', () => {
+      const photos = Array(1000).fill(null).map((_, i) => ({
+        filename: `photo-${String(i).padStart(4, '0')}.jpg`,
+        score: Math.random() * 10
+      }));
+
+      const result = generateTiers(photos);
+
+      expect(result.summary.total).toBe(1000);
+      expect(result.tier1.length + result.tier2.length + result.tier3.length).toBe(1000);
+    });
+
+    it('should handle extreme threshold values', () => {
+      const photos = [
+        { filename: 'p1.jpg', score: 5.0 },
+        { filename: 'p2.jpg', score: 5.0 }
+      ];
+
+      const result = generateTiers(photos, { high: 1.0, medium: 0.5 });
+
+      expect(result.tier1).toHaveLength(2);
+      expect(result.tier2).toHaveLength(0);
+      expect(result.tier3).toHaveLength(0);
+    });
+  });
 });
