@@ -3,7 +3,7 @@
 import { Command } from 'commander';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
 import { processBatch, validatePhotos } from '../processing/batch-processor.js';
-import { aggregateScores, generateTiers, generateStatistics, integrateSmartTiering } from '../analysis/score-aggregator.js';
+import { aggregateScores, integrateSmartTiering } from '../analysis/score-aggregator.js';
 import { exportReports } from '../output/report-generator.js';
 import { displayTierSummary, displayTierDetails, displayTierRecommendations } from './tier-display.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
@@ -124,25 +124,35 @@ program
         logger.warn(`${batchResults.failed} photos failed to process`);
       }
 
+      // DEBUG: Log structure of batchResults
+      logger.debug(`batchResults keys: ${Object.keys(batchResults).join(', ')}`);
+      logger.debug(`batchResults.results type: ${typeof batchResults.results}, length: ${Array.isArray(batchResults.results) ? batchResults.results.length : 'N/A'}`);
+
       // Aggregate scores
       logger.section('AGGREGATION');
       const successfulResults = batchResults.results
         .filter((r) => r.success)
-        .map((r) => r.data);
+        .map((r) => ({
+          photoPath: r.photo,
+          scores: r.scores
+        }));
+
+      if (!Array.isArray(successfulResults)) {
+        logger.error(`Error: successfulResults is not an array. Type: ${typeof successfulResults}, Value: ${JSON.stringify(successfulResults)}`);
+        process.exit(1);
+      }
 
       if (successfulResults.length === 0) {
         logger.error('No successful analyses to aggregate');
         process.exit(1);
       }
 
-      const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria);
-      const tiers = generateTiers(aggregation);
+      const aggregation = aggregateScores(successfulResults, analysisPrompt.criteria || []);
       const smartTiers = integrateSmartTiering(aggregation);
-      const stats = generateStatistics(aggregation);
 
       // Generate and export reports
       logger.section('REPORT GENERATION');
-      exportReports(options.output, aggregation, tiers, stats, {
+      exportReports(options.output, aggregation, aggregation.tiers, aggregation.statistics, {
         formats: ['markdown', 'json', 'csv'],
         basename: 'photo-analysis',
         title: `${analysisPrompt.title} - Analysis Report`,
@@ -158,8 +168,8 @@ program
       if (batchResults.failedPhotos && batchResults.failedPhotos.length > 0) {
         logger.warn(`Failed to analyze: ${batchResults.failedPhotos.length}`);
       }
-      logger.info(`Average score: ${stats.average}/10`);
-      logger.info(`Score range: ${stats.min.toFixed(1)} - ${stats.max.toFixed(1)}`);
+      logger.info(`Average score: ${aggregation.statistics.average}/10`);
+      logger.info(`Score range: ${aggregation.statistics.min.toFixed(1)} - ${aggregation.statistics.max.toFixed(1)}`);
 
       // Display tier breakdown if requested
       if (options.showTiers && smartTiers) {

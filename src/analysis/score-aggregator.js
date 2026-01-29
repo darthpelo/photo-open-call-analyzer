@@ -1,27 +1,79 @@
 import { logger } from '../utils/logger.js';
 import { generateTiers } from './smart-tiering.js';
 
+// Re-export generateTiers for test compatibility
+export { generateTiers };
+
 /**
  * Aggregate scores from multiple photo analyses
- * @param {Array<Object>} analyses - Array of photo analysis results
+ * @param {Array<Object>} analyses - Array of photo analysis results with structure: 
+ *   [{ photoPath: string, scores: { individual: {...}, summary: {...} } }, ...]
  * @param {Object} criteria - Criteria configuration with weights
  * @returns {Object} Aggregated scoring and ranking
+ * @throws {Error} If analyses is not an array or malformed
  */
 export function aggregateScores(analyses, criteria = []) {
+  // Guard clause - validate input is array
+  if (!Array.isArray(analyses)) {
+    const errorMsg = `Invalid aggregateScores input: analyses must be an array. Received type: ${typeof analyses}`;
+    logger.error(errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  // Handle empty analyses gracefully
+  if (analyses.length === 0) {
+    logger.info('No analyses provided to aggregateScores, returning empty result');
+    
+    // Initialize empty criteria stats with lowercase keys
+    const criteriaStats = {};
+    criteria.forEach((criterion) => {
+      const key = criterion.name.toLowerCase().replace(/\s+/g, '_');
+      criteriaStats[key] = {
+        name: criterion.name,
+        scores: [],
+        average: 0,
+        median: 0,
+        mean: 0,
+        min: 0,
+        max: 0,
+        weight: criterion.weight || 0,
+      };
+    });
+
+    return {
+      timestamp: new Date().toISOString(),
+      total_photos: 0,
+      ranking: [],
+      tiers: { tier1: [], tier2: [], tier3: [], summary: { total: 0, tier1_count: 0, tier2_count: 0, tier3_count: 0 } },
+      statistics: {
+        count: 0,
+        average: 0,
+        median: 0,
+        min: 0,
+        max: 0,
+        std_dev: 0,
+        criteria: criteriaStats
+      },
+    };
+  }
+
   logger.info(`Aggregating scores from ${analyses.length} photos`);
 
   const photoScores = [];
   const criteriaStats = {};
 
-  // Initialize criteria statistics
+  // Initialize criteria statistics with lowercase keys for consistency
   criteria.forEach((criterion) => {
-    criteriaStats[criterion.name] = {
+    const key = criterion.name.toLowerCase().replace(/\s+/g, '_');
+    criteriaStats[key] = {
+      name: criterion.name,
       scores: [],
       average: 0,
       median: 0,
       min: 0,
       max: 0,
       weight: criterion.weight || 0,
+      mean: 0, // Alias for average
     };
   });
 
@@ -29,34 +81,39 @@ export function aggregateScores(analyses, criteria = []) {
   analyses.forEach((analysis) => {
     const photoScore = {
       photo: analysis.photoPath || analysis.photo,
+      filename: analysis.filename || (analysis.photoPath || analysis.photo).split('/').pop(),
       individual_scores: analysis.scores?.individual || {},
       summary: analysis.scores?.summary || {},
     };
 
-    // Collect individual criterion scores
-    if (analysis.scores?.individual) {
-      Object.entries(analysis.scores.individual).forEach(([criterionName, scoreData]) => {
-        if (criteriaStats[criterionName]) {
-          criteriaStats[criterionName].scores.push(scoreData.score);
-        }
-      });
-    }
-
     // Add overall scores
     if (analysis.scores?.summary?.weighted_average) {
       photoScore.overall_score = analysis.scores.summary.weighted_average;
+      photoScore.weighted_score = analysis.scores.summary.weighted_average;
     } else if (analysis.scores?.summary?.average) {
       photoScore.overall_score = analysis.scores.summary.average;
+      photoScore.weighted_score = analysis.scores.summary.average;
+    }
+
+    // Collect individual criterion scores
+    if (analysis.scores?.individual) {
+      Object.entries(analysis.scores.individual).forEach(([criterionName, scoreData]) => {
+        const key = criterionName.toLowerCase().replace(/\s+/g, '_');
+        if (criteriaStats[key]) {
+          criteriaStats[key].scores.push(scoreData.score);
+        }
+      });
     }
 
     photoScores.push(photoScore);
   });
 
   // Calculate statistics for each criterion
-  Object.entries(criteriaStats).forEach(([criterionName, stats]) => {
+  Object.entries(criteriaStats).forEach(([criterionKey, stats]) => {
     if (stats.scores.length > 0) {
       stats.scores.sort((a, b) => a - b);
       stats.average = Math.round((stats.scores.reduce((a, b) => a + b, 0) / stats.scores.length) * 10) / 10;
+      stats.mean = stats.average; // Alias
       stats.min = stats.scores[0];
       stats.max = stats.scores[stats.scores.length - 1];
       stats.median = stats.scores[Math.floor(stats.scores.length / 2)];
@@ -71,61 +128,28 @@ export function aggregateScores(analyses, criteria = []) {
     photo.rank = index + 1;
   });
 
+  // Generate tiers using score distribution
+  // Convert to tiering format expected by generateTiers
+  const photosForTiering = photoScores.map((p) => ({
+    filename: p.photo || p.photoPath || 'unknown.jpg',
+    score: p.overall_score || 0,
+    ...p
+  }));
+  const tiersData = generateTiers(photosForTiering);
+  
+  // Generate statistics
+  const statsData = generateStatistics({ photos: photoScores });
+
   return {
     timestamp: new Date().toISOString(),
     total_photos: analyses.length,
-    photos: photoScores,
-    criteria_statistics: criteriaStats,
+    ranking: photoScores,
+    tiers: tiersData,
+    statistics: {
+      ...statsData,
+      criteria: criteriaStats
+    },
   };
-}
-
-/**
- * Generate ranking tiers based on scores
- * @param {Object} aggregation - Aggregated scores from aggregateScores()
- * @param {Object} tierConfig - Tier configuration (optional)
- * @returns {Object} Photos organized by tier
- */
-export function generateTiers(aggregation, tierConfig = {}) {
-  const defaultTiers = {
-    strong_yes: { min: 8.0, label: '🟢 Strong Yes' },
-    yes: { min: 7.0, label: '🟡 Yes' },
-    maybe: { min: 6.0, label: '🟠 Maybe' },
-    no: { min: 0, label: '🔴 No' },
-  };
-
-  const tiers = { ...defaultTiers, ...tierConfig };
-
-  const result = {
-    timestamp: aggregation.timestamp,
-    tiers: {},
-    summary: {},
-  };
-
-  // Organize photos into tiers
-  Object.keys(tiers).forEach((tierKey) => {
-    result.tiers[tierKey] = [];
-  });
-
-  aggregation.photos.forEach((photo) => {
-    const score = photo.overall_score || 0;
-
-    for (const [tierKey, tierConfig] of Object.entries(tiers)) {
-      if (score >= tierConfig.min) {
-        result.tiers[tierKey].push(photo);
-        break;
-      }
-    }
-  });
-
-  // Generate summary
-  Object.entries(result.tiers).forEach(([tierKey, photos]) => {
-    result.summary[tierKey] = {
-      count: photos.length,
-      percentage: Math.round((photos.length / aggregation.total_photos) * 100),
-    };
-  });
-
-  return result;
 }
 
 /**
@@ -134,7 +158,8 @@ export function generateTiers(aggregation, tierConfig = {}) {
  * @returns {Object} Statistical analysis
  */
 export function generateStatistics(aggregation) {
-  const overallScores = aggregation.photos.map((p) => p.overall_score || 0).filter((s) => s > 0);
+  const photos = aggregation.ranking || aggregation.photos || [];
+  const overallScores = photos.map((p) => p.overall_score || 0).filter((s) => s > 0);
 
   if (overallScores.length === 0) {
     return { message: 'No scores available' };
@@ -170,7 +195,8 @@ export function generateStatistics(aggregation) {
  * @returns {Object} Tiered classification with metadata
  */
 export function integrateSmartTiering(aggregation, tierThresholds = null) {
-  if (!aggregation || !aggregation.photos || aggregation.photos.length === 0) {
+  const photos = aggregation.ranking || aggregation.photos || [];
+  if (!aggregation || photos.length === 0) {
     logger.warn('No photos available for tiering');
     return {
       tier1: [],
@@ -181,7 +207,7 @@ export function integrateSmartTiering(aggregation, tierThresholds = null) {
   }
 
   // Convert aggregated photos to tiering format
-  const photoData = aggregation.photos.map(photo => ({
+  const photoData = photos.map(photo => ({
     filename: photo.photo || photo.photoPath,
     score: photo.overall_score || 0,
     // Preserve original metadata for downstream processing

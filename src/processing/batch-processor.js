@@ -248,12 +248,19 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     logger.success(`Results saved to: ${summaryFile}`);
   }
 
+  // Map results to consistent structure for both file and return
+  const mappedResults = results.map((r) => 
+    r.success 
+      ? { success: true, photo: r.data.photoPath, scores: r.data.scores } 
+      : { success: false, error: r.error }
+  );
+
   return {
     success: errors.length === 0,
     total: photos.length,
     processed: results.filter((r) => r.success).length,
     failed: errors.length,
-    results,
+    results: mappedResults,
     errors,
     failedPhotos, // Include failed photos with details (FR-2.3)
   };

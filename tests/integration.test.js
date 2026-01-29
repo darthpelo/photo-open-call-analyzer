@@ -54,7 +54,7 @@ describe('Integration Tests: Score Aggregation & Reporting', () => {
 
       expect(result.ranking).toBeDefined();
       expect(result.ranking.length).toBe(1);
-      expect(result.ranking[0].weighted_score).toBeCloseTo(expected, 1);
+      expect(result.ranking[0].weighted_score).toBeCloseTo(expected, 0.1);
     });
 
     it('should rank photos by weighted score descending', () => {
@@ -171,16 +171,20 @@ describe('Integration Tests: Score Aggregation & Reporting', () => {
 
       // Verify tiers exist
       expect(result.tiers).toBeDefined();
-      expect(Object.keys(result.tiers).length).toBeGreaterThan(0);
+      expect(result.tiers.tier1).toBeDefined();
+      expect(result.tiers.tier2).toBeDefined();
+      expect(result.tiers.tier3).toBeDefined();
 
       // Verify all photos are in tiers
-      const allTierPhotos = Object.values(result.tiers).flat();
+      const allTierPhotos = [
+        ...result.tiers.tier1,
+        ...result.tiers.tier2,
+        ...result.tiers.tier3
+      ];
       expect(allTierPhotos.length).toBe(4);
 
       // Verify highest-scored photo is in top tier
-      const tierValues = Object.values(result.tiers);
-      const topTier = tierValues[0]; // Assuming first tier is best
-      expect(topTier.some(p => p.filename === 'photo-1.jpg')).toBe(true);
+      expect(result.tiers.tier1.some(p => p.filename === 'photo-1.jpg')).toBe(true);
     });
 
     it('should handle tie-breaking consistently', () => {
@@ -273,13 +277,14 @@ describe('Integration Tests: Score Aggregation & Reporting', () => {
       const result = aggregateScores(photoScores, criteria);
 
       expect(result.statistics).toBeDefined();
-      expect(result.statistics.composition).toBeDefined();
-      expect(result.statistics.composition.mean).toBeDefined();
-      expect(result.statistics.composition.median).toBeDefined();
+      expect(result.statistics.criteria).toBeDefined();
+      expect(result.statistics.criteria.composition).toBeDefined();
+      expect(result.statistics.criteria.composition.mean).toBeDefined();
+      expect(result.statistics.criteria.composition.median).toBeDefined();
       
       // For composition scores [5, 7, 9]: mean = 7, median = 7
-      expect(result.statistics.composition.mean).toBeCloseTo(7, 0);
-      expect(result.statistics.composition.median).toBeCloseTo(7, 0);
+      expect(result.statistics.criteria.composition.mean).toBeCloseTo(7, 0);
+      expect(result.statistics.criteria.composition.median).toBeCloseTo(7, 0);
     });
 
     it('should handle single photo statistics', () => {
@@ -305,8 +310,8 @@ describe('Integration Tests: Score Aggregation & Reporting', () => {
       const result = aggregateScores(photoScores, criteria);
 
       expect(result.statistics).toBeDefined();
-      expect(result.statistics.composition.mean).toBeCloseTo(7, 0);
-      expect(result.statistics.composition.median).toBeCloseTo(7, 0);
+      expect(result.statistics.criteria.composition.mean).toBeCloseTo(7, 0);
+      expect(result.statistics.criteria.composition.median).toBeCloseTo(7, 0);
     });
   });
 

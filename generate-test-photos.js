@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import fs from 'fs';
 
 // Minimal JPEG header (valid JPEG)
@@ -32,12 +34,29 @@ const jpegHeader = Buffer.from([
   0x00, 0x00, 0x3F, 0x00, 0xFB, 0xD1, 0x4F, 0xFF, 0xD9
 ]);
 
-// Valid JPEGs
-fs.writeFileSync('test-manual/test-corrupted/photos/valid.jpg', jpegHeader);
-fs.writeFileSync('test-manual/test-timeout/photos/photo1.jpg', jpegHeader);
-fs.writeFileSync('test-manual/test-timeout/photos/photo2.jpg', jpegHeader);
+const photosDir = 'data/open-calls/test-batch-fix/photos';
 
-// Corrupted JPEG (truncated)
-fs.writeFileSync('test-manual/test-corrupted/photos/corrupted.jpg', jpegHeader.slice(0, Math.floor(jpegHeader.length / 2)));
+// Generate 8 test photos with different sizes (to simulate batch processing)
+const photos = [
+  'photo-high-1.jpg',  // High score candidate
+  'photo-high-2.jpg',  // High score candidate
+  'photo-mid-1.jpg',   // Medium score candidate
+  'photo-mid-2.jpg',   // Medium score candidate
+  'photo-mid-3.jpg',   // Medium score candidate
+  'photo-low-1.jpg',   // Low score candidate
+  'photo-low-2.jpg',   // Low score candidate
+  'photo-edge-case.jpg' // Edge case
+];
 
-console.log('✓ Created test images');
+console.log(`📸 Generating ${photos.length} test photos to ${photosDir}/`);
+
+photos.forEach((photoName, idx) => {
+  const filePath = `${photosDir}/${photoName}`;
+  // Vary the JPEG slightly by padding random bytes (doesn't affect validity)
+  const padding = Buffer.alloc(Math.random() * 1000);
+  const photoBuffer = Buffer.concat([jpegHeader, padding]);
+  fs.writeFileSync(filePath, photoBuffer);
+  console.log(`  ✓ Created ${photoName} (${photoBuffer.length} bytes)`);
+});
+
+console.log('\n✅ Test photo generation complete!\n');

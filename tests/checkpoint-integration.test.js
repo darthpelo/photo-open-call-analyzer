@@ -1,3 +1,4 @@
+/**
  * Integration Tests for Checkpoint Resume Workflows
  * 
  * Tests end-to-end resume functionality with batch-processor.js
@@ -15,7 +16,7 @@
  * NOTE: These tests use mocked analyzePhoto to avoid Ollama dependency
  */
 
-import { jest } from '@jest/globals';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
