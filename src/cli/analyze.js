@@ -288,4 +288,11 @@ program
     }
   });
 
+program.on('command:*', (unknownCommand) => {
+  logger.error(`Unknown command: ${unknownCommand[0]}`);
+  logger.info("Did you mean 'npm run analyze analyze <project-dir>'?");
+  logger.info("Available commands: analyze, validate");
+  process.exit(1);
+});
+
 program.parse(process.argv);
