@@ -1,37 +1,32 @@
 import { getApiClient, getModelName } from '../utils/api-client.js';
 import { logger } from '../utils/logger.js';
+import { buildMetaPrompt } from '../prompts/prompt-builder.js';
+import { validateCriteria, normalizeWeights } from '../prompts/criteria-refinement.js';
 
 /**
  * Generate analysis prompt for a specific open call using Ollama
+ * Enhanced with template library and validation (FR-2.4)
+ *
  * @param {Object} openCallData - Open call information
+ * @param {Object} options - Generation options
+ * @param {string} options.juryStyle - Optional jury style (e.g., "minimalist", "bold")
+ * @param {string} options.template - Force specific template type
+ * @param {boolean} options.validate - Validate criteria before returning (default: true)
  * @returns {Promise<Object>} Analysis prompt with criteria and questions
  */
-export async function generateAnalysisPrompt(openCallData) {
-  logger.info('Generating analysis prompt for open call');
+export async function generateAnalysisPrompt(openCallData, options = {}) {
+  logger.info('Generating enhanced analysis prompt for open call');
 
   const client = getApiClient();
   const model = getModelName();
 
-  const prompt = `You are an expert photography competition analyst.
-Analyze this open call and create a structured evaluation framework.
+  // Build enhanced meta-prompt using template library
+  const { prompt, metadata } = buildMetaPrompt(openCallData, {
+    juryStyle: options.juryStyle,
+    forcedTemplate: options.template
+  });
 
-**Competition Title**: ${openCallData.title || 'Not specified'}
-**Theme**: ${openCallData.theme || 'Not specified'}
-**Jury Members**: ${openCallData.jury?.join(', ') || 'Not specified'}
-**Past Winners**: ${openCallData.pastWinners || 'No information'}
-**Additional Context**: ${openCallData.context || 'None'}
-
-Provide:
-1. The 5 main evaluation criteria for this competition (name, description, weight %)
-2. Key patterns or themes from past winners
-3. 5 specific questions to ask when evaluating each photo
-4. Preferred style/aesthetics from the jury
-
-Format the criteria like this:
-CRITERION: [name]
-DESCRIPTION: [description]
-WEIGHT: [numeric percentage]
----`;
+  logger.debug(`Using ${metadata.competitionType} template (confidence: ${metadata.templateConfidence})`);
 
   try {
     const response = await client.chat({
@@ -43,15 +38,48 @@ WEIGHT: [numeric percentage]
         }
       ],
       options: {
-        temperature: 0.5,
-        num_predict: 2000
+        temperature: metadata.temperature, // Lowered from 0.5 to 0.3 for consistency
+        num_predict: metadata.maxTokens
       }
     });
 
     const analysisText = response.message.content;
     const parsedPrompt = parseAnalysisPrompt(analysisText, openCallData);
 
-    logger.success('Analysis prompt generated');
+    // Validate and normalize criteria (FR-2.4)
+    if (options.validate !== false && parsedPrompt.criteria.length > 0) {
+      const validation = validateCriteria(parsedPrompt.criteria);
+
+      if (validation.scores.specificity < 6) {
+        logger.warn(`Criteria specificity score: ${validation.scores.specificity}/10 - consider regenerating`);
+      }
+
+      // Auto-normalize weights
+      parsedPrompt.criteria = normalizeWeights(parsedPrompt.criteria);
+
+      // Add validation metadata
+      parsedPrompt.validation = {
+        specificityScore: validation.scores.specificity,
+        alignmentScore: validation.scores.alignment,
+        overallScore: validation.scores.overall,
+        issues: validation.issues.filter(i => i.severity === 'high'),
+        validated: true
+      };
+
+      if (validation.issues.filter(i => i.severity === 'high').length > 0) {
+        logger.warn(`${validation.issues.filter(i => i.severity === 'high').length} high-severity issues found in criteria`);
+      }
+    }
+
+    // Add generation metadata
+    parsedPrompt.metadata = {
+      competitionType: metadata.competitionType,
+      templateUsed: metadata.competitionType,
+      juryStyle: options.juryStyle || null,
+      generatedAt: new Date().toISOString()
+    };
+
+    logger.success(`Analysis prompt generated (${metadata.competitionType} template, score: ${parsedPrompt.validation?.overallScore || 'N/A'}/10)`);
 
     return parsedPrompt;
   } catch (error) {
