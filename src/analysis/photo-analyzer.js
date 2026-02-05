@@ -2,6 +2,11 @@ import { readFileSync } from 'fs';
 import path from 'path';
 import { getApiClient, getModelName } from '../utils/api-client.js';
 import { logger } from '../utils/logger.js';
+import {
+  buildMultiStagePrompts,
+  injectStage1Output,
+  buildStage3Prompt
+} from '../prompts/prompt-builder.js';
 
 /**
  * Analyzes a photo using Ollama with LLaVA vision model
@@ -244,6 +249,201 @@ function parseAnalysisResponse(analysisText, analysisPrompt) {
 }
 
 /**
+ * Analyzes a photo using multi-stage reasoning for improved quality (FR-2.4 Phase 2)
+ *
+ * Three-stage analysis:
+ * 1. Understanding: Observe photo without scoring
+ * 2. Evaluation: Score each criterion with focused analysis
+ * 3. Consistency: Review scores for coherence
+ *
+ * @param {string} photoPath - Path to the photo file
+ * @param {Object} analysisPrompt - Analysis prompt with criteria
+ * @param {Object} options - Analysis options
+ * @returns {Promise<Object>} Comprehensive analysis with stage outputs
+ */
+export async function analyzePhotoMultiStage(photoPath, analysisPrompt, options = {}) {
+  try {
+    logger.debug(`Multi-stage analysis starting: ${photoPath}`);
+
+    // Read image once
+    const imageBuffer = readFileSync(photoPath);
+    const base64Image = imageBuffer.toString('base64');
+
+    const client = getApiClient();
+    const model = getModelName();
+
+    // Build all stage prompts
+    const stages = buildMultiStagePrompts(analysisPrompt, options);
+
+    // STAGE 1: Understanding (observe without judging)
+    logger.debug('Stage 1: Understanding photo...');
+    const stage1Response = await client.chat({
+      model: model,
+      messages: [
+        {
+          role: 'user',
+          content: stages.stage1.prompt,
+          images: [base64Image]
+        }
+      ],
+      options: {
+        temperature: stages.stage1.temperature,
+        num_predict: stages.stage1.maxTokens
+      }
+    });
+
+    const understandingText = stage1Response.message.content;
+    logger.debug(`Stage 1 complete (${understandingText.length} chars)`);
+
+    // STAGE 2: Criterion-by-criterion evaluation
+    logger.debug(`Stage 2: Evaluating ${stages.stage2.length} criteria...`);
+    const stage2Prompts = injectStage1Output(stages.stage2, understandingText);
+
+    const scores = {
+      individual: {},
+      summary: {}
+    };
+
+    // Evaluate each criterion
+    for (const criterionPrompt of stage2Prompts) {
+      logger.debug(`  Evaluating: ${criterionPrompt.criterion}`);
+
+      const criterionResponse = await client.chat({
+        model: model,
+        messages: [
+          {
+            role: 'user',
+            content: criterionPrompt.prompt,
+            images: [base64Image]
+          }
+        ],
+        options: {
+          temperature: criterionPrompt.temperature,
+          num_predict: criterionPrompt.maxTokens
+        }
+      });
+
+      const evaluationText = criterionResponse.message.content;
+
+      // Parse score from response
+      const scoreMatch = evaluationText.match(/SCORE:\s*[^:]*:\s*(\d+)\/10/i);
+      const reasoningMatch = evaluationText.match(/REASONING:\s*([^\n]+(?:\n(?!SCORE:|REASONING:)[^\n]+)*)/i);
+
+      if (scoreMatch) {
+        const score = parseInt(scoreMatch[1], 10);
+        const reasoning = reasoningMatch ? reasoningMatch[1].trim() : evaluationText.substring(0, 200);
+
+        // Find criterion weight
+        const criterion = analysisPrompt.criteria.find(
+          c => c.name === criterionPrompt.criterion
+        );
+
+        scores.individual[criterionPrompt.criterion] = {
+          score: score,
+          weight: criterion ? criterion.weight : 20,
+          reasoning: reasoning,
+          fullEvaluation: evaluationText
+        };
+
+        logger.debug(`  ${criterionPrompt.criterion}: ${score}/10`);
+      } else {
+        logger.warn(`  Could not parse score for ${criterionPrompt.criterion}`);
+        // Fallback: try to extract any number
+        const anyNumber = evaluationText.match(/(\d+)\/10/);
+        if (anyNumber) {
+          const score = parseInt(anyNumber[1], 10);
+          scores.individual[criterionPrompt.criterion] = {
+            score: score,
+            weight: 20,
+            reasoning: evaluationText.substring(0, 200),
+            fullEvaluation: evaluationText
+          };
+        }
+      }
+    }
+
+    // Calculate weighted average
+    const weightedScores = Object.entries(scores.individual)
+      .filter(([_, data]) => data.weight > 0)
+      .map(([_, data]) => data.score * data.weight);
+
+    const totalWeight = Object.values(scores.individual)
+      .filter((data) => data.weight > 0)
+      .reduce((sum, data) => sum + data.weight, 0);
+
+    if (totalWeight > 0) {
+      scores.summary.weighted_average =
+        Math.round((weightedScores.reduce((a, b) => a + b, 0) / totalWeight) * 10) / 10;
+    }
+
+    // STAGE 3: Consistency check
+    logger.debug('Stage 3: Consistency check...');
+    const scoresForStage3 = Object.entries(scores.individual).map(([criterion, data]) => ({
+      criterion,
+      score: data.score,
+      reasoning: data.reasoning
+    }));
+
+    const stage3 = buildStage3Prompt(
+      stages.stage3Template,
+      scoresForStage3,
+      scores.summary.weighted_average || 0
+    );
+
+    const stage3Response = await client.chat({
+      model: model,
+      messages: [
+        {
+          role: 'user',
+          content: stage3.prompt,
+          images: [base64Image]
+        }
+      ],
+      options: {
+        temperature: stage3.temperature,
+        num_predict: stage3.maxTokens
+      }
+    });
+
+    const consistencyText = stage3Response.message.content;
+
+    // Parse stage 3 output
+    const recommendationMatch = consistencyText.match(/RECOMMENDATION:\s*([^\n]+)/i);
+    const confidenceMatch = consistencyText.match(/CONFIDENCE:\s*([^\n]+)/i);
+    const strengthMatch = consistencyText.match(/KEY STRENGTH:\s*([^\n]+)/i);
+    const concernMatch = consistencyText.match(/MAIN CONCERN:\s*([^\n]+)/i);
+
+    scores.summary.recommendation = recommendationMatch ? recommendationMatch[1].trim() : 'Maybe';
+    scores.summary.confidence = confidenceMatch ? confidenceMatch[1].trim() : 'Medium';
+    scores.summary.keyStrength = strengthMatch ? strengthMatch[1].trim() : '';
+    scores.summary.mainConcern = concernMatch ? concernMatch[1].trim() : '';
+
+    logger.debug('Multi-stage analysis complete');
+
+    return {
+      photoPath,
+      filename: path.basename(photoPath),
+      analysisMode: 'multi-stage',
+      stages: {
+        understanding: understandingText,
+        evaluations: scores.individual,
+        consistency: consistencyText
+      },
+      scores,
+      timestamp: new Date().toISOString(),
+      model: model
+    };
+
+  } catch (error) {
+    logger.error(`Multi-stage analysis failed for ${photoPath}: ${error.message}`);
+
+    // Fallback to single-stage on error
+    logger.warn('Falling back to single-stage analysis...');
+    return await analyzePhoto(photoPath, analysisPrompt);
+  }
+}
+
+/**
  * Get default criteria if none provided
  * @returns {Array} Default criteria
  */
@@ -286,16 +486,25 @@ function getDefaultCriteria() {
 export async function analyzePhotoWithTimeout(photoPath, analysisPrompt, options = {}) {
   const timeout = options.timeout || 60000; // 60s default
   const timeoutSeconds = Math.floor(timeout / 1000);
+  const analysisMode = options.analysisMode || 'single';
 
   try {
+    // Select analysis function based on mode
+    const analysisFn = analysisMode === 'multi' || analysisMode === 'multi-stage'
+      ? analyzePhotoMultiStage
+      : analyzePhoto;
+
     const result = await Promise.race([
       // Actual analysis
-      analyzePhoto(photoPath, analysisPrompt).then(data => ({ data })),
-      
-      // Timeout promise
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('TIMEOUT')), timeout)
-      )
+      analysisFn(photoPath, analysisPrompt, options).then(data => ({ data })),
+
+      // Timeout promise (longer for multi-stage)
+      new Promise((_, reject) => {
+        const actualTimeout = analysisMode === 'multi' || analysisMode === 'multi-stage'
+          ? timeout * 1.5 // 50% longer for multi-stage
+          : timeout;
+        setTimeout(() => reject(new Error('TIMEOUT')), actualTimeout);
+      })
     ]);
 
     // Analysis completed before timeout
