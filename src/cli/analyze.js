@@ -30,6 +30,7 @@ program
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
   .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
   .option('--show-tiers', 'Display tier breakdown in terminal')
+  .option('--analysis-mode <mode>', 'Analysis mode: single or multi (default: multi)', 'multi')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -106,14 +107,15 @@ program
       }
 
       const batchResults = await processBatch(
-        photosDir, 
-        analysisPrompt, 
+        photosDir,
+        analysisPrompt,
         {
           outputDir: options.output,
           parallel: parseInt(options.parallel),
           checkpointInterval,
           clearCheckpoint: options.clearCheckpoint || false,
-          photoTimeout // Pass timeout to batch processor (FR-2.3)
+          photoTimeout, // Pass timeout to batch processor (FR-2.3)
+          analysisMode: options.analysisMode // Pass analysis mode (FR-2.4 Phase 2)
         },
         config  // Pass config for checkpoint validation
       );
