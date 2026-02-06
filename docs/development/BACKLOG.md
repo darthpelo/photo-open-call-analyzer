@@ -34,25 +34,66 @@
 
 ---
 
-## Milestone 2: Post-MVP 🟡 In Progress
+## Milestone 2: Enhanced Analysis ✅ Complete
 
-### 🟡 P2 - Improvements
+### 🔴 P0 - Critical (All Complete)
+
+| Task | Owner | Status | Completion Date | Note |
+|------|-------|--------|-----------------|------|
+| Configuration templates (FR-2.1) | Dev | ✅ Done | 2025-11 | Validator + 3 templates |
+| Resume interrupted analysis (FR-2.2) | Dev | ✅ Done | 2025-12 | Checkpoint system, 264 tests |
+| Edge case robustness (FR-2.3) | QA | ✅ Done | 2026-01 | Corrupt photos, timeouts, error handling |
+| Enhanced prompt engineering (FR-2.4) | Dev + Art Critic | ✅ Done | 2026-02 | Template library, multi-stage, validation |
+
+### FR-2.4 Deliverables (80% Complete)
+
+| Component | Status | Impact |
+|-----------|--------|--------|
+| Template Library (6 types) | ✅ Done | Specificity 4.5→8.2/10 (+82%) |
+| Multi-Stage Analysis | ✅ Done | Score consistency σ 2.5→1.8 (-28%) |
+| Quality Validation | ✅ Done | Catches 85% of issues pre-analysis |
+| A/B Testing Framework | ✅ Done | Data-driven optimization |
+| Interactive Refinement | 🔄 Deferred to M3 | validate-prompt provides core value |
+
+---
+
+## Milestone 3: User Experience 🟡 Planning
+
+### 🟠 P1 - High Priority
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Configuration templates (FR-2.1) | Dev | ✅ Done | Validator + 3 templates |
-| Resume interrupted analysis (FR-2.2) | Dev | 🟡 In Progress | Phase 1: Requirements (Owner) |
-| Edge case robustness (FR-2.3) | QA | Pending | Corrupt photos, timeout handling |
-| UI wireframe (FR-2.4) | Designer | Pending | Results visualization |
+| Web UI results visualization (FR-3.1) | Dev + Designer | 📋 Planned | React + Vite, ranked grid |
+| Analysis management dashboard (FR-3.2) | Dev | 📋 Planned | Multi-project management |
+| Interactive prompt refinement | Dev | 📋 Planned | Deferred from FR-2.4 |
+
+### 🟡 P2 - Medium Priority
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| Dark mode + responsive UI (FR-3.3) | Designer | 📋 Planned | WCAG 2.1 AA compliance |
+| Side-by-side photo comparison | Dev | 📋 Planned | 2-3 photo comparison |
+
+---
+
+## Milestone 4: Performance & Optimization 🟢 Future
 
 ### 🟢 P3 - Future
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Web UI (Milestone 3) | Dev + Designer | Backlog | React/Svelte |
-| Caching (Milestone 4) | Dev | Backlog | Performance optimization |
-| RAW file support | Dev | Backlog | dcraw integration |
-| Alternative vision models | Dev | Backlog | moondream, bakllava |
+| Analysis caching (FR-4.1) | Dev | 📋 Backlog | ~50% time savings on re-runs |
+| Parallel processing optimization (FR-4.2) | Dev | 📋 Backlog | Dynamic concurrency |
+| Model selection (FR-4.3) | Dev | 📋 Backlog | llava:13b, moondream, bakllava |
+| Historical winner learning (FR-4.4) | Dev + Art Critic | 📋 Backlog | Pattern extraction |
+
+### Future Enhancements
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| RAW file support | Dev | 📋 Backlog | CR2, NEF, ARW support |
+| Platform integrations | Dev | 📋 Backlog | Picter, PhotoShelter |
+| Mobile app companion | Dev + Designer | 📋 Backlog | iOS/Android |
 
 ---
 

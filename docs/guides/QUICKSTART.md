@@ -2,12 +2,12 @@
 
 ## Setup
 
-### 1. Verifica Ollama
+### 1. Verify Ollama
 ```bash
 ollama list
 ```
 
-Se non vedi `llava:7b`:
+If you don't see `llava:7b`:
 ```bash
 ollama pull llava:7b
 ```
