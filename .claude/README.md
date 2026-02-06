@@ -215,6 +215,277 @@ Some tasks require sequence:
 
 ---
 
+## BMAD Global Skills Integration
+
+This project integrates with **global BMAD skills** installed at `~/.claude/skills/bmad/` for specialized workflows that complement our local agents.
+
+### Philosophy: Hybrid Model
+
+**Use Global BMAD for**:
+- ✅ Standard methodologies (security audit, sprint planning, UX frameworks)
+- ✅ Document structure templates (ADRs, test plans, security reports)
+- ✅ Workflow orchestration (guided multi-step processes)
+- ✅ Context optimization (sharding large documents)
+
+**Use Local Agents for**:
+- ✅ Photography domain expertise (Art Critic, Designer)
+- ✅ Project-specific coordination (Project Owner)
+- ✅ Implementation and testing (Dev, QA)
+- ✅ Personality and team culture (Alex, Marco, Sofia)
+
+**Principle**: Global BMAD provides **methodology**, local agents provide **expertise**.
+
+---
+
+### Available Global BMAD Skills
+
+#### Core Workflow Skills
+
+**Security Auditing**: `/bmad-security audit`
+- **When**: Before major releases (M2, M3, M4) or when adding Web UI
+- **Output**: `.claude/bmad-output/security-audit.md`
+- **Includes**: STRIDE threat model, OWASP Top 10, vulnerability analysis, remediation roadmap
+- **Use Case**: "Run security audit before M3 Web UI deployment"
+
+**Sprint Planning**: `/bmad-sprint`
+- **When**: Planning new milestones with multiple features
+- **Output**: `.claude/bmad-output/sprint-plan.md`
+- **Includes**: 6-step ceremony (backlog → capacity → selection → breakdown → goal → commitment)
+- **Integration**: Marco uses sprint-plan.md for capacity awareness, BACKLOG.md remains source of truth
+- **Use Case**: "Plan M3 sprint with data-driven capacity tracking"
+
+**UX Design Foundation**: `/bmad-ux wireframe`
+- **When**: Designing new user interfaces (M3 Web UI)
+- **Output**: `.claude/bmad-output/ux-design.md`
+- **Includes**: User personas, ASCII wireframes, user flows, WCAG 2.1 AA accessibility requirements
+- **Integration**: Sofia (Designer) enhances with photography-specific design patterns
+- **Use Case**: "Generate UX foundation for M3 Web UI, then Sofia adds photo-first visual hierarchy"
+
+**Architecture Design**: `/bmad-architect`
+- **When**: Designing system architecture, need ADR structure
+- **Output**: `.claude/bmad-output/architecture.md`
+- **Includes**: Component diagrams, tech stack evaluation, ADR templates
+- **Integration**: Architect agent delegates to global for standard structure, adds photography expertise
+- **Use Case**: "Generate ADR template for M3 Web UI framework decision"
+
+**Context Sharding**: `/bmad-shard`
+- **When**: Large documents (PRD, architecture) slow down context loading
+- **Output**: `.claude/bmad-output/shards/requirements/FR-*.md`
+- **Impact**: 90% token reduction for focused work
+- **Integration**: Dev references sharded requirements instead of full PRD
+- **Use Case**: "Shard 359-line PRD into individual FR files (~20 lines each)"
+
+**Quality Assurance**: `/bmad-qa`
+- **When**: Need structured test plan template
+- **Output**: `.claude/bmad-output/test-design.md`
+- **Integration**: QA Lead enhances with photography-specific test scenarios
+- **Use Case**: "Generate test plan structure for M3 Web UI"
+
+---
+
+### Integration Patterns
+
+#### Pattern 1: Skill Invocation (No Local Agent)
+**When**: Standard capability, no domain customization needed
+
+```bash
+# Example: Security audit
+/bmad-security audit
+# Output: .claude/bmad-output/security-audit.md
+
+# Example: Context sharding
+/bmad-shard
+# Output: .claude/bmad-output/shards/requirements/FR-*.md
+```
+
+**Use**: One-time operations, standard templates, optimization tasks
+
+---
+
+#### Pattern 2: Sequential Handoff (Global → Local)
+**When**: Need foundation + domain expertise
+
+```
+1. /bmad-ux wireframe
+   → Output: ux-design.md (personas, wireframes, accessibility)
+
+2. @Designer: Review ux-design.md. Add photography-specific:
+   - Photo-first visual hierarchy
+   - Dark mode for photo review (reduced eye strain)
+   - Gallery/grid layout patterns
+   - Image comparison interactions
+```
+
+**Use**: UX design, architecture with domain specifics, test planning
+
+---
+
+#### Pattern 3: Complementary (Global + Local Parallel)
+**When**: Different responsibilities, same goal
+
+```
+Parallel work:
+- /bmad-sprint: Interactive ceremony, capacity planning
+- @Project Owner: BACKLOG.md maintenance, prioritization
+
+Both maintain linked documentation:
+- sprint-plan.md (BMAD): Data-driven capacity tracking
+- BACKLOG.md (Marco): Source of truth for features
+```
+
+**Use**: Sprint planning, project coordination, parallel workflows
+
+---
+
+#### Pattern 4: Wrapper (Local Delegates to Global)
+**When**: Want local personality, need global capability
+
+```markdown
+# .claude/agents/architect.md workflow:
+1. Architect agent receives architecture task
+2. Delegates to /bmad-architect for standard structure
+3. Enhances with photography-specific considerations
+4. Documents in architecture.md + ADRs
+
+Result: Standard methodology + domain expertise
+```
+
+**Use**: Architecture, test design, documentation generation
+
+---
+
+### When to Use Which Approach
+
+| Task | Use Global BMAD | Use Local Agent | Use Both |
+|------|----------------|-----------------|----------|
+| **Security audit** | ✅ `/bmad-security audit` | ❌ | ❌ |
+| **Sprint planning** | ✅ `/bmad-sprint` | ✅ Marco tracks | ✅ Complementary |
+| **UX foundation** | ✅ `/bmad-ux wireframe` | ✅ Sofia enhances | ✅ Sequential |
+| **Architecture** | ✅ `/bmad-architect` structure | ✅ Architect adds expertise | ✅ Wrapper |
+| **Context sharding** | ✅ `/bmad-shard` | ❌ | ❌ |
+| **Feature implementation** | ❌ | ✅ @Dev | ❌ |
+| **Photography expertise** | ❌ | ✅ @Art Critic, @Designer | ❌ |
+| **Project coordination** | ❌ | ✅ @Project Owner | ❌ |
+
+---
+
+### Workflow Example: M3 Sprint Planning
+
+```
+Scenario: Plan M3 Web UI implementation (FR-3.1, 3.2, 3.3)
+
+Step 1: Run BMAD Sprint Planning
+/bmad-sprint
+→ Interactive ceremony (6 steps)
+→ Output: sprint-plan.md with:
+   - Sprint goal: "Enable web-based photo review"
+   - Capacity: 40 story points (1 dev, 10 days)
+   - Committed: FR-3.1 (13pt), FR-3.2 (8pt), FR-3.3 (5pt)
+   - Task breakdown with hours
+   - Capacity warnings at 75%, 100%
+
+Step 2: Marco Reviews and Tracks
+@Project Owner: Review sprint-plan.md
+→ Update BACKLOG.md with sprint data
+→ Track progress against capacity
+→ Adjust priorities if overcommitted
+
+Step 3: Dev Uses for Implementation
+@Dev: Implement FR-3.1
+→ Reference sprint-plan.md for task breakdown
+→ Reference shards/requirements/FR-3.1.md for details
+→ Update progress in sprint-plan.md
+
+Result: Data-driven planning + flexible tracking
+```
+
+---
+
+### Output Directory Structure
+
+```
+.claude/
+├── agents/               # Local agents (Alex, Marco, Sofia, etc.)
+├── workflows/            # Local workflows
+├── bmad-output/          # Global BMAD skill outputs
+│   ├── architecture.md
+│   ├── security-audit.md
+│   ├── ux-design.md
+│   ├── sprint-plan.md
+│   ├── session-state.json
+│   └── shards/
+│       └── requirements/
+│           ├── FR-3.1.md  (~20 lines)
+│           ├── FR-3.2.md  (~20 lines)
+│           └── FR-3.3.md  (~20 lines)
+└── README.md             # This file
+```
+
+**Convention**: Global BMAD outputs go to `.claude/bmad-output/`, local agent outputs to project root or `docs/`.
+
+---
+
+### Benefits by Area
+
+#### Design
+- **UX structured**: Personas, wireframes, accessibility (BMAD ux)
+- **Architecture decisions**: ADRs documented (BMAD architect)
+- **Domain expertise**: Sofia adds photography-specific design
+
+#### Development
+- **Context optimization**: 90% token reduction via sharding
+- **Clear requirements**: Sharded FR per feature focus
+- **Security baseline**: Pre-deployment audit findings
+
+#### Testing
+- **Structured validation**: Test plans from BMAD qa
+- **Security testing**: OWASP/STRIDE checklist
+- **Coverage tracking**: Automated via sprint plan
+
+#### Maintenance
+- **Documentation**: Consistent BMAD artifacts structure
+- **Sprint tracking**: Data-driven via sprint-plan.md
+- **Session state**: Resume interrupted work
+- **Traceability**: Requirements → implementation → tests
+
+---
+
+### Getting Started with BMAD Skills
+
+**First Time Usage**:
+1. Verify global BMAD installed: `ls ~/.claude/skills/bmad/`
+2. Check domain detection: `~/.claude/skills/bmad/scripts/detect_domain.sh`
+3. Run first skill: `/bmad-security audit` (good baseline)
+4. Review output: `cat .claude/bmad-output/security-audit.md`
+
+**Integration Checklist for New Features**:
+- [ ] Sprint planning: `/bmad-sprint` for capacity-driven planning
+- [ ] UX design: `/bmad-ux` if user-facing (then Sofia enhances)
+- [ ] Architecture: `/bmad-architect` for ADR structure (then Architect enhances)
+- [ ] Security: `/bmad-security audit` before major releases
+- [ ] Context: `/bmad-shard` if PRD/docs grow >300 lines
+
+---
+
+### Troubleshooting
+
+**Issue**: "Unknown skill: bmad-security"
+- **Cause**: Skills not registered in current session
+- **Fix**: Skills may need manual invocation or agent-based workflow
+- **Workaround**: Use methodology manually following skill template
+
+**Issue**: "Domain detection failed"
+- **Cause**: Project structure doesn't match software/business/personal patterns
+- **Fix**: Manually specify domain or use generic templates
+- **Check**: `~/.claude/skills/bmad/scripts/detect_domain.sh`
+
+**Issue**: "Output file not found"
+- **Cause**: Skill not run yet or output path incorrect
+- **Fix**: Ensure `.claude/bmad-output/` directory exists
+- **Create**: `mkdir -p .claude/bmad-output`
+
+---
+
 ## Communication Protocols
 
 ### How to Invoke an Agent
