@@ -23,12 +23,13 @@ import { classifyError, ErrorType, getActionableMessage } from '../utils/error-c
  * @returns {Promise<Object>} Batch processing results
  */
 export async function processBatch(photosDirectory, analysisPrompt, options = {}, openCallConfig = null) {
-  const { 
-    outputDir = null, 
-    parallel = 3, 
+  const {
+    outputDir = null,
+    parallel = 3,
     skipExisting = false,
     checkpointInterval = 10,
-    clearCheckpoint = false
+    clearCheckpoint = false,
+    analysisMode = 'multi' // FR-2.4 Phase 2: default to multi-stage analysis
   } = options;
 
   // Determine project directory (parent of photos directory)
@@ -147,9 +148,10 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
           logger.debug(`⚠️ ${photo.name}: ${validation.warning}`);
         }
 
-        // 2. ANALYZE WITH TIMEOUT (FR-2.3)
+        // 2. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4)
         const analysisResult = await analyzePhotoWithTimeout(photo.path, analysisPrompt, {
-          timeout: photoTimeout
+          timeout: photoTimeout,
+          analysisMode // Pass analysis mode (single or multi-stage)
         });
 
         if (analysisResult.success) {
