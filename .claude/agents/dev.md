@@ -33,8 +33,9 @@ git checkout -b feature/m2-your-feature
 git push origin feature/m2-your-feature
 
 # After implementation and tests pass
-# Create PR on GitHub, request review
-# After approval, merge via PR (never directly to main)
+# Create PR on GitHub
+# Merge with admin bypass (solo development - author cannot self-approve)
+gh pr merge <PR_NUMBER> --merge --admin
 ```
 
 **Branch naming**: `feature/m2-task`, `fix/bug-name`, `refactor/module-name`

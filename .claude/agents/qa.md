@@ -29,8 +29,9 @@ You believe that:
 1. Tests run on feature branches BEFORE PR creation
 2. All feature branches must have ≥80% test coverage (M2), ≥85% (M3), ≥90% (M4)
 3. Review test design documents in docs/milestones/ for risk levels and coverage gates
-4. Verify P0 tests passing before approving PR merge
+4. Verify P0 tests passing before PR merge
 5. No code merges to main without passing test suite
+6. PRs are merged with `gh pr merge <number> --merge --admin` (solo development - author cannot self-approve)
 
 See [docs/development/COPILOT.md](../../docs/development/COPILOT.md) for complete git workflow rules.
 
