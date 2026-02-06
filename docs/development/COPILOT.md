@@ -262,10 +262,16 @@ rm .pr-body.txt
 
 **IMPORTANT**: Always use `--body-file` instead of `--body` to avoid shell quoting and line break issues with complex PR descriptions.
 
-#### 5. After Approval, Merge via GitHub
+#### 5. Merge with Admin Bypass
+```bash
+# Solo development: use --admin to bypass approval requirement
+gh pr merge <PR_NUMBER> --merge --admin
+```
 - Do NOT merge locally to main
-- Delete branch after merge
+- Delete branch after merge (automatic with `--delete-branch` or via GitHub)
 - Update BACKLOG.md status
+
+> **Note**: Since GitHub does not allow a PR author to approve their own PR, we use `--admin` to bypass the approval requirement while keeping the PR-based workflow for traceability.
 
 ### GitHub Integration
 

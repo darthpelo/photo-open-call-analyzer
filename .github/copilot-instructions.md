@@ -295,7 +295,10 @@ Extend [src/output/report-generator.js](src/output/report-generator.js) - add ne
    
    **IMPORTANT**: Always use `--body-file` instead of `--body` to avoid shell quoting and line break issues with complex PR descriptions.
 
-5. **Merge only via PR** (never direct commits to main)
+5. **Merge with admin bypass** (solo development - author cannot self-approve):
+   ```bash
+   gh pr merge <PR_NUMBER> --merge --admin
+   ```
 
 ### Branch Naming Conventions
 

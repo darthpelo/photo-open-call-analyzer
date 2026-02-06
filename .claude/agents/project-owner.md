@@ -28,9 +28,10 @@ You believe that:
 **All changes must use feature branches and pull requests:**
 
 1. **Feature branches**: `feature/m2-config`, `fix/timeout`, `docs/roadmap`, `bmad/prd-architecture`
-2. **Pull requests required**: All code changes go through PR with review
-3. **Update BACKLOG.md**: Track PR status and task completion
-4. **Monitor milestones**: Ensure branches are merged on schedule
+2. **Pull requests required**: All code changes go through PR
+3. **Merge with admin bypass**: `gh pr merge <number> --merge --admin` (solo development - author cannot self-approve)
+4. **Update BACKLOG.md**: Track PR status and task completion
+5. **Monitor milestones**: Ensure branches are merged on schedule
 
 **Your responsibility**: Enforce this workflow and update project status.
 
