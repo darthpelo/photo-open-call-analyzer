@@ -10,6 +10,7 @@ import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
 import { logger } from '../utils/logger.js';
 import { readJson, fileExists, writeJson, projectPath } from '../utils/file-utils.js';
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
+import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
 import { join } from 'path';
 import ora from 'ora';
 
@@ -290,10 +291,41 @@ program
     }
   });
 
+/**
+ * Validate analysis prompt quality (FR-2.4 Phase 3)
+ */
+program
+  .command('validate-prompt <project-dir>')
+  .description('Validate quality of generated analysis prompt')
+  .option('--verbose', 'Show detailed validation information')
+  .option('--no-auto-fix', 'Disable automatic fixes')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('PROMPT QUALITY VALIDATION');
+
+      const result = await validateProjectPrompt(projectDir, {
+        verbose: options.verbose || false,
+        autoFix: options.autoFix !== false
+      });
+
+      if (!result.valid) {
+        process.exit(1);
+      }
+
+      logger.success('✅ Prompt quality validation passed!');
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze analyze <project-dir>'?");
-  logger.info("Available commands: analyze, validate");
+  logger.info("Available commands: analyze, analyze-single, validate, validate-prompt");
   process.exit(1);
 });
 
