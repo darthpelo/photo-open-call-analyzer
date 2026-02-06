@@ -11,6 +11,7 @@ import { logger } from '../utils/logger.js';
 import { readJson, fileExists, writeJson, projectPath } from '../utils/file-utils.js';
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
+import { comparePrompts } from '../validation/ab-testing-framework.js';
 import { join } from 'path';
 import ora from 'ora';
 
@@ -322,10 +323,71 @@ program
     }
   });
 
+/**
+ * A/B test prompt variants (FR-2.4 Phase 3 Story 3.2)
+ */
+program
+  .command('test-prompt')
+  .description('A/B test two prompt variants on a photo sample')
+  .requiredOption('--baseline <path>', 'Path to baseline prompt JSON')
+  .requiredOption('--variant <path>', 'Path to variant prompt JSON')
+  .requiredOption('--photos <dir>', 'Directory containing photos')
+  .option('--sample <n>', 'Number of photos to test (default: 3)', '3')
+  .option('--output <path>', 'Output path for report (default: ./ab-test-report.json)', './ab-test-report.json')
+  .option('--timeout <seconds>', 'Timeout per photo in seconds (default: 60)', '60')
+  .action(async (options) => {
+    try {
+      logger.section('A/B TESTING');
+
+      const sampleSize = parseInt(options.sample, 10);
+      const timeout = parseInt(options.timeout, 10) * 1000;
+
+      if (isNaN(sampleSize) || sampleSize < 1 || sampleSize > 50) {
+        logger.error('Sample size must be between 1 and 50');
+        process.exit(1);
+      }
+
+      logger.info(`Comparing prompts on ${sampleSize} photos`);
+      logger.info(`Baseline: ${options.baseline}`);
+      logger.info(`Variant:  ${options.variant}`);
+
+      const report = await comparePrompts(
+        options.baseline,
+        options.variant,
+        options.photos,
+        {
+          sample: sampleSize,
+          timeout,
+          analysisMode: 'single' // Use single-stage for speed
+        }
+      );
+
+      // Display summary
+      logger.section('RESULTS');
+      logger.info(`Winner: ${report.winner.winner.toUpperCase()} (confidence: ${report.winner.confidence})`);
+      logger.info(`Baseline avg: ${report.baseline.avgScore}, Variant avg: ${report.variant.avgScore}`);
+      logger.info(`Score delta: ${report.comparison.scoreDelta > 0 ? '+' : ''}${report.comparison.scoreDelta}`);
+
+      console.log('\nRecommendations:');
+      report.recommendations.forEach(rec => console.log(`  ${rec}`));
+
+      // Export report
+      writeJson(options.output, report);
+      logger.success(`Full report saved to: ${options.output}`);
+
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze analyze <project-dir>'?");
-  logger.info("Available commands: analyze, analyze-single, validate, validate-prompt");
+  logger.info("Available commands: analyze, analyze-single, validate, validate-prompt, test-prompt");
   process.exit(1);
 });
 
