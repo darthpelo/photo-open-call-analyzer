@@ -12,12 +12,46 @@ import { readJson, fileExists, writeJson, projectPath } from '../utils/file-util
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
 import { comparePrompts } from '../validation/ab-testing-framework.js';
+import { runInitWizard } from './init-wizard.js';
 import { join } from 'path';
 import ora from 'ora';
 
 const program = new Command();
 
 program.name('photo-analyzer').description('AI-powered photo analysis for photography competitions').version('1.0.0');
+
+/**
+ * Project initialization wizard (FR-3.4)
+ */
+program
+  .command('init [project-name]')
+  .description('Create a new open call project with guided setup')
+  .option('-t, --template <type>', 'Use template (portrait, landscape, conceptual, street, custom)')
+  .option('--non-interactive', 'Skip interactive prompts (requires --template)')
+  .action(async (projectName, options) => {
+    try {
+      if (options.nonInteractive && !options.template) {
+        logger.error('--non-interactive requires --template option');
+        process.exit(1);
+      }
+
+      const result = await runInitWizard({
+        projectName,
+        template: options.template,
+        interactive: !options.nonInteractive
+      });
+
+      if (!result.success) {
+        process.exit(1);
+      }
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
 
 /**
  * Main analyze command
@@ -32,7 +66,7 @@ program
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
   .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
   .option('--show-tiers', 'Display tier breakdown in terminal')
-  .option('--analysis-mode <mode>', 'Analysis mode: single or multi (default: multi)', 'multi')
+  .option('--analysis-mode <mode>', 'Analysis mode: single or multi (default: single)', 'single')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -386,8 +420,8 @@ program
 
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
-  logger.info("Did you mean 'npm run analyze analyze <project-dir>'?");
-  logger.info("Available commands: analyze, analyze-single, validate, validate-prompt, test-prompt");
+  logger.info("Did you mean 'npm run analyze <command>'?");
+  logger.info("Available commands: init, analyze, analyze-single, validate, validate-prompt, test-prompt");
   process.exit(1);
 });
 

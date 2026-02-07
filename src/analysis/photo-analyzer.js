@@ -501,7 +501,7 @@ export async function analyzePhotoWithTimeout(photoPath, analysisPrompt, options
       // Timeout promise (longer for multi-stage)
       new Promise((_, reject) => {
         const actualTimeout = analysisMode === 'multi' || analysisMode === 'multi-stage'
-          ? timeout * 1.5 // 50% longer for multi-stage
+          ? timeout * 4.0 // 4x for multi-stage (Stage 1 + 4 criteria + Stage 3)
           : timeout;
         setTimeout(() => reject(new Error('TIMEOUT')), actualTimeout);
       })
