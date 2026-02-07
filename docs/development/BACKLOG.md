@@ -78,6 +78,25 @@
 | Parallel processing optimization (FR-3.8) | Dev | 📋 Planned | Dynamic concurrency |
 | Model selection (FR-3.9) | Dev | 📋 Planned | llava:13b, moondream, bakllava |
 | Historical winner learning (FR-3.10) | Dev + Art Critic | 📋 Planned | Pattern extraction |
+| Polaroid Set Analysis (FR-3.11) | Dev + Art Critic | 🟡 In Progress | Set-level photo group evaluation |
+
+### FR-3.11: Polaroid Set Analysis (Sub-tasks)
+
+| Sub-task | Owner | Status | Note |
+|----------|-------|--------|------|
+| `setMode` in open-call.json + polaroid template | Dev | 📋 Planned | Configuration schema for set-based analysis |
+| `set-analyzer.js` | Dev | 📋 Planned | Core set cohesion and narrative analysis |
+| `set-prompt-builder.js` | Dev + Art Critic | 📋 Planned | Set-specific prompt generation |
+| `combination-generator.js` | Dev | 📋 Planned | Generate candidate photo groupings (C(n,k)) |
+| `set-score-aggregator.js` | Dev | 📋 Planned | Aggregate and rank set-level scores |
+| CLI: `analyze-set` command | Dev | 📋 Planned | Analyze a specific set of photos |
+| CLI: `suggest-sets` command | Dev | 📋 Planned | Auto-suggest best photo combinations |
+| Set analysis reports (MD/JSON/CSV) | Dev | 📋 Planned | Multi-format set-level reports |
+| TDD: set-analyzer.test.js | QA + Dev | 📋 Planned | Full coverage for set analyzer |
+| TDD: set-prompt-builder.test.js | QA + Dev | 📋 Planned | Full coverage for prompt builder |
+| TDD: combination-generator.test.js | QA + Dev | 📋 Planned | Full coverage for combination generator |
+| TDD: set-score-aggregator.test.js | QA + Dev | 📋 Planned | Full coverage for score aggregator |
+| TDD: CLI integration tests | QA + Dev | 📋 Planned | analyze-set + suggest-sets commands |
 
 ---
 

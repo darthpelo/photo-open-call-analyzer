@@ -79,6 +79,42 @@ const TEMPLATES = {
     }
   },
 
+  polaroid: {
+    id: 'polaroid',
+    name: 'Polaroid Set Exhibition',
+    description: 'Competitions requiring photo sets in dialogue (Polaroid Open Call style)',
+    config: {
+      title: 'Polaroid Open Call',
+      theme: 'Create a cohesive series of photographs that dialogue with each other, building a visual narrative around the theme. Each photo should contribute a unique perspective while maintaining stylistic and tonal coherence with the set.',
+      jury: [
+        'Contemporary photography curator',
+        'Polaroid brand creative director',
+        'Fine art photography professor'
+      ],
+      pastWinners: 'Winning sets demonstrated strong visual coherence while each photo added a unique voice. Successful submissions showed consistent color palettes or tonal qualities, clear narrative progression, and meaningful thematic connections between images. Sets where photos created a dialogue — contrasting yet complementary — scored highest. Technical consistency across all photos was expected.',
+      context: 'This competition requires submitting a set of photos (typically 4) that work together as a cohesive body of work. Individual photo quality matters, but the strength of the set as a whole is paramount. Judges evaluate how photos dialogue with each other and collectively represent the theme.',
+      customCriteria: [
+        { name: 'Theme Interpretation', weight: 25, description: 'How effectively each photo interprets and contributes to the theme' },
+        { name: 'Technical Quality', weight: 25, description: 'Technical excellence in exposure, focus, and processing consistency' },
+        { name: 'Creativity', weight: 25, description: 'Originality of vision and creative approach to the subject' },
+        { name: 'Visual Impact', weight: 25, description: 'Immediate emotional and aesthetic impact of each image' }
+      ],
+      setMode: {
+        enabled: true,
+        setSize: 4,
+        setCriteria: [
+          { name: 'Visual Coherence', weight: 25, description: 'Consistency of style, color palette, tonal quality, and aesthetic approach across all photos' },
+          { name: 'Thematic Dialogue', weight: 30, description: 'How the photos converse with each other, building upon or contrasting themes meaningfully' },
+          { name: 'Narrative Arc', weight: 25, description: 'Whether the set tells a story or creates a journey from first to last photo' },
+          { name: 'Complementarity', weight: 20, description: 'How each photo adds unique value to the set without redundancy' }
+        ],
+        individualWeight: 40,
+        setWeight: 60,
+        maxSetsToEvaluate: 10
+      }
+    }
+  },
+
   street: {
     id: 'street',
     name: 'Street Photography',
@@ -135,6 +171,7 @@ export function getTemplateChoices() {
     { name: 'Landscape Photography', value: 'landscape', description: 'Competitions focused on nature, scenery, and environmental photography' },
     { name: 'Conceptual Photography', value: 'conceptual', description: 'Competitions focused on creative concepts, storytelling, and artistic expression' },
     { name: 'Street Photography', value: 'street', description: 'Competitions focused on candid urban life, documentary, and decisive moments' },
+    { name: 'Polaroid Set Exhibition', value: 'polaroid', description: 'Competitions requiring photo sets in dialogue (e.g., 4 photos for Polaroid)' },
     { name: 'Custom (blank template)', value: 'custom', description: 'Start with an empty template' }
   ];
 }

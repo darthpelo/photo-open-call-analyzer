@@ -239,6 +239,19 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Impact**: AI learns what works for specific photographers
 
+#### FR-3.11: Polaroid Set Analysis 🟡 IN PROGRESS
+- [ ] `setMode` configuration in `open-call.json` + polaroid template
+- [ ] Set-level photo group evaluation (typically 4 photos per set)
+- [ ] `set-analyzer.js`: Core set cohesion and narrative analysis
+- [ ] `set-prompt-builder.js`: Set-specific prompt generation
+- [ ] `combination-generator.js`: Generate candidate photo groupings
+- [ ] `set-score-aggregator.js`: Aggregate set-level scores
+- [ ] CLI commands: `analyze-set`, `suggest-sets`
+- [ ] Set analysis reports (Markdown, JSON, CSV)
+- [ ] Full TDD coverage for all new modules
+
+**Impact**: Support analyzing groups of photos as cohesive sets for Polaroid-style exhibitions, enabling photographers to find the best combination of photos that work together as a unified visual narrative
+
 ---
 
 ## Milestone 4 (M4): Web UI & User Experience ⚪ PLANNED
@@ -341,10 +354,11 @@ Create a tool to help photographers select their best photos for open calls, usi
 - Coverage thresholds enforced, pre-commit hooks active
 
 **Next Steps**:
-1. Implement analysis caching (FR-3.7)
-2. Parallel processing optimization (FR-3.8)
-3. Model selection & management (FR-3.9)
-4. Plan M4 Web UI architecture
+1. Complete Polaroid Set Analysis (FR-3.11)
+2. Implement analysis caching (FR-3.7)
+3. Parallel processing optimization (FR-3.8)
+4. Model selection & management (FR-3.9)
+5. Plan M4 Web UI architecture
 
 ---
 
@@ -391,6 +405,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 ## Changelog
 
+- **2026-02-07**: Added FR-3.11 Polaroid Set Analysis (set-level photo group evaluation for Polaroid-style exhibitions)
 - **2026-02-07**: Swapped M3/M4 priorities (Performance now M3, Web UI now M4). Added TDD enforcement and smart analysis mode as M3-Phase 1 deliverables (ADR-013, ADR-014)
 - **2026-02-06**: Updated M2 status to complete, added FR-2.4 metrics, M3 planning
 - **2026-01-28**: Added FR-2.3 completion status
