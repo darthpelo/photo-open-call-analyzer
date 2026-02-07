@@ -15,6 +15,7 @@ Photo Open Call Analyzer uses **Ollama with LLaVA** (local vision model) and a s
 - Deeply analyze open call requirements
 - Study past winners to understand jury preferences
 - Evaluate each submitted photo with objective, specific criteria
+- **Evaluate photo sets as cohesive groups** for Polaroid-style exhibitions (FR-3.11)
 - Generate a ranking with detailed feedback
 
 **100% local and free** - No API key required, no cost per analysis.
@@ -196,6 +197,40 @@ node src/cli/analyze.js analyze-single ./path/to/photo.jpg
    - `photo-analysis.json` - Structured data
    - `photo-analysis.csv` - For Excel/Sheets
 
+### Analyze a set of photos (Polaroid Mode)
+
+For competitions requiring photo sets "in dialogue" (e.g. Polaroid Open Call):
+
+1. **Initialize with Polaroid template**
+   ```bash
+   node src/cli/analyze.js init my-polaroid --template polaroid
+   ```
+
+2. **Copy your photos**
+   ```bash
+   cp ~/Pictures/selection/*.jpg data/open-calls/my-polaroid/photos/
+   ```
+
+3. **Analyze a specific set**
+   ```bash
+   node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/ \
+     --photos photo1.jpg photo2.jpg photo3.jpg photo4.jpg
+   ```
+
+4. **Or find the optimal sets automatically**
+   ```bash
+   # First run individual analysis
+   node src/cli/analyze.js analyze data/open-calls/my-polaroid/
+
+   # Then find the best photo combinations
+   node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 5
+   ```
+
+5. **View results** in `./results/`:
+   - `set-analysis.md` - Set ranking and recommendations
+   - `set-analysis.json` - Structured set data
+   - `set-analysis.csv` - Set scores for spreadsheets
+
 ### Validate Prompt Quality (Recommended)
 
 Before running expensive batch analysis, validate your criteria:
@@ -334,11 +369,16 @@ photo-open-call-analyzer/
 │   ├── analysis/                 # Core analysis
 │   │   ├── photo-analyzer.js    # Ollama/LLaVA analysis
 │   │   ├── prompt-generator.js  # Criteria generation
-│   │   └── score-aggregator.js  # Score aggregation
+│   │   ├── score-aggregator.js  # Score aggregation
+│   │   ├── set-analyzer.js      # Multi-image set analysis (FR-3.11)
+│   │   ├── set-prompt-builder.js # Set-level prompt generation
+│   │   └── set-score-aggregator.js # Composite set scoring
 │   ├── processing/
-│   │   └── batch-processor.js   # Batch processing
+│   │   ├── batch-processor.js   # Batch processing
+│   │   └── combination-generator.js # C(N,K) set combinations
 │   ├── output/
-│   │   └── report-generator.js  # Report export
+│   │   ├── report-generator.js  # Report export
+│   │   └── set-report-generator.js # Set reports (MD/JSON/CSV)
 │   ├── cli/
 │   │   └── analyze.js           # CLI commands
 │   └── utils/
@@ -402,6 +442,30 @@ npm run analyze test-prompt \
 #   --sample <n>           # Number of photos to test (default: 3)
 ```
 
+### Set Analysis Commands (New in FR-3.11)
+
+```bash
+# Analyze a specific set of photos as a group
+npm run analyze analyze-set data/open-calls/project-name/ \
+  --photos photo1.jpg photo2.jpg photo3.jpg photo4.jpg
+
+# Options:
+#   --photos <paths...>     # Photo filenames (required, space-separated)
+#   --skip-individual       # Skip individual analysis (use existing results)
+#   --timeout <seconds>     # Timeout per analysis (default: 120)
+#   -o, --output <dir>      # Output directory (default: ./results)
+
+# Find optimal photo sets from previously analyzed photos
+npm run analyze suggest-sets data/open-calls/project-name/ --top 5
+
+# Options:
+#   -n, --top <n>           # Number of top sets to suggest (default: 5)
+#   --skip-vision           # Skip vision evaluation (pre-scoring only, faster)
+#   --max-candidates <n>    # Max sets to evaluate with vision model (default: 10)
+#   --timeout <seconds>     # Timeout per set evaluation (default: 120)
+#   -o, --output <dir>      # Output directory (default: ./results)
+```
+
 ### Analysis Modes
 
 **Single-stage** (faster, ~20-30s per photo):
@@ -429,7 +493,7 @@ npm run analyze analyze project/
 npm run analyze analyze project/ --template wildlife
 ```
 
-Available templates: `portrait`, `landscape`, `wildlife`, `conceptual`, `documentary`, `generic`
+Available templates: `portrait`, `landscape`, `wildlife`, `conceptual`, `documentary`, `generic`, `polaroid` (set mode)
 
 ---
 
@@ -454,6 +518,43 @@ ollama pull llava:13b
 OLLAMA_MODEL=llava:13b node src/cli/analyze.js analyze ./my-project/
 ```
 
+### Set Mode Configuration (Polaroid)
+
+For competitions requiring photo sets, add `setMode` to your `open-call.json`:
+
+```json
+{
+  "title": "Polaroid Open Call 2026",
+  "theme": "Boundaries & Transitions",
+  "jury": ["..."],
+  "setMode": {
+    "enabled": true,
+    "setSize": 4,
+    "setCriteria": [
+      { "name": "Visual Coherence", "weight": 25, "description": "Style, palette, tonal consistency" },
+      { "name": "Thematic Dialogue", "weight": 30, "description": "Inter-photo conversation" },
+      { "name": "Narrative Arc", "weight": 25, "description": "Story progression across photos" },
+      { "name": "Complementarity", "weight": 20, "description": "Each photo adds unique value" }
+    ],
+    "individualWeight": 40,
+    "setWeight": 60,
+    "maxSetsToEvaluate": 10
+  }
+}
+```
+
+Or use the `polaroid` template which pre-configures everything:
+```bash
+node src/cli/analyze.js init my-project --template polaroid
+```
+
+The **composite score** is calculated as:
+```
+compositeScore = (individualWeight × avgPhotoScore + setWeight × setScore) / 100
+```
+
+Default weights: 40% individual quality, 60% set coherence.
+
 ---
 
 ## Evaluation Criteria
@@ -469,6 +570,7 @@ The system automatically generates competition-specific criteria using a **templ
 | **Wildlife** | Behavior capture, habitat context, timing, natural setting |
 | **Conceptual** | Originality, symbolism, artistic execution, visual impact |
 | **Documentary** | Storytelling, authenticity, social impact, ethical approach |
+| **Polaroid** | Visual coherence, thematic dialogue, narrative arc, complementarity (set mode) |
 | **Generic** | Balanced criteria for mixed or unclassified competitions |
 
 ### Example Criteria (Wildlife Template)
@@ -561,6 +663,16 @@ The final report includes:
 
 **Validation overhead**: +10-30 seconds (one-time, before batch)
 
+### Set Analysis Performance
+
+| Operation | Time Estimate |
+|-----------|--------------|
+| **Single set (4 photos)** | 60-120 seconds |
+| **suggest-sets (10 candidates)** | 10-20 minutes |
+| **suggest-sets --skip-vision** | 5-10 seconds |
+
+Set analysis sends all images in a single Ollama call, which requires more VRAM. For best results with sets, use `llava:13b` or larger models.
+
 ---
 
 ## Troubleshooting
@@ -619,13 +731,20 @@ ollama pull llava:7b
 - 🎯 **40% more detailed feedback** (avg 300 → 420 chars)
 - 🎯 **Validation prevents wasted time** (catch issues before 30-min analysis)
 
-### Milestone 3 (M3) - User Experience (In Planning)
-- [ ] Web UI for results visualization
-- [ ] Side-by-side photo comparison
-- [ ] Interactive prompt refinement
-- [ ] RAW file support
+### Milestone 3 (M3) - Set Analysis & UX ✅
+- [x] **FR-3.11**: Polaroid Set Analysis (photo groups "in dialogue")
+  - [x] Multi-image Ollama vision analysis
+  - [x] Combination optimization (C(N,K) with diversity pre-filtering)
+  - [x] Composite scoring (individual + set weighted)
+  - [x] `analyze-set` and `suggest-sets` CLI commands
+  - [x] `polaroid` template with set mode pre-configured
+  - [x] Set reports (MD/JSON/CSV)
+  - [x] ADR-015 architecture decision
+- [x] **FR-3.4**: Guided project initialization wizard
 
 ### Future (M4+) - Advanced Features
+- [ ] Web UI for results visualization
+- [ ] Side-by-side photo comparison
 - [ ] Historical winner pattern learning
 - [ ] AI-powered photo improvement suggestions
 - [ ] Platform integration (Picter, PhotoShelter)
@@ -646,6 +765,7 @@ ollama pull llava:7b
   - [ADR-009: Multi-Stage Prompting](docs/architecture/ADR-009-multi-stage-prompting.md)
   - [ADR-010: Template-Based Prompt Engineering](docs/architecture/ADR-010-template-based-prompt-engineering.md)
   - [ADR-011: Criteria Validation System](docs/architecture/ADR-011-criteria-validation-system.md)
+  - [ADR-015: Set Analysis / Polaroid Mode](docs/architecture/ADR-015-set-analysis.md)
 
 ### Development
 - **[Development Docs](docs/development/)** - ROADMAP, BACKLOG, agent collaboration
