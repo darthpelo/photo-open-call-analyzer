@@ -1,6 +1,6 @@
 import { readdirSync, statSync } from 'fs';
 import { join, dirname } from 'path';
-import { analyzePhoto, analyzePhotoWithTimeout } from '../analysis/photo-analyzer.js';
+import { analyzePhoto, analyzePhotoWithTimeout, smartSelectAnalysisMode } from '../analysis/photo-analyzer.js';
 import { logger } from '../utils/logger.js';
 import { writeJson } from '../utils/file-utils.js';
 import {
@@ -29,7 +29,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     skipExisting = false,
     checkpointInterval = 10,
     clearCheckpoint = false,
-    analysisMode = 'multi' // FR-2.4 Phase 2: default to multi-stage analysis
+    analysisMode = 'auto' // ADR-014: smart auto-selection as default
   } = options;
 
   // Determine project directory (parent of photos directory)
@@ -123,6 +123,19 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
   // Get timeout from options (FR-2.3)
   const photoTimeout = options.photoTimeout || 60000; // Default 60s
 
+  // Resolve analysis mode: auto-select if mode is 'auto' (ADR-014)
+  let effectiveMode = analysisMode;
+  if (analysisMode === 'auto') {
+    effectiveMode = smartSelectAnalysisMode({
+      photoCount: photosToAnalyze.length,
+      timeoutMs: photoTimeout,
+      criteriaCount: analysisPrompt.criteria?.length || 5
+    });
+    logger.info(`Auto-selected analysis mode: ${effectiveMode} ` +
+      `(${photosToAnalyze.length} photos, ${analysisPrompt.criteria?.length || 5} criteria, ` +
+      `${photoTimeout / 1000}s timeout)`);
+  }
+
   // Process photos in parallel batches
   for (let i = 0; i < photosToAnalyze.length; i += parallel) {
     const batch = photosToAnalyze.slice(i, i + parallel);
@@ -148,10 +161,10 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
           logger.debug(`⚠️ ${photo.name}: ${validation.warning}`);
         }
 
-        // 2. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4)
+        // 2. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4) + AUTO (ADR-014)
         const analysisResult = await analyzePhotoWithTimeout(photo.path, analysisPrompt, {
           timeout: photoTimeout,
-          analysisMode // Pass analysis mode (single or multi-stage)
+          analysisMode: effectiveMode // Pass resolved mode (never 'auto')
         });
 
         if (analysisResult.success) {

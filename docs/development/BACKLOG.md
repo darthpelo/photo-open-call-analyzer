@@ -57,35 +57,46 @@
 
 ---
 
-## Milestone 3: User Experience 🟡 Planning
+## Milestone 3: Performance & Optimization 🟡 In Progress
+
+### 🔴 P0 - Critical (Complete)
+
+| Task | Owner | Status | Completion Date | Note |
+|------|-------|--------|-----------------|------|
+| TDD enforcement (ADR-013) | Dev | ✅ Done | 2026-02 | Coverage thresholds, husky, lint-staged |
+| photo-analyzer.test.js | QA + Dev | ✅ Done | 2026-02 | 0% -> 98.8% coverage, 39 tests |
+| api-client.test.js extension | QA + Dev | ✅ Done | 2026-02 | 35% -> 100% coverage, 17 tests |
+| Smart analysis mode (ADR-014) | Dev | ✅ Done | 2026-02 | smartSelectAnalysisMode(), auto default |
+| FIX-3: Parallelize Stage 2 | Dev | ✅ Done | 2026-02 | Promise.all(), ~50% speedup |
+| Fix batch-processor default | Dev | ✅ Done | 2026-02 | multi -> auto |
 
 ### 🟠 P1 - High Priority
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Web UI results visualization (FR-3.1) | Dev + Designer | 📋 Planned | React + Vite, ranked grid |
-| Analysis management dashboard (FR-3.2) | Dev | 📋 Planned | Multi-project management |
-| Interactive prompt refinement | Dev | 📋 Planned | Deferred from FR-2.4 |
+| Analysis caching (FR-3.7) | Dev | 📋 Planned | ~50% time savings on re-runs |
+| Parallel processing optimization (FR-3.8) | Dev | 📋 Planned | Dynamic concurrency |
+| Model selection (FR-3.9) | Dev | 📋 Planned | llava:13b, moondream, bakllava |
+| Historical winner learning (FR-3.10) | Dev + Art Critic | 📋 Planned | Pattern extraction |
+
+---
+
+## Milestone 4: Web UI & User Experience 🟢 Future
+
+### 🟠 P1 - High Priority
+
+| Task | Owner | Status | Note |
+|------|-------|--------|------|
+| Web UI results visualization (FR-4.1) | Dev + Designer | 📋 Backlog | React + Vite, ranked grid |
+| Analysis management dashboard (FR-4.2) | Dev | 📋 Backlog | Multi-project management |
+| Interactive prompt refinement (FR-4.5) | Dev | 📋 Backlog | Deferred from FR-2.4 |
 
 ### 🟡 P2 - Medium Priority
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
-| Dark mode + responsive UI (FR-3.3) | Designer | 📋 Planned | WCAG 2.1 AA compliance |
-| Side-by-side photo comparison | Dev | 📋 Planned | 2-3 photo comparison |
-
----
-
-## Milestone 4: Performance & Optimization 🟢 Future
-
-### 🟢 P3 - Future
-
-| Task | Owner | Status | Note |
-|------|-------|--------|------|
-| Analysis caching (FR-4.1) | Dev | 📋 Backlog | ~50% time savings on re-runs |
-| Parallel processing optimization (FR-4.2) | Dev | 📋 Backlog | Dynamic concurrency |
-| Model selection (FR-4.3) | Dev | 📋 Backlog | llava:13b, moondream, bakllava |
-| Historical winner learning (FR-4.4) | Dev + Art Critic | 📋 Backlog | Pattern extraction |
+| Dark mode + responsive UI (FR-4.3) | Designer | 📋 Backlog | WCAG 2.1 AA compliance |
+| Side-by-side photo comparison | Dev | 📋 Backlog | 2-3 photo comparison |
 
 ### Future Enhancements
 

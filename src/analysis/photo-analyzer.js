@@ -295,8 +295,8 @@ export async function analyzePhotoMultiStage(photoPath, analysisPrompt, options 
     const understandingText = stage1Response.message.content;
     logger.debug(`Stage 1 complete (${understandingText.length} chars)`);
 
-    // STAGE 2: Criterion-by-criterion evaluation
-    logger.debug(`Stage 2: Evaluating ${stages.stage2.length} criteria...`);
+    // STAGE 2: Criterion-by-criterion evaluation (PARALLEL - FIX-3 / ADR-014)
+    logger.debug(`Stage 2: Evaluating ${stages.stage2.length} criteria in parallel...`);
     const stage2Prompts = injectStage1Output(stages.stage2, understandingText);
 
     const scores = {
@@ -304,25 +304,30 @@ export async function analyzePhotoMultiStage(photoPath, analysisPrompt, options 
       summary: {}
     };
 
-    // Evaluate each criterion
-    for (const criterionPrompt of stage2Prompts) {
-      logger.debug(`  Evaluating: ${criterionPrompt.criterion}`);
-
-      const criterionResponse = await client.chat({
-        model: model,
-        messages: [
-          {
-            role: 'user',
-            content: criterionPrompt.prompt,
-            images: [base64Image]
+    // Evaluate all criteria in parallel (Promise.all)
+    const criterionResponses = await Promise.all(
+      stage2Prompts.map(criterionPrompt => {
+        logger.debug(`  Queuing evaluation: ${criterionPrompt.criterion}`);
+        return client.chat({
+          model: model,
+          messages: [
+            {
+              role: 'user',
+              content: criterionPrompt.prompt,
+              images: [base64Image]
+            }
+          ],
+          options: {
+            temperature: criterionPrompt.temperature,
+            num_predict: criterionPrompt.maxTokens
           }
-        ],
-        options: {
-          temperature: criterionPrompt.temperature,
-          num_predict: criterionPrompt.maxTokens
-        }
-      });
+        });
+      })
+    );
 
+    // Process responses in order
+    criterionResponses.forEach((criterionResponse, index) => {
+      const criterionPrompt = stage2Prompts[index];
       const evaluationText = criterionResponse.message.content;
 
       // Parse score from response
@@ -360,7 +365,7 @@ export async function analyzePhotoMultiStage(photoPath, analysisPrompt, options 
           };
         }
       }
-    }
+    });
 
     // Calculate weighted average
     const weightedScores = Object.entries(scores.individual)
@@ -528,6 +533,41 @@ export async function analyzePhotoWithTimeout(photoPath, analysisPrompt, options
     // Other error - re-throw
     throw error;
   }
+}
+
+/**
+ * Intelligently selects analysis mode based on runtime context (ADR-014).
+ *
+ * Uses weighted scoring across three signals: photo count, timeout,
+ * and criteria count to determine the optimal trade-off between
+ * quality (multi-stage) and speed (single-stage).
+ *
+ * @param {Object} context
+ * @param {number} context.photoCount - Number of photos to analyze
+ * @param {number} context.timeoutMs - Per-photo timeout in milliseconds
+ * @param {number} context.criteriaCount - Number of evaluation criteria
+ * @returns {string} 'single' or 'multi'
+ */
+export function smartSelectAnalysisMode(context) {
+  const { photoCount, timeoutMs, criteriaCount } = context;
+
+  let multiScore = 0;
+  let singleScore = 0;
+
+  // Photo count signal (weight: 2)
+  if (photoCount <= 5) multiScore += 2;
+  else if (photoCount > 10) singleScore += 2;
+  else multiScore += 1;
+
+  // Timeout signal (weight: 1-2)
+  if (timeoutMs >= 240000) multiScore += 1;
+  else if (timeoutMs < 120000) singleScore += 2;
+
+  // Criteria count signal (weight: 1)
+  if (criteriaCount <= 6) multiScore += 1;
+  else singleScore += 1;
+
+  return multiScore >= singleScore ? 'multi' : 'single';
 }
 
 export { getDefaultCriteria };
