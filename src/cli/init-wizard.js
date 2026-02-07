@@ -290,13 +290,16 @@ async function promptCustomConfig() {
     customCriteria = await promptCustomCriteria([]);
   }
 
+  const setMode = await promptSetMode();
+
   return {
     title,
     theme,
     jury,
     pastWinners,
     ...(context && { context }),
-    ...(customCriteria && customCriteria.length > 0 && { customCriteria })
+    ...(customCriteria && customCriteria.length > 0 && { customCriteria }),
+    ...(setMode && { setMode })
   };
 }
 
@@ -381,7 +384,8 @@ async function promptTemplateCustomization(template, isInteractive = true) {
     jury,
     pastWinners,
     ...(config.context && { context: config.context }),
-    ...(config.customCriteria && { customCriteria: config.customCriteria })
+    ...(config.customCriteria && { customCriteria: config.customCriteria }),
+    ...(config.setMode && { setMode: config.setMode })
   };
 }
 
@@ -519,6 +523,64 @@ async function promptCustomCriteria(existing = []) {
 }
 
 /**
+ * Prompt for set mode configuration (Polaroid-style photo sets)
+ * @returns {Promise<Object|undefined>} Set mode configuration or undefined if not enabled
+ */
+async function promptSetMode() {
+  const enableSetMode = await confirm({
+    message: 'Does this competition require submitting a set/group of photos?',
+    default: false
+  });
+
+  if (!enableSetMode) {
+    return undefined;
+  }
+
+  logger.section('SET MODE CONFIGURATION');
+
+  const setSizeStr = await input({
+    message: 'How many photos per set?',
+    default: '4',
+    validate: (value) => {
+      const num = parseInt(value, 10);
+      if (isNaN(num) || num < 2 || num > 10) {
+        return 'Set size must be a number between 2 and 10';
+      }
+      return true;
+    }
+  });
+  const setSize = parseInt(setSizeStr, 10);
+
+  const useDefaultSetCriteria = await confirm({
+    message: 'Use default set criteria (Visual Coherence, Thematic Dialogue, Narrative Arc, Complementarity)?',
+    default: true
+  });
+
+  let setCriteria;
+  if (!useDefaultSetCriteria) {
+    setCriteria = await promptCustomCriteria([]);
+  } else {
+    setCriteria = [
+      { name: 'Visual Coherence', weight: 25, description: 'Consistency of style, color palette, tonal quality, and aesthetic approach across all photos' },
+      { name: 'Thematic Dialogue', weight: 30, description: 'How the photos converse with each other, building upon or contrasting themes meaningfully' },
+      { name: 'Narrative Arc', weight: 25, description: 'Whether the set tells a story or creates a journey from first to last photo' },
+      { name: 'Complementarity', weight: 20, description: 'How each photo adds unique value to the set without redundancy' }
+    ];
+  }
+
+  logger.success(`Set mode enabled: ${setSize} photos per set`);
+
+  return {
+    enabled: true,
+    setSize,
+    ...(setCriteria && setCriteria.length > 0 && { setCriteria }),
+    individualWeight: 40,
+    setWeight: 60,
+    maxSetsToEvaluate: 10
+  };
+}
+
+/**
  * Display formatted configuration summary
  * @param {Object} config - Open call configuration
  */
@@ -541,6 +603,19 @@ function displayConfigSummary(config) {
       const weightStr = criterion.weight ? ` (weight: ${criterion.weight})` : '';
       logger.info(`  ${i + 1}. ${criterion.name}${weightStr}`);
     });
+  }
+
+  if (config.setMode && config.setMode.enabled) {
+    logger.info(chalk.bold('Set Mode: ') + chalk.green('Enabled'));
+    logger.info(`  Photos per set: ${config.setMode.setSize || 4}`);
+    logger.info(`  Scoring: ${config.setMode.individualWeight || 40}% individual + ${config.setMode.setWeight || 60}% set`);
+    if (config.setMode.setCriteria && config.setMode.setCriteria.length > 0) {
+      logger.info(`  Set Criteria: ${config.setMode.setCriteria.length} defined`);
+      config.setMode.setCriteria.forEach((criterion, i) => {
+        const weightStr = criterion.weight ? ` (weight: ${criterion.weight})` : '';
+        logger.info(`    ${i + 1}. ${criterion.name}${weightStr}`);
+      });
+    }
   }
 
   console.log(); // Empty line for spacing

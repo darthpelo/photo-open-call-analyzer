@@ -7,13 +7,17 @@ import { aggregateScores, integrateSmartTiering } from '../analysis/score-aggreg
 import { exportReports } from '../output/report-generator.js';
 import { displayTierSummary, displayTierDetails, displayTierRecommendations } from './tier-display.js';
 import { generateAnalysisPrompt } from '../analysis/prompt-generator.js';
+import { analyzeSet, analyzeSetWithTimeout } from '../analysis/set-analyzer.js';
+import { aggregateSetScores, rankSets } from '../analysis/set-score-aggregator.js';
+import { selectCandidateSets, countCombinations } from '../processing/combination-generator.js';
+import { exportSetReports } from '../output/set-report-generator.js';
 import { logger } from '../utils/logger.js';
 import { readJson, fileExists, writeJson, projectPath } from '../utils/file-utils.js';
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
 import { comparePrompts } from '../validation/ab-testing-framework.js';
 import { runInitWizard } from './init-wizard.js';
-import { join } from 'path';
+import { join, basename } from 'path';
 import ora from 'ora';
 
 const program = new Command();
@@ -418,10 +422,358 @@ program
     }
   });
 
+/**
+ * Analyze a specific set of photos as a group (FR-3.11)
+ */
+program
+  .command('analyze-set <project-dir>')
+  .description('Analyze a predefined set of photos as a cohesive group (Polaroid mode)')
+  .requiredOption('--photos <paths...>', 'Photo filenames (space-separated, relative to project photos dir)')
+  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('--skip-individual', 'Skip individual analysis (use existing results)')
+  .option('--timeout <seconds>', 'Timeout per analysis in seconds (30-300)', '120')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('SET ANALYSIS (Polaroid Mode)');
+
+      const configFile = join(projectDir, 'open-call.json');
+      const photosDir = join(projectDir, 'photos');
+      const promptFile = join(projectDir, 'analysis-prompt.json');
+
+      if (!fileExists(configFile)) {
+        logger.error(`Configuration file not found: ${configFile}`);
+        process.exit(1);
+      }
+
+      // Load and validate config
+      const configResult = await loadOpenCallConfig(configFile);
+      if (!configResult.success) {
+        logger.error('Configuration validation failed:');
+        console.log(formatValidationErrors(configResult.validation.errors));
+        process.exit(1);
+      }
+
+      const config = configResult.data;
+      const setConfig = config.setMode || { enabled: true, setSize: options.photos.length };
+
+      if (!setConfig.setCriteria) {
+        const { getDefaultSetCriteria } = await import('../analysis/set-prompt-builder.js');
+        setConfig.setCriteria = getDefaultSetCriteria();
+      }
+
+      // Validate photo count matches set size
+      const expectedSize = setConfig.setSize || options.photos.length;
+      if (options.photos.length !== expectedSize) {
+        logger.warn(`Expected ${expectedSize} photos for set, got ${options.photos.length}`);
+      }
+
+      // Resolve photo paths
+      const photoPaths = options.photos.map(p => join(photosDir, p));
+      for (const photoPath of photoPaths) {
+        if (!fileExists(photoPath)) {
+          logger.error(`Photo not found: ${photoPath}`);
+          process.exit(1);
+        }
+      }
+
+      // Load or generate analysis prompt
+      let analysisPrompt;
+      if (fileExists(promptFile)) {
+        analysisPrompt = readJson(promptFile);
+      } else {
+        logger.info('Generating analysis prompt...');
+        analysisPrompt = await generateAnalysisPrompt(config);
+        writeJson(promptFile, analysisPrompt);
+      }
+
+      // Phase 1: Individual analysis (unless skipped)
+      let individualResults = [];
+      if (!options.skipIndividual) {
+        logger.section('INDIVIDUAL ANALYSIS');
+        for (const photoPath of photoPaths) {
+          const spinner = ora(`Analyzing ${basename(photoPath)}...`).start();
+          try {
+            const result = await analyzePhoto(photoPath, analysisPrompt);
+            const score = result.scores?.summary?.weighted_average || result.scores?.summary?.average || 0;
+            individualResults.push({
+              filename: basename(photoPath),
+              score,
+              scores: result.scores
+            });
+            spinner.succeed(`${basename(photoPath)}: ${score.toFixed(1)}/10`);
+          } catch (err) {
+            spinner.fail(`${basename(photoPath)}: failed (${err.message})`);
+            individualResults.push({ filename: basename(photoPath), score: 0 });
+          }
+        }
+      } else {
+        // Try to load from existing results
+        const resultsFile = join(projectDir, 'results', 'batch-results.json');
+        if (fileExists(resultsFile)) {
+          const batchResults = readJson(resultsFile);
+          const photoNames = options.photos.map(p => basename(p));
+          individualResults = (batchResults.results || [])
+            .filter(r => r.success && photoNames.includes(basename(r.photo)))
+            .map(r => ({
+              filename: basename(r.photo),
+              score: r.scores?.summary?.weighted_average || r.scores?.summary?.average || 0,
+              scores: r.scores
+            }));
+        }
+        logger.info(`Loaded ${individualResults.length} existing individual results`);
+      }
+
+      // Phase 2: Set analysis
+      logger.section('SET-LEVEL ANALYSIS');
+      const timeout = parseInt(options.timeout, 10) * 1000;
+      const spinner = ora('Analyzing photo set coherence...').start();
+
+      const setResult = await analyzeSetWithTimeout(
+        photoPaths, analysisPrompt, setConfig,
+        { timeout },
+        individualResults
+      );
+
+      if (!setResult.success) {
+        spinner.fail(setResult.timedOut ? 'Set analysis timed out' : `Set analysis failed: ${setResult.error}`);
+        process.exit(1);
+      }
+
+      spinner.succeed('Set analysis complete');
+
+      // Aggregate scores
+      const aggregated = aggregateSetScores(individualResults, setResult.data, setConfig);
+
+      // Display results
+      logger.section('SET RESULTS');
+      logger.info(`Composite Score: ${aggregated.compositeScore.toFixed(2)}/10`);
+      logger.info(`  Individual Average: ${aggregated.individualAverage.toFixed(2)}/10 (weight: ${aggregated.individualWeight}%)`);
+      logger.info(`  Set Score: ${aggregated.setWeightedAverage.toFixed(2)}/10 (weight: ${aggregated.setWeight}%)`);
+      logger.info(`Recommendation: ${aggregated.recommendation}`);
+
+      if (aggregated.suggestedOrder.length > 0) {
+        logger.info(`Suggested viewing order: ${aggregated.suggestedOrder.join(', ')}`);
+      }
+
+      // Set criteria scores
+      logger.section('SET CRITERIA SCORES');
+      for (const [name, data] of Object.entries(aggregated.setScores)) {
+        logger.info(`  ${name}: ${data.score}/10 (${data.weight}%)`);
+        if (data.reasoning) {
+          logger.info(`    ${data.reasoning}`);
+        }
+      }
+
+      // Export reports
+      const outputDir = join(projectDir, options.output);
+      exportSetReports(outputDir, [aggregated], null, setConfig, {
+        title: analysisPrompt.title,
+        theme: analysisPrompt.theme
+      });
+
+      logger.success(`Set analysis complete! Results saved to: ${outputDir}`);
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
+/**
+ * Suggest optimal photo sets from analyzed photos (FR-3.11)
+ */
+program
+  .command('suggest-sets <project-dir>')
+  .description('Find optimal photo sets from previously analyzed photos')
+  .option('-n, --top <n>', 'Number of top sets to suggest', '5')
+  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('--skip-vision', 'Skip vision-based set evaluation (use pre-scoring only)')
+  .option('--max-candidates <n>', 'Max sets to evaluate with vision model', '10')
+  .option('--timeout <seconds>', 'Timeout per set evaluation in seconds (30-300)', '120')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('SET SUGGESTION (Polaroid Mode)');
+
+      const configFile = join(projectDir, 'open-call.json');
+      const resultsFile = join(projectDir, 'results', 'batch-results.json');
+      const promptFile = join(projectDir, 'analysis-prompt.json');
+
+      if (!fileExists(configFile)) {
+        logger.error(`Configuration file not found: ${configFile}`);
+        process.exit(1);
+      }
+
+      if (!fileExists(resultsFile)) {
+        logger.error(`No batch results found. Run 'analyze' first.`);
+        logger.info(`Expected: ${resultsFile}`);
+        process.exit(1);
+      }
+
+      // Load config
+      const configResult = await loadOpenCallConfig(configFile);
+      if (!configResult.success) {
+        logger.error('Configuration validation failed:');
+        console.log(formatValidationErrors(configResult.validation.errors));
+        process.exit(1);
+      }
+
+      const config = configResult.data;
+      const setConfig = config.setMode || { enabled: true, setSize: 4 };
+      const setSize = setConfig.setSize || 4;
+
+      if (!setConfig.setCriteria) {
+        const { getDefaultSetCriteria } = await import('../analysis/set-prompt-builder.js');
+        setConfig.setCriteria = getDefaultSetCriteria();
+      }
+
+      // Load analysis prompt
+      let analysisPrompt;
+      if (fileExists(promptFile)) {
+        analysisPrompt = readJson(promptFile);
+      } else {
+        analysisPrompt = { title: config.title, theme: config.theme };
+      }
+
+      // Load individual results
+      const batchResults = readJson(resultsFile);
+      const rankedPhotos = (batchResults.results || [])
+        .filter(r => r.success)
+        .map(r => {
+          const score = r.scores?.summary?.weighted_average || r.scores?.summary?.average || 0;
+          const scores = {};
+          if (r.scores?.individual) {
+            for (const [name, data] of Object.entries(r.scores.individual)) {
+              scores[name] = data.score || 0;
+            }
+          }
+          return {
+            filename: basename(r.photo),
+            path: r.photo,
+            score,
+            scores
+          };
+        })
+        .sort((a, b) => b.score - a.score);
+
+      if (rankedPhotos.length < setSize) {
+        logger.error(`Need at least ${setSize} analyzed photos, found ${rankedPhotos.length}`);
+        process.exit(1);
+      }
+
+      const totalCombos = countCombinations(rankedPhotos.length, setSize);
+      logger.info(`Found ${rankedPhotos.length} analyzed photos`);
+      logger.info(`Set size: ${setSize} photos`);
+      logger.info(`Total possible combinations: ${totalCombos}`);
+
+      // Phase 1: Pre-filter and score combinations
+      logger.section('CANDIDATE SELECTION');
+      const maxCandidates = parseInt(options.maxCandidates, 10);
+      const preFilterTopN = Math.min(rankedPhotos.length, 12);
+
+      const spinner = ora(`Pre-scoring combinations from top ${preFilterTopN} photos...`).start();
+      const candidates = selectCandidateSets(rankedPhotos, setSize, {
+        maxSetsToEvaluate: maxCandidates,
+        preFilterTopN
+      });
+      spinner.succeed(`Selected ${candidates.length} candidate sets`);
+
+      // Phase 2: Vision-based evaluation (unless skipped)
+      const topN = parseInt(options.top, 10);
+      let evaluatedSets = [];
+
+      if (!options.skipVision) {
+        logger.section('SET EVALUATION');
+        const timeout = parseInt(options.timeout, 10) * 1000;
+        const setsToEvaluate = candidates.slice(0, maxCandidates);
+
+        for (let i = 0; i < setsToEvaluate.length; i++) {
+          const candidate = setsToEvaluate[i];
+          const photoNames = candidate.photos.map(p => p.filename).join(', ');
+          const evalSpinner = ora(`[${i + 1}/${setsToEvaluate.length}] Evaluating: ${photoNames}`).start();
+
+          const photoPaths = candidate.photos.map(p => {
+            if (p.path) return p.path;
+            return join(projectDir, 'photos', p.filename);
+          });
+
+          const setResult = await analyzeSetWithTimeout(
+            photoPaths, analysisPrompt, setConfig,
+            { timeout },
+            candidate.photos
+          );
+
+          if (setResult.success) {
+            const aggregated = aggregateSetScores(candidate.photos, setResult.data, setConfig);
+            aggregated.setId = `set-${i + 1}`;
+            evaluatedSets.push(aggregated);
+            evalSpinner.succeed(`Set ${i + 1}: ${aggregated.compositeScore.toFixed(2)}/10 - ${aggregated.recommendation}`);
+          } else {
+            evalSpinner.fail(`Set ${i + 1}: ${setResult.timedOut ? 'timeout' : setResult.error}`);
+          }
+        }
+      } else {
+        // Use pre-scores without vision evaluation
+        evaluatedSets = candidates.slice(0, topN).map((c, i) => ({
+          setId: `set-${i + 1}`,
+          compositeScore: c.preScore / setSize,
+          individualAverage: c.sumIndividualScore / setSize,
+          setWeightedAverage: 0,
+          photos: c.photos,
+          recommendation: 'Pre-scored (no vision evaluation)',
+          setScores: {},
+          suggestedOrder: [],
+          photoRoles: {}
+        }));
+      }
+
+      if (evaluatedSets.length === 0) {
+        logger.error('No sets were successfully evaluated');
+        process.exit(1);
+      }
+
+      // Rank and display
+      const ranked = rankSets(evaluatedSets);
+
+      logger.section('TOP SETS');
+      ranked.ranking.slice(0, topN).forEach(set => {
+        const photos = set.photos.map(p => p.filename).join(', ');
+        logger.info(`#${set.rank} [${set.compositeScore.toFixed(2)}/10] ${photos}`);
+        if (set.recommendation) {
+          logger.info(`   Recommendation: ${set.recommendation}`);
+        }
+      });
+
+      // Statistics
+      if (ranked.statistics.total > 1) {
+        logger.section('STATISTICS');
+        logger.info(`Sets evaluated: ${ranked.statistics.total}`);
+        logger.info(`Average score: ${ranked.statistics.average.toFixed(2)}`);
+        logger.info(`Score range: ${ranked.statistics.min.toFixed(2)} - ${ranked.statistics.max.toFixed(2)}`);
+      }
+
+      // Export reports
+      const outputDir = join(projectDir, options.output);
+      exportSetReports(outputDir, ranked.ranking, ranked.statistics, setConfig, {
+        title: analysisPrompt.title,
+        theme: analysisPrompt.theme
+      });
+
+      logger.success(`Set suggestions saved to: ${outputDir}`);
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, validate, validate-prompt, test-prompt");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt");
   process.exit(1);
 });
 

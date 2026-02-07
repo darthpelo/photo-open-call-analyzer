@@ -8,6 +8,7 @@ This tool helps photographers select their best photos to submit to open calls b
 - The open call theme and requirements
 - Jury preferences (based on past winners)
 - Each submitted photo against identified criteria
+- **Set-level coherence** for Polaroid-style exhibitions requiring photo groups in dialogue (FR-3.11)
 
 **Stack**: Node.js + Ollama (LLaVA) for local, free vision analysis.
 
@@ -58,6 +59,19 @@ mkdir -p data/open-calls/my-oc/photos
 node src/cli/analyze.js analyze data/open-calls/my-oc/
 ```
 
+### 5. Set Analysis (Polaroid Mode)
+```bash
+# Initialize with Polaroid template (setMode pre-configured)
+node src/cli/analyze.js init my-polaroid --template polaroid
+
+# Analyze a specific set of photos
+node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/ \
+  --photos photo1.jpg photo2.jpg photo3.jpg photo4.jpg
+
+# Find optimal sets from already-analyzed photos
+node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 5
+```
+
 ## Project Structure
 
 ```
@@ -77,9 +91,14 @@ photo-open-call-analyzer/
 │   ├── analysis/             # Photo analysis logic
 │   │   ├── photo-analyzer.js # Core with Ollama/LLaVA
 │   │   ├── prompt-generator.js
-│   │   └── score-aggregator.js
+│   │   ├── score-aggregator.js
+│   │   ├── set-analyzer.js       # Multi-image set analysis (FR-3.11)
+│   │   ├── set-prompt-builder.js # Set-level prompt generation
+│   │   └── set-score-aggregator.js # Composite set scoring
 │   ├── processing/           # Batch processing
+│   │   └── combination-generator.js # C(N,K) set combinations
 │   ├── output/               # Report generation
+│   │   └── set-report-generator.js  # Set reports (MD/JSON/CSV)
 │   ├── cli/                  # CLI commands
 │   └── utils/
 │       ├── api-client.js     # Ollama client
@@ -93,7 +112,9 @@ photo-open-call-analyzer/
 │   │       └── results/      # Results
 │   └── test-photos/          # Test photos
 ├── tests/                    # Automated tests
-└── docs/                     # Documentation
+└── docs/
+    └── architecture/
+        └── ADR-015-set-analysis.md  # Set analysis architecture decision
 ```
 
 ## Conventions
@@ -192,6 +213,10 @@ git push origin feature/m2-task-name
 node src/cli/analyze.js analyze-single ./photo.jpg
 node src/cli/analyze.js analyze ./data/open-calls/my-oc/
 node src/cli/analyze.js validate ./data/open-calls/my-oc/photos/
+
+# Set Analysis (Polaroid Mode)
+node src/cli/analyze.js analyze-set ./data/open-calls/my-oc/ --photos p1.jpg p2.jpg p3.jpg p4.jpg
+node src/cli/analyze.js suggest-sets ./data/open-calls/my-oc/ --top 5
 
 # Tests
 npm test

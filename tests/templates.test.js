@@ -108,9 +108,9 @@ describe('Templates (FR-3.4 Utility Functions)', () => {
       expect(templates.length).toBeGreaterThan(0);
     });
 
-    it('should return exactly 4 templates', () => {
+    it('should return exactly 5 templates', () => {
       const templates = listTemplates();
-      expect(templates.length).toBe(4);
+      expect(templates.length).toBe(5);
     });
 
     it('should include portrait template', () => {
@@ -168,9 +168,9 @@ describe('Templates (FR-3.4 Utility Functions)', () => {
       expect(choices.length).toBeGreaterThan(0);
     });
 
-    it('should return 5 choices (4 templates + custom)', () => {
+    it('should return 6 choices (5 templates + custom)', () => {
       const choices = getTemplateChoices();
-      expect(choices.length).toBe(5);
+      expect(choices.length).toBe(6);
     });
 
     it('should have correct choice structure', () => {
