@@ -66,7 +66,7 @@ program
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
   .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
   .option('--show-tiers', 'Display tier breakdown in terminal')
-  .option('--analysis-mode <mode>', 'Analysis mode: single or multi (default: single)', 'single')
+  .option('--analysis-mode <mode>', 'Analysis mode: single, multi, or auto (default: auto)', 'auto')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');

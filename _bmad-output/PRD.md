@@ -113,17 +113,60 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
   - [ADR-010: Template-Based Prompt Engineering](../docs/architecture/ADR-010-template-based-prompt-engineering.md)
   - [ADR-011: Criteria Validation System](../docs/architecture/ADR-011-criteria-validation-system.md)
 
-### Tier 3: Web UI (Milestone 3) 🟠 P1
+### Tier 3: Performance & Optimization (Milestone 3) 🟠 P1
 
-#### FR-3.1: Results Visualization
+#### FR-3.5: TDD Enforcement (ADR-013)
+- **Requirement**: Enforce test-driven development with coverage thresholds and pre-commit hooks
+- **Acceptance Criteria**:
+  - Coverage thresholds: statements 80%, branches 70%, functions 80%, lines 80%
+  - Pre-commit hooks run related tests via husky + lint-staged
+  - Critical modules (photo-analyzer.js, api-client.js) at 80%+ coverage
+- **Status**: Complete
+
+#### FR-3.6: Smart Analysis Mode Selection (ADR-014)
+- **Requirement**: Automatically select optimal analysis mode (single vs multi-stage) based on batch context
+- **Acceptance Criteria**:
+  - `--analysis-mode auto` as new default
+  - `smartSelectAnalysisMode()` function with weighted heuristic
+  - Stage 2 parallelization via `Promise.all()` (FIX-3)
+  - Transparent logging of auto-selection decision
+- **Status**: Complete
+
+#### FR-3.7: Analysis Caching
+- **Requirement**: Cache results to avoid re-analyzing identical photos
+- **Acceptance Criteria**:
+  - Photo content hash (perceptual or file-based) enables cache lookup
+  - Cache stored locally in project directory
+  - User can clear cache or disable caching per-batch
+  - Cache hit rate reported in analysis summary
+
+#### FR-3.8: Parallel Processing Optimization
+- **Requirement**: Maximize throughput for large batches without overloading system
+- **Acceptance Criteria**:
+  - Configurable concurrency (default: 3, range: 1-10)
+  - Memory usage stays <1GB for any batch size
+  - Performance dashboard: photos/sec, queue depth, Ollama latency
+  - Auto-throttle if Ollama overloaded
+
+#### FR-3.9: Model Selection
+- **Requirement**: Support alternative vision models for flexibility
+- **Acceptance Criteria**:
+  - Pluggable model selector (default: llava:7b, options: llava:13b, moondream2, bakllava)
+  - Model auto-download if missing
+  - Performance comparison: speed, accuracy, memory per model
+  - Documentation on model selection trade-offs
+
+### Tier 4: Web UI (Milestone 4) 🟡 P2
+
+#### FR-4.1: Results Visualization
 - **Requirement**: Web interface to view analysis results with rich visuals
 - **Acceptance Criteria**:
   - Display ranked photo grid with scores and thumbnails
   - Sortable by total score, individual criteria, or manual drag-drop reordering
-  - Side-by-side comparison of 2–3 photos
+  - Side-by-side comparison of 2-3 photos
   - Expandable detail view (full feedback, strengths, improvements)
 
-#### FR-3.2: Analysis Management
+#### FR-4.2: Analysis Management
 - **Requirement**: Manage multiple open call analyses from one dashboard
 - **Acceptance Criteria**:
   - List of all open call projects with analysis date and photo count
@@ -131,7 +174,7 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
   - Export results in multiple formats from UI
   - Search/filter analyses by competition name or date
 
-#### FR-3.3: UI Polish
+#### FR-4.3: UI Polish
 - **Requirement**: Professional, accessible interface
 - **Acceptance Criteria**:
   - Dark mode support (default: system preference)
@@ -139,15 +182,15 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
   - Keyboard navigation fully functional
   - WCAG 2.1 AA accessibility compliance
 
-#### FR-3.4: Guided Project Initialization ✅ P0
+#### FR-4.4: Guided Project Initialization ✅ P0
 - **Requirement**: Interactive CLI wizard for creating valid `open-call.json` configuration files with real-time validation, template support, and automatic project structure setup
-- **Status**: In Development (feature/m3-guided-init-cli)
+- **Status**: Complete
 - **Priority**: P0 (High - User Requested)
 - **Complexity**: Medium (3.5-4.5 days)
 - **Acceptance Criteria**:
   1. **Interactive Wizard**:
      - User can create project without writing JSON manually
-     - 5-step guided workflow (setup → details → criteria → review → create)
+     - 5-step guided workflow (setup -> details -> criteria -> review -> create)
      - Real-time validation prevents invalid configurations
      - Progress indicator shows current step (X/5)
   2. **Template Library**:
@@ -168,10 +211,10 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
      - Writes validated `open-call.json`
      - Generates project `README.md` with usage instructions
   5. **Error Handling**:
-     - Existing project name → prompt for new name
-     - Invalid input → clear error message with suggestion
-     - Cancel mid-wizard → no partial files created
-     - File system errors → user-friendly error messages
+     - Existing project name -> prompt for new name
+     - Invalid input -> clear error message with suggestion
+     - Cancel mid-wizard -> no partial files created
+     - File system errors -> user-friendly error messages
   6. **Documentation**:
      - Updated `CLAUDE.md` with init command
      - Updated `README.md` with wizard usage
@@ -180,7 +223,7 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
   - User can create project in < 3 minutes (vs 10-15 minutes manual)
   - Zero configuration validation errors after wizard
   - 100% of required fields populated
-  - Test coverage ≥85% (M3 standard)
+  - Test coverage >= 85% (M4 standard)
 - **Dependencies**:
   - `@inquirer/prompts` v8.0.0 (new dependency)
   - Existing: validator.js, file-utils.js, logger.js
@@ -193,31 +236,12 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
   - **Time Saved**: ~10-15 minutes per project creation
   - **Error Reduction**: 100% (validation prevents invalid configs)
 
-### Tier 4: Performance & Optimization (Milestone 4) 🟡 P2
-
-#### FR-4.1: Analysis Caching
-- **Requirement**: Cache results to avoid re-analyzing identical photos
+#### FR-4.5: Interactive Prompt Refinement
+- **Requirement**: Web-based prompt refinement workflow
 - **Acceptance Criteria**:
-  - Photo content hash (perceptual or file-based) enables cache lookup
-  - Cache stored locally in project directory
-  - User can clear cache or disable caching per-batch
-  - Cache hit rate reported in analysis summary
-
-#### FR-4.2: Parallel Processing Optimization
-- **Requirement**: Maximize throughput for large batches without overloading system
-- **Acceptance Criteria**:
-  - Configurable concurrency (default: 3, range: 1–10)
-  - Memory usage stays <1GB for any batch size
-  - Performance dashboard: photos/sec, queue depth, Ollama latency
-  - Auto-throttle if Ollama overloaded
-
-#### FR-4.3: Model Selection
-- **Requirement**: Support alternative vision models for flexibility
-- **Acceptance Criteria**:
-  - Pluggable model selector (default: llava:7b, options: llava:13b, moondream2, bakllava)
-  - Model auto-download if missing
-  - Performance comparison: speed, accuracy, memory per model
-  - Documentation on model selection trade-offs
+  - Deferred component from FR-2.4
+  - Visual quality validation
+  - Suggestion acceptance/rejection UI
 
 ---
 
@@ -278,17 +302,20 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
 - **Code Added**: ~4,990 lines production + 1,090 test lines
 - **Duration**: 5 weeks actual (vs 6 weeks estimated, -17% ahead of schedule)
 
-### Milestone 3 Success Criteria
-- [ ] Web UI renders ranked results in ≤ 3 seconds
-- [ ] Side-by-side comparison functional for any 2–3 photos
-- [ ] Mobile UX validated on iOS Safari + Android Chrome
-- [ ] Accessibility audit: 0 critical issues per WCAG 2.1 AA
-
-### Milestone 4 Success Criteria
-- [ ] Cache hit rate ≥ 20% on typical re-runs
+### Milestone 3 Success Criteria (Performance & Optimization)
+- [x] TDD enforcement: coverage thresholds active, pre-commit hooks installed
+- [x] Smart auto-selection: `--analysis-mode auto` as default, transparent logging
+- [x] Stage 2 parallelization: `Promise.all()` reduces multi-stage time by ~50%
+- [ ] Cache hit rate >= 20% on typical re-runs
 - [ ] Parallel processing scales linearly up to 6 concurrent photos
 - [ ] 3+ alternative models tested and documented (speed/accuracy trade-offs)
 - [ ] Performance SLAs met on reference hardware (8GB RAM, 4-core CPU)
+
+### Milestone 4 Success Criteria (Web UI)
+- [ ] Web UI renders ranked results in <= 3 seconds
+- [ ] Side-by-side comparison functional for any 2-3 photos
+- [ ] Mobile UX validated on iOS Safari + Android Chrome
+- [ ] Accessibility audit: 0 critical issues per WCAG 2.1 AA
 
 ### Overall Product Metrics
 - **Adoption**: 50+ GitHub stars by Q2 2026

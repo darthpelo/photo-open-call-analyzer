@@ -181,14 +181,74 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 ---
 
-## Milestone 3 (M3): User Experience 🟡 IN PLANNING
-**Status**: ⚪ Planning Phase
+## Milestone 3 (M3): Performance & Optimization 🟡 IN PROGRESS
+**Status**: 🟡 In Progress
 **Target**: Q2 2026
+**Goal**: TDD enforcement, smart analysis mode, performance improvements
+
+### Delivered (M3-Phase 1)
+
+#### FR-3.5: TDD Enforcement (ADR-013) ✅
+- [x] Coverage thresholds: statements 80%, branches 70%, functions 80%, lines 80%
+- [x] Pre-commit hooks via husky + lint-staged
+- [x] photo-analyzer.js: 0% -> 98.8% coverage (39 tests)
+- [x] api-client.js: 35% -> 100% coverage (17 tests)
+
+**Impact**: Coverage can never silently regress below thresholds
+
+#### FR-3.6: Smart Analysis Mode Selection (ADR-014) ✅
+- [x] `smartSelectAnalysisMode()` with weighted heuristic
+- [x] `--analysis-mode auto` as new CLI default
+- [x] Stage 2 parallelization via `Promise.all()` (FIX-3)
+- [x] Transparent auto-selection logging
+- [x] batch-processor.js default fixed (multi -> auto)
+
+**Impact**: Multi-stage time reduced ~50% (250s -> 130s), optimal mode auto-selected
+
+### Planned (M3-Phase 2)
+
+#### FR-3.7: Analysis Caching
+- [ ] Photo content hash for cache lookup
+- [ ] Local cache storage in project directory
+- [ ] Cache hit rate reporting
+- [ ] Clear cache option
+
+**Impact**: Avoid re-analyzing identical photos, ~50% time savings on re-runs
+
+#### FR-3.8: Parallel Processing Optimization
+- [ ] Dynamic concurrency based on system resources
+- [ ] Memory usage optimization (target: <1GB for 100-photo batch)
+- [ ] Performance dashboard (photos/sec, queue depth, latency)
+- [ ] Auto-throttle on Ollama overload
+
+**Impact**: 2x throughput on high-end systems
+
+#### FR-3.9: Model Selection & Management
+- [ ] Pluggable model selector (llava:7b, llava:13b, moondream, bakllava)
+- [ ] Auto-download missing models
+- [ ] Performance comparison (speed vs accuracy)
+- [ ] Model recommendation based on system specs
+
+**Impact**: Flexibility for different hardware/quality tradeoffs
+
+#### FR-3.10: Historical Winner Learning
+- [ ] Store past winners analysis results
+- [ ] Pattern extraction across competitions
+- [ ] Winner similarity scoring
+- [ ] Personalized recommendations based on history
+
+**Impact**: AI learns what works for specific photographers
+
+---
+
+## Milestone 4 (M4): Web UI & User Experience ⚪ PLANNED
+**Status**: ⚪ Future
+**Target**: Q3 2026
 **Goal**: Web UI and interactive workflows
 
 ### Planned Deliverables
 
-#### FR-3.1: Results Visualization
+#### FR-4.1: Results Visualization
 - [ ] Web UI for ranked photo grid with scores
 - [ ] Sortable by criteria, drag-and-drop reordering
 - [ ] Side-by-side comparison (2-3 photos)
@@ -196,7 +256,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Priority**: P1 (High - Requested by users)
 
-#### FR-3.2: Analysis Management Dashboard
+#### FR-4.2: Analysis Management Dashboard
 - [ ] List all open call projects with metadata
 - [ ] Re-run analysis on existing projects
 - [ ] Export from UI (MD, JSON, CSV)
@@ -204,7 +264,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Priority**: P1 (High)
 
-#### FR-3.3: UI Polish
+#### FR-4.3: UI Polish
 - [ ] Dark mode support (system preference default)
 - [ ] Mobile responsive (tablets + phones)
 - [ ] Keyboard navigation
@@ -212,7 +272,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Priority**: P2 (Medium)
 
-#### FR-3.4: Interactive Prompt Refinement
+#### FR-4.4: Interactive Prompt Refinement
 - [ ] Deferred component from FR-2.4
 - [ ] Web-based refinement workflow
 - [ ] Visual quality validation
@@ -226,47 +286,6 @@ Create a tool to help photographers select their best photos for open calls, usi
 - **State**: React Context or Zustand
 - **Backend**: Node.js Express (minimal API)
 - **Storage**: Local filesystem (maintain local-first approach)
-
----
-
-## Milestone 4 (M4): Performance & Optimization ⚪ PLANNED
-**Status**: ⚪ Future
-**Target**: Q3 2026
-**Goal**: Scale to large batches and improve speed
-
-### Planned Deliverables
-
-#### FR-4.1: Analysis Caching
-- [ ] Photo content hash for cache lookup
-- [ ] Local cache storage in project directory
-- [ ] Cache hit rate reporting
-- [ ] Clear cache option
-
-**Impact**: Avoid re-analyzing identical photos, ~50% time savings on re-runs
-
-#### FR-4.2: Parallel Processing Optimization
-- [ ] Dynamic concurrency based on system resources
-- [ ] Memory usage optimization (target: <1GB for 100-photo batch)
-- [ ] Performance dashboard (photos/sec, queue depth, latency)
-- [ ] Auto-throttle on Ollama overload
-
-**Impact**: 2× throughput on high-end systems
-
-#### FR-4.3: Model Selection & Management
-- [ ] Pluggable model selector (llava:7b, llava:13b, moondream, bakllava)
-- [ ] Auto-download missing models
-- [ ] Performance comparison (speed vs accuracy)
-- [ ] Model recommendation based on system specs
-
-**Impact**: Flexibility for different hardware/quality tradeoffs
-
-#### FR-4.4: Historical Winner Learning
-- [ ] Store past winners analysis results
-- [ ] Pattern extraction across competitions
-- [ ] Winner similarity scoring
-- [ ] Personalized recommendations based on history
-
-**Impact**: AI learns what works for specific photographers
 
 ---
 
@@ -299,16 +318,16 @@ Create a tool to help photographers select their best photos for open calls, usi
 ## Timeline Overview
 
 ```
-2025 Q4  |███████████████| M1 MVP Complete
-         |███████████████| M2 Started (FR-2.1, FR-2.2)
+2025 Q4  |###############| M1 MVP Complete
+         |###############| M2 Started (FR-2.1, FR-2.2)
 
-2026 Q1  |███████████████| M2 Complete (FR-2.3, FR-2.4)
-         |▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒| M3 Planning
+2026 Q1  |###############| M2 Complete (FR-2.3, FR-2.4)
+         |###############| M3 Phase 1 (TDD, Performance)
 
-2026 Q2  |               | M3 Web UI (Target)
+2026 Q2  |               | M3 Phase 2 (Caching, Models)
          |               |
 
-2026 Q3  |               | M4 Performance (Target)
+2026 Q3  |               | M4 Web UI (Target)
          |               |
 ```
 
@@ -317,15 +336,15 @@ Create a tool to help photographers select their best photos for open calls, usi
 ## Current Focus (Feb 2026)
 
 **Active Work**:
-- ✅ M2 documentation complete
-- 🎯 M3 planning and architecture design
-- 🎯 User feedback collection on FR-2.4 features
+- M2 documentation complete
+- M3 Phase 1: TDD enforcement (ADR-013) + Smart analysis mode (ADR-014)
+- Coverage thresholds enforced, pre-commit hooks active
 
 **Next Steps**:
-1. Gather user feedback on prompt engineering features
-2. Design Web UI mockups and UX flows
-3. Evaluate React vs Next.js for frontend
-4. Plan M3 implementation phases
+1. Implement analysis caching (FR-3.7)
+2. Parallel processing optimization (FR-3.8)
+3. Model selection & management (FR-3.9)
+4. Plan M4 Web UI architecture
 
 ---
 
@@ -342,17 +361,20 @@ Create a tool to help photographers select their best photos for open calls, usi
 - ✅ Test coverage: ≥80%
 - ✅ Checkpoint recovery: 100% success rate
 
-### M3 Targets
-- [ ] Web UI load time: ≤3 seconds (LCP)
+### M3 Targets (Performance & Optimization)
+- [x] TDD enforcement: coverage thresholds active, pre-commit hooks installed
+- [x] Smart auto-selection: `--analysis-mode auto` as default
+- [x] Stage 2 parallelization: multi-stage time reduced ~50%
+- [ ] Cache hit rate: >= 20% on re-runs
+- [ ] Parallel scaling: linear up to 6 concurrent photos
+- [ ] Memory usage: <= 500MB for 100-photo batch
+- [ ] Model switching: <30s for model download + warmup
+
+### M4 Targets (Web UI)
+- [ ] Web UI load time: <= 3 seconds (LCP)
 - [ ] Mobile responsive: tested on iOS Safari + Android Chrome
 - [ ] Accessibility: 0 critical WCAG violations
-- [ ] User satisfaction: ≥8/10 (survey)
-
-### M4 Targets
-- [ ] Cache hit rate: ≥20% on re-runs
-- [ ] Parallel scaling: linear up to 6 concurrent photos
-- [ ] Memory usage: ≤500MB for 100-photo batch
-- [ ] Model switching: <30s for model download + warmup
+- [ ] User satisfaction: >= 8/10 (survey)
 
 ---
 
@@ -369,6 +391,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 ## Changelog
 
+- **2026-02-07**: Swapped M3/M4 priorities (Performance now M3, Web UI now M4). Added TDD enforcement and smart analysis mode as M3-Phase 1 deliverables (ADR-013, ADR-014)
 - **2026-02-06**: Updated M2 status to complete, added FR-2.4 metrics, M3 planning
 - **2026-01-28**: Added FR-2.3 completion status
 - **2025-12-15**: Added FR-2.2 checkpoint system details
