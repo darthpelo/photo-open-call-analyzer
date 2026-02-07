@@ -139,6 +139,60 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
   - Keyboard navigation fully functional
   - WCAG 2.1 AA accessibility compliance
 
+#### FR-3.4: Guided Project Initialization ✅ P0
+- **Requirement**: Interactive CLI wizard for creating valid `open-call.json` configuration files with real-time validation, template support, and automatic project structure setup
+- **Status**: In Development (feature/m3-guided-init-cli)
+- **Priority**: P0 (High - User Requested)
+- **Complexity**: Medium (3.5-4.5 days)
+- **Acceptance Criteria**:
+  1. **Interactive Wizard**:
+     - User can create project without writing JSON manually
+     - 5-step guided workflow (setup → details → criteria → review → create)
+     - Real-time validation prevents invalid configurations
+     - Progress indicator shows current step (X/5)
+  2. **Template Library**:
+     - 4+ competition templates (portrait, landscape, conceptual, street)
+     - User can select template during wizard
+     - Templates pre-fill all required fields
+     - User can customize template-provided values
+  3. **Input Validation**:
+     - Project name: alphanumeric + dashes only
+     - Competition title: 3-200 chars
+     - Theme: 5-1000 chars
+     - Jury members: 1-50 members, 2-100 chars each
+     - Past winners: 10-2000 chars
+     - Custom criteria: max 10, weights auto-normalized
+  4. **Project Structure**:
+     - Auto-creates `data/open-calls/[project-name]/`
+     - Creates subdirectories: `photos/`, `results/`
+     - Writes validated `open-call.json`
+     - Generates project `README.md` with usage instructions
+  5. **Error Handling**:
+     - Existing project name → prompt for new name
+     - Invalid input → clear error message with suggestion
+     - Cancel mid-wizard → no partial files created
+     - File system errors → user-friendly error messages
+  6. **Documentation**:
+     - Updated `CLAUDE.md` with init command
+     - Updated `README.md` with wizard usage
+     - New guide: `docs/guides/project-initialization.md`
+- **Success Metrics**:
+  - User can create project in < 3 minutes (vs 10-15 minutes manual)
+  - Zero configuration validation errors after wizard
+  - 100% of required fields populated
+  - Test coverage ≥85% (M3 standard)
+- **Dependencies**:
+  - `@inquirer/prompts` v8.0.0 (new dependency)
+  - Existing: validator.js, file-utils.js, logger.js
+- **Related Documents**:
+  - [ADR-012: Interactive CLI Prompting Library](../docs/architecture/ADR-012-interactive-cli-prompting-library.md)
+  - [Implementation Plan](/Users/alessioroberto/.claude/plans/federated-baking-iverson.md)
+- **User Impact**:
+  - **Before**: Manual JSON editing, error-prone, high barrier to entry
+  - **After**: Guided workflow, validated input, instant project setup
+  - **Time Saved**: ~10-15 minutes per project creation
+  - **Error Reduction**: 100% (validation prevents invalid configs)
+
 ### Tier 4: Performance & Optimization (Milestone 4) 🟡 P2
 
 #### FR-4.1: Analysis Caching
