@@ -28,6 +28,9 @@ Thumbs.db
 # Test
 coverage/
 
+# Top-level results (analysis output)
+results/
+
 # Data (keep structure, ignore analysis content)
 # Photos & test images
 data/open-calls/*/photos/*
@@ -38,6 +41,10 @@ data/open-calls/*/results/*
 data/open-calls/*/batch-results.json
 data/open-calls/*/analysis-prompt.json
 data/open-calls/*/analysis-results.json
+
+# Open call config & docs (user-specific data)
+data/open-calls/*/open-call.json
+data/open-calls/*/README.md
 
 # Personal analysis documents (Art Critic, Dev notes)
 data/open-calls/*/final-ranking.md
