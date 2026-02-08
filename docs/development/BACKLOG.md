@@ -11,6 +11,43 @@
 
 ---
 
+## Active Projects
+
+### instantart Arles 2026 (Polaroid Open Call)
+
+**Status**: Setup Complete
+**Created**: 2026-02-07
+**Project Owner**: Marco
+**Type**: Polaroid Set Analysis (FR-3.11)
+
+| Phase | Owner | Status | Note |
+|-------|-------|--------|------|
+| Project Initialization | Project Owner | ✅ Done | Configuration validated |
+| Research Competition Details | Art Critic | 📋 Pending | Deadline, theme, requirements TBD |
+| Photo Preparation | User | 📋 Pending | Digitize Polaroids, add to photos/ |
+| Individual Analysis | Dev (CLI) | 📋 Pending | Awaiting photos |
+| Set Analysis | Dev (CLI) | 📋 Pending | Awaiting individual results |
+| Set Review & Selection | Art Critic + Owner | 📋 Pending | Final decision |
+
+**Project Path**: `/data/open-calls/instantart-arles-2026/`
+
+**Key Files**:
+- `open-call.json` - Configuration (validated ✅)
+- `project-brief.md` - Complete project documentation
+- `README.md` - Usage instructions
+- `photos/` - Empty (awaiting photos)
+- `results/` - Empty (awaiting analysis)
+
+**Set Configuration**:
+- Set size: 4 photos
+- Individual weight: 40%
+- Set weight: 60%
+- Max sets to evaluate: 10
+
+**Next Action**: User needs to add digitized Polaroid photos to `photos/` directory
+
+---
+
 ## Milestone 1: MVP ✅ Complete
 
 ### 🔴 P0 - Critical
@@ -78,25 +115,27 @@
 | Parallel processing optimization (FR-3.8) | Dev | 📋 Planned | Dynamic concurrency |
 | Model selection (FR-3.9) | Dev | 📋 Planned | llava:13b, moondream, bakllava |
 | Historical winner learning (FR-3.10) | Dev + Art Critic | 📋 Planned | Pattern extraction |
-| Polaroid Set Analysis (FR-3.11) | Dev + Art Critic | 🟡 In Progress | Set-level photo group evaluation |
+| Polaroid Set Analysis (FR-3.11) | Dev + Art Critic | ✅ Done | 2026-02 | Set-level photo group evaluation |
 
-### FR-3.11: Polaroid Set Analysis (Sub-tasks)
+### FR-3.11: Polaroid Set Analysis ✅ Complete
 
-| Sub-task | Owner | Status | Note |
-|----------|-------|--------|------|
-| `setMode` in open-call.json + polaroid template | Dev | 📋 Planned | Configuration schema for set-based analysis |
-| `set-analyzer.js` | Dev | 📋 Planned | Core set cohesion and narrative analysis |
-| `set-prompt-builder.js` | Dev + Art Critic | 📋 Planned | Set-specific prompt generation |
-| `combination-generator.js` | Dev | 📋 Planned | Generate candidate photo groupings (C(n,k)) |
-| `set-score-aggregator.js` | Dev | 📋 Planned | Aggregate and rank set-level scores |
-| CLI: `analyze-set` command | Dev | 📋 Planned | Analyze a specific set of photos |
-| CLI: `suggest-sets` command | Dev | 📋 Planned | Auto-suggest best photo combinations |
-| Set analysis reports (MD/JSON/CSV) | Dev | 📋 Planned | Multi-format set-level reports |
-| TDD: set-analyzer.test.js | QA + Dev | 📋 Planned | Full coverage for set analyzer |
-| TDD: set-prompt-builder.test.js | QA + Dev | 📋 Planned | Full coverage for prompt builder |
-| TDD: combination-generator.test.js | QA + Dev | 📋 Planned | Full coverage for combination generator |
-| TDD: set-score-aggregator.test.js | QA + Dev | 📋 Planned | Full coverage for score aggregator |
-| TDD: CLI integration tests | QA + Dev | 📋 Planned | analyze-set + suggest-sets commands |
+| Sub-task | Owner | Status | Completion | Note |
+|----------|-------|--------|------------|------|
+| `setMode` in open-call.json + polaroid template | Dev | ✅ Done | 2026-01 | Configuration schema implemented |
+| `set-analyzer.js` | Dev | ✅ Done | 2026-01 | Core set cohesion and narrative analysis |
+| `set-prompt-builder.js` | Dev + Art Critic | ✅ Done | 2026-01 | Set-specific prompt generation |
+| `combination-generator.js` | Dev | ✅ Done | 2026-01 | Generate candidate photo groupings (C(n,k)) |
+| `set-score-aggregator.js` | Dev | ✅ Done | 2026-01 | Aggregate and rank set-level scores |
+| CLI: `analyze-set` command | Dev | ✅ Done | 2026-01 | Analyze a specific set of photos |
+| CLI: `suggest-sets` command | Dev | ✅ Done | 2026-01 | Auto-suggest best photo combinations |
+| Set analysis reports (MD/JSON/CSV) | Dev | ✅ Done | 2026-01 | Multi-format set-level reports |
+| TDD: set-analyzer.test.js | QA + Dev | ✅ Done | 2026-01 | Full coverage for set analyzer |
+| TDD: set-prompt-builder.test.js | QA + Dev | ✅ Done | 2026-01 | Full coverage for prompt builder |
+| TDD: combination-generator.test.js | QA + Dev | ✅ Done | 2026-01 | Full coverage for combination generator |
+| TDD: set-score-aggregator.test.js | QA + Dev | ✅ Done | 2026-01 | Full coverage for score aggregator |
+| TDD: CLI integration tests | QA + Dev | ✅ Done | 2026-01 | analyze-set + suggest-sets commands |
+
+**FR-3.11 Summary**: Complete set analysis system implemented with full test coverage. Now available for production use in Polaroid-style competitions like instantart Arles 2026.
 
 ---
 
@@ -136,6 +175,7 @@
 | Main workflow | - | 2024-01 | analyze-open-call.md |
 | Migration to Ollama | Dev | 2024-01 | From Anthropic to local |
 | Photo analysis tests | QA | 2024-01 | 7.8/10 on sample |
+| instantart Arles 2026 project setup | Project Owner | 2026-02-07 | Polaroid template initialized |
 
 ---
 
@@ -153,8 +193,8 @@ Valid owners: `Art Critic`, `Dev`, `Designer`, `QA`, `Project Owner`
 
 ### Current Status: Requirements Finalization
 
-**Phase 1 Owner**: @Project Owner  
-**Estimated Duration**: 1 day  
+**Phase 1 Owner**: @Project Owner
+**Estimated Duration**: 1 day
 **Start Date**: 2026-01-28
 
 ### Requirements to Finalize
