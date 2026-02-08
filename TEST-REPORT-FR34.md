@@ -367,7 +367,7 @@ Coverage: Excellent
 
 **✓ Auto-creates Directory Structure**
 - Tests verify photos/ directory creation
-- Tests verify results/ directory creation
+- Tests verify results/{timestamp}/ directory creation (FR-3.12)
 - Tests verify proper file placement
 
 **✓ Generates Project README with Instructions**

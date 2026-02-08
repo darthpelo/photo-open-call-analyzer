@@ -776,7 +776,7 @@ jobs:
 ✓ Checkpoint saved every 10 photos
 ✓ After final photo analyzed
 ✓ Checkpoint deleted (doesn't exist)
-✓ Results written to results/ directory
+✓ Results written to {projectDir}/results/{timestamp}/ directory (FR-3.12)
 ```
 
 **Acceptance Criteria**:

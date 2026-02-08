@@ -107,9 +107,9 @@ Phase 5 validation and testing for FR-2.3 Edge Case Robustness is now complete. 
 4. **QUICKSTART.md** - Updated with error handling workflows
 
 ### Test Results
-- **Markdown Report** (results/photo-analysis.md)
-- **JSON Report** (results/photo-analysis.json)
-- **CSV Report** (results/photo-analysis.csv)
+- **Markdown Report** (`{project}/results/latest/photo-analysis.md`)
+- **JSON Report** (`{project}/results/latest/photo-analysis.json`)
+- **CSV Report** (`{project}/results/latest/photo-analysis.csv`)
 
 ---
 

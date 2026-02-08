@@ -207,7 +207,7 @@ Create a **free, open-source, local-first photo evaluation system** that photogr
      - Custom criteria: max 10, weights auto-normalized
   4. **Project Structure**:
      - Auto-creates `data/open-calls/[project-name]/`
-     - Creates subdirectories: `photos/`, `results/`
+     - Creates subdirectories: `photos/`, `results/` (results use timestamped subdirs per FR-3.12)
      - Writes validated `open-call.json`
      - Generates project `README.md` with usage instructions
   5. **Error Handling**:

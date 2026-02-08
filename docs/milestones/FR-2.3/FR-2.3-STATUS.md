@@ -154,8 +154,8 @@ npm run analyze data/open-calls/my-project
 
 **Review Failed Photos Report**:
 ```bash
-# Check results/photo-analysis.md for "Failed Photos" section
-# Check results/photo-analysis.json for failedPhotos array
+# Check {project}/results/latest/photo-analysis.md for "Failed Photos" section (FR-3.12)
+# Check {project}/results/latest/photo-analysis.json for failedPhotos array
 ```
 
 ### Next Steps

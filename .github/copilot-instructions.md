@@ -173,8 +173,8 @@ cp path/to/photo*.jpg data/open-calls/my-project/photos/
 # 4. Run analysis (first time generates analysis-prompt.json)
 npm run analyze data/open-calls/my-project/
 
-# 5. Check results
-cat results/photo-analysis.md
+# 5. Check results (saved to {project}/results/{timestamp}/ with 'latest' symlink)
+cat data/open-calls/my-project/results/latest/photo-analysis.md
 ```
 
 ## Key Files by Function

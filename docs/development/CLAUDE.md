@@ -55,8 +55,11 @@ node src/cli/analyze.js analyze-single ./path/to/photo.jpg
 mkdir -p data/open-calls/my-oc/photos
 
 # Add photos and config
-# Then run:
+# Then run (results saved to data/open-calls/my-oc/results/{timestamp}/):
 node src/cli/analyze.js analyze data/open-calls/my-oc/
+
+# View latest results:
+ls data/open-calls/my-oc/results/latest/
 ```
 
 ### 5. Set Analysis (Polaroid Mode)
@@ -70,6 +73,9 @@ node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/ \
 
 # Find optimal sets from already-analyzed photos
 node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 5
+
+# All results are saved to data/open-calls/my-polaroid/results/{timestamp}/
+# with a 'latest' symlink pointing to the most recent run
 ```
 
 ## Project Structure
@@ -109,12 +115,15 @@ photo-open-call-analyzer/
 │   │   └── {call-name}/
 │   │       ├── open-call.json # Config
 │   │       ├── photos/       # Photos to analyze
-│   │       └── results/      # Results
+│   │       └── results/      # Timestamped results (FR-3.12)
+│   │           ├── {ISO-timestamp}/  # e.g. 2026-02-08T14-30-45
+│   │           └── latest            # Symlink to most recent run
 │   └── test-photos/          # Test photos
 ├── tests/                    # Automated tests
 └── docs/
     └── architecture/
-        └── ADR-015-set-analysis.md  # Set analysis architecture decision
+        ├── ADR-015-set-analysis.md  # Set analysis architecture decision
+        └── ADR-016-results-location.md  # Timestamped results (FR-3.12)
 ```
 
 ## Conventions
@@ -209,7 +218,7 @@ git checkout -b feature/m2-task-name
 git push origin feature/m2-task-name
 # Then create PR on GitHub
 
-# Analysis
+# Analysis (results saved to {project}/results/{timestamp}/, FR-3.12)
 node src/cli/analyze.js analyze-single ./photo.jpg
 node src/cli/analyze.js analyze ./data/open-calls/my-oc/
 node src/cli/analyze.js validate ./data/open-calls/my-oc/photos/
@@ -217,6 +226,9 @@ node src/cli/analyze.js validate ./data/open-calls/my-oc/photos/
 # Set Analysis (Polaroid Mode)
 node src/cli/analyze.js analyze-set ./data/open-calls/my-oc/ --photos p1.jpg p2.jpg p3.jpg p4.jpg
 node src/cli/analyze.js suggest-sets ./data/open-calls/my-oc/ --top 5
+
+# View latest results
+ls ./data/open-calls/my-oc/results/latest/
 
 # Tests
 npm test

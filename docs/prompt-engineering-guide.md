@@ -510,7 +510,7 @@ Photo: portrait-023.jpg
 
 **1. Check individual photo**:
 ```bash
-cat results/portrait-023.json
+cat {project}/results/latest/portrait-023.json  # FR-3.12: use latest symlink
 # Review scores.individual vs scores.summary
 ```
 

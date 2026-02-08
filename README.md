@@ -191,8 +191,10 @@ node src/cli/analyze.js analyze-single ./path/to/photo.jpg
    - Warn if issues detected
    - Analyze all photos with AI vision model
 
-5. **View results**
-   Reports will be generated in `./results/`:
+5. **View results** (saved to `data/open-calls/{name}/results/{timestamp}/` with `latest` symlink)
+   ```bash
+   ls data/open-calls/my-open-call/results/latest/
+   ```
    - `photo-analysis.md` - Markdown report
    - `photo-analysis.json` - Structured data
    - `photo-analysis.csv` - For Excel/Sheets
@@ -226,7 +228,10 @@ For competitions requiring photo sets "in dialogue" (e.g. Polaroid Open Call):
    node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 5
    ```
 
-5. **View results** in `./results/`:
+5. **View results** (saved to `data/open-calls/{name}/results/{timestamp}/`)
+   ```bash
+   ls data/open-calls/my-polaroid/results/latest/
+   ```
    - `set-analysis.md` - Set ranking and recommendations
    - `set-analysis.json` - Structured set data
    - `set-analysis.csv` - Set scores for spreadsheets
@@ -392,7 +397,9 @@ photo-open-call-analyzer/
 │           ├── open-call.json        # Configuration
 │           ├── analysis-prompt.json  # Generated prompt
 │           ├── photos/               # Photos to analyze
-│           └── results/              # Results
+│           └── results/              # Timestamped results (FR-3.12)
+│               ├── {ISO-timestamp}/  # e.g. 2026-02-08T14-30-45
+│               └── latest            # Symlink to most recent
 │
 ├── CLAUDE.md                     # Context for Claude Code
 ├── ROADMAP.md                    # Vision and milestones
@@ -453,7 +460,7 @@ npm run analyze analyze-set data/open-calls/project-name/ \
 #   --photos <paths...>     # Photo filenames (required, space-separated)
 #   --skip-individual       # Skip individual analysis (use existing results)
 #   --timeout <seconds>     # Timeout per analysis (default: 120)
-#   -o, --output <dir>      # Output directory (default: ./results)
+#   -o, --output <dir>      # Output directory relative to project (default: results)
 
 # Find optimal photo sets from previously analyzed photos
 npm run analyze suggest-sets data/open-calls/project-name/ --top 5
@@ -463,7 +470,7 @@ npm run analyze suggest-sets data/open-calls/project-name/ --top 5
 #   --skip-vision           # Skip vision evaluation (pre-scoring only, faster)
 #   --max-candidates <n>    # Max sets to evaluate with vision model (default: 10)
 #   --timeout <seconds>     # Timeout per set evaluation (default: 120)
-#   -o, --output <dir>      # Output directory (default: ./results)
+#   -o, --output <dir>      # Output directory relative to project (default: results)
 ```
 
 ### Analysis Modes
@@ -739,6 +746,9 @@ ollama pull llava:7b
   - [x] `analyze-set` and `suggest-sets` CLI commands
   - [x] `polaroid` template with set mode pre-configured
   - [x] Set reports (MD/JSON/CSV)
+- [x] **FR-3.12**: Consistent per-open-call results with timestamped history (ADR-016)
+  - [x] Results saved to `{projectDir}/results/{timestamp}/` with `latest` symlink
+  - [x] All CLI commands (`analyze`, `analyze-set`, `suggest-sets`) aligned
   - [x] ADR-015 architecture decision
 - [x] **FR-3.4**: Guided project initialization wizard
 
@@ -766,6 +776,7 @@ ollama pull llava:7b
   - [ADR-010: Template-Based Prompt Engineering](docs/architecture/ADR-010-template-based-prompt-engineering.md)
   - [ADR-011: Criteria Validation System](docs/architecture/ADR-011-criteria-validation-system.md)
   - [ADR-015: Set Analysis / Polaroid Mode](docs/architecture/ADR-015-set-analysis.md)
+  - [ADR-016: Results Location / Timestamped History](docs/architecture/ADR-016-results-location.md)
 
 ### Development
 - **[Development Docs](docs/development/)** - ROADMAP, BACKLOG, agent collaboration

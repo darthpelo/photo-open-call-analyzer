@@ -145,9 +145,10 @@ Output:
 ```
 
 ### Results Generated
-- `results/photo-analysis.md` - Professional report
-- `results/photo-analysis.json` - Programmatic data
-- `results/photo-analysis.csv` - For spreadsheet
+Results are saved to `{projectDir}/results/{timestamp}/` with a `latest` symlink (FR-3.12):
+- `photo-analysis.md` - Professional report
+- `photo-analysis.json` - Programmatic data
+- `photo-analysis.csv` - For spreadsheet
 
 ---
 

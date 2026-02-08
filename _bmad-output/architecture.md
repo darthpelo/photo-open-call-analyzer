@@ -73,7 +73,7 @@ npm run analyze validate data/open-calls/nature-wildlife/
 npm run analyze analyze-single ./path/to/photo.jpg
 ```
 
-**Outputs**: Calls orchestrator functions; results saved to `results/` directory
+**Outputs**: Calls orchestrator functions; results saved to `{projectDir}/results/{timestamp}/` directory (FR-3.12)
 
 ---
 
@@ -313,13 +313,15 @@ exportReports(aggregatedScores, outputDir)
   // Files: photo-analysis.md, photo-analysis.json, photo-analysis.csv
 ```
 
-**Sample Report Filenames**:
+**Sample Report Filenames** (FR-3.12: timestamped output):
 ```
 results/
-  photo-analysis.md       # Human-readable summary
-  photo-analysis.json     # Complete structured data
-  photo-analysis.csv      # Spreadsheet import
-  analysis-prompt.json    # Generated criteria (cached)
+  2026-02-08T14-30-45/      # Timestamped run directory
+    photo-analysis.md       # Human-readable summary
+    photo-analysis.json     # Complete structured data
+    photo-analysis.csv      # Spreadsheet import
+    batch-results.json      # Batch processing summary
+  latest -> 2026-02-08T14-30-45  # Symlink to most recent
 ```
 
 ---
@@ -353,7 +355,7 @@ logger.debug(msg)       // Debug message (only if DEBUG=*)
 
 2. analyze.js parses args
    → path: "data/open-calls/nature-wildlife/"
-   → outputDir: "results/"
+   → outputDir: "data/open-calls/nature-wildlife/results/{timestamp}/"  (FR-3.12)
 
 3. batch-processor.js orchestrates
    ├─ load open-call.json
