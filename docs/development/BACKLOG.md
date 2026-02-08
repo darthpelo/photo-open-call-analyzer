@@ -111,6 +111,7 @@
 
 | Task | Owner | Status | Note |
 |------|-------|--------|------|
+| Consistent results directory (FR-3.12) | Dev | ✅ Done | 2026-02 | Per-open-call timestamped results (ADR-016) |
 | Analysis caching (FR-3.7) | Dev | 📋 Planned | ~50% time savings on re-runs |
 | Parallel processing optimization (FR-3.8) | Dev | 📋 Planned | Dynamic concurrency |
 | Model selection (FR-3.9) | Dev | 📋 Planned | llava:13b, moondream, bakllava |

@@ -1,5 +1,5 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync } from 'fs';
-import { dirname, resolve } from 'path';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, symlinkSync, lstatSync } from 'fs';
+import { dirname, resolve, join, isAbsolute } from 'path';
 import { fileURLToPath } from 'url';
 
 /**
@@ -78,4 +78,34 @@ export function ensureDir(filePath) {
  */
 export function projectPath(...parts) {
   return resolve(process.cwd(), ...parts);
+}
+
+/**
+ * Resolve output directory with timestamped subdirectory and latest symlink.
+ * Creates {baseDir}/{ISO-timestamp}/ and a 'latest' symlink pointing to it.
+ * @param {string} projectDir - Base project directory
+ * @param {string} outputPath - Output path (relative to projectDir, or absolute)
+ * @returns {string} Absolute path to the timestamped output directory
+ */
+export function resolveOutputDir(projectDir, outputPath) {
+  const baseDir = isAbsolute(outputPath) ? outputPath : join(projectDir, outputPath);
+  const timestamp = new Date().toISOString().split('.')[0].replace(/:/g, '-');
+  const timestampedDir = join(baseDir, timestamp);
+
+  mkdirSync(timestampedDir, { recursive: true });
+
+  const latestLink = join(baseDir, 'latest');
+  try {
+    if (existsSync(latestLink)) {
+      const stat = lstatSync(latestLink);
+      if (stat.isSymbolicLink() || stat.isFile()) {
+        unlinkSync(latestLink);
+      }
+    }
+    symlinkSync(timestamp, latestLink, 'dir');
+  } catch {
+    writeFileSync(join(baseDir, 'latest.txt'), timestamp, 'utf-8');
+  }
+
+  return timestampedDir;
 }
