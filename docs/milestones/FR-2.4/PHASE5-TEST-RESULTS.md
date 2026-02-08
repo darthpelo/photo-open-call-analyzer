@@ -380,9 +380,10 @@ test-manual/
 - `test-large-file/photos/large-5mb.jpg` (5MB)
 
 ### Results Saved
-- `results/photo-analysis.md` (all test runs)
-- `results/photo-analysis.json` (with failedPhotos array)
-- `results/photo-analysis.csv` (compatible with spreadsheets)
+Results are saved to `{projectDir}/results/{timestamp}/` with a `latest` symlink (FR-3.12):
+- `photo-analysis.md` (all test runs)
+- `photo-analysis.json` (with failedPhotos array)
+- `photo-analysis.csv` (compatible with spreadsheets)
 
 ---
 

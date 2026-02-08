@@ -239,18 +239,26 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Impact**: AI learns what works for specific photographers
 
-#### FR-3.11: Polaroid Set Analysis 🟡 IN PROGRESS
-- [ ] `setMode` configuration in `open-call.json` + polaroid template
-- [ ] Set-level photo group evaluation (typically 4 photos per set)
-- [ ] `set-analyzer.js`: Core set cohesion and narrative analysis
-- [ ] `set-prompt-builder.js`: Set-specific prompt generation
-- [ ] `combination-generator.js`: Generate candidate photo groupings
-- [ ] `set-score-aggregator.js`: Aggregate set-level scores
-- [ ] CLI commands: `analyze-set`, `suggest-sets`
-- [ ] Set analysis reports (Markdown, JSON, CSV)
-- [ ] Full TDD coverage for all new modules
+#### FR-3.11: Polaroid Set Analysis ✅
+- [x] `setMode` configuration in `open-call.json` + polaroid template
+- [x] Set-level photo group evaluation (typically 4 photos per set)
+- [x] `set-analyzer.js`: Core set cohesion and narrative analysis
+- [x] `set-prompt-builder.js`: Set-specific prompt generation
+- [x] `combination-generator.js`: Generate candidate photo groupings
+- [x] `set-score-aggregator.js`: Aggregate set-level scores
+- [x] CLI commands: `analyze-set`, `suggest-sets`
+- [x] Set analysis reports (Markdown, JSON, CSV)
+- [x] Full TDD coverage for all new modules
 
-**Impact**: Support analyzing groups of photos as cohesive sets for Polaroid-style exhibitions, enabling photographers to find the best combination of photos that work together as a unified visual narrative
+**Impact**: Support analyzing groups of photos as cohesive sets for Polaroid-style exhibitions
+
+#### FR-3.12: Consistent Results Directory with Timestamped History ✅
+- [x] `resolveOutputDir()` utility in `file-utils.js`
+- [x] All CLI commands save to `{projectDir}/results/{timestamp}/` with `latest` symlink
+- [x] ADR-016 architecture decision record
+- [x] 9 unit tests, 590 total tests passing
+
+**Impact**: Per-open-call result isolation with full historical tracking (ADR-016)
 
 ---
 
@@ -349,15 +357,15 @@ Create a tool to help photographers select their best photos for open calls, usi
 ## Current Focus (Feb 2026)
 
 **Active Work**:
-- M2 documentation complete
-- M3 Phase 1: TDD enforcement (ADR-013) + Smart analysis mode (ADR-014)
-- Coverage thresholds enforced, pre-commit hooks active
+- M3 Phase 1: Complete (TDD, Smart Mode, Polaroid Set Analysis, Results Directory)
+- FR-3.12: Consistent per-open-call results with timestamped history (ADR-016)
+- 590 tests passing, coverage thresholds enforced
 
 **Next Steps**:
-1. Complete Polaroid Set Analysis (FR-3.11)
-2. Implement analysis caching (FR-3.7)
-3. Parallel processing optimization (FR-3.8)
-4. Model selection & management (FR-3.9)
+1. Implement analysis caching (FR-3.7)
+2. Parallel processing optimization (FR-3.8)
+3. Model selection & management (FR-3.9)
+4. Historical winner learning (FR-3.10)
 5. Plan M4 Web UI architecture
 
 ---
@@ -405,6 +413,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 ## Changelog
 
+- **2026-02-08**: Added FR-3.12 Consistent Results Directory with Timestamped History (ADR-016). All CLI commands now save to {projectDir}/results/{timestamp}/ with latest symlink
 - **2026-02-07**: Added FR-3.11 Polaroid Set Analysis (set-level photo group evaluation for Polaroid-style exhibitions)
 - **2026-02-07**: Swapped M3/M4 priorities (Performance now M3, Web UI now M4). Added TDD enforcement and smart analysis mode as M3-Phase 1 deliverables (ADR-013, ADR-014)
 - **2026-02-06**: Updated M2 status to complete, added FR-2.4 metrics, M3 planning

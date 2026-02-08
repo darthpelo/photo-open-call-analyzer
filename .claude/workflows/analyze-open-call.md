@@ -150,8 +150,9 @@ Available formats:
 - JSON
 - CSV
 
-Output:
-- data/open-calls/{name}/report.{format}
+Output (FR-3.12: timestamped results):
+- data/open-calls/{name}/results/{timestamp}/report.{format}
+- data/open-calls/{name}/results/latest -> {timestamp} (symlink)
 ```
 
 ## Final File Structure
@@ -171,7 +172,13 @@ data/open-calls/{call-name}/
 │   └── ...
 ├── aggregated-scores.json     # Aggregated scores
 ├── final-ranking.md           # Final ranking
-└── report.md                  # Exportable report
+└── results/                   # Timestamped results (FR-3.12)
+    ├── 2026-02-08T14-30-45/   # Each analysis run
+    │   ├── batch-results.json
+    │   ├── photo-analysis.md
+    │   ├── photo-analysis.json
+    │   └── photo-analysis.csv
+    └── latest -> 2026-02-08T14-30-45  # Symlink to most recent
 ```
 
 ## Complete Checklist

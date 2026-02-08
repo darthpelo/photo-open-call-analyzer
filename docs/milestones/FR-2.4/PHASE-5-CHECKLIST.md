@@ -118,8 +118,8 @@ npm run analyze test-corrupted
 
 **Verification**:
 ```bash
-grep "corrupted" results/photo-analysis.md
-grep "CORRUPTED_FILE" results/photo-analysis.json
+grep "corrupted" {project}/results/latest/photo-analysis.md
+grep "CORRUPTED_FILE" {project}/results/latest/photo-analysis.json
 ```
 
 ### Scenario MT-ER-002: HEIC Format Support
@@ -298,7 +298,7 @@ npm run analyze test-resume
 
 ```bash
 # After analysis, verify all report formats exist and are valid
-ls -la results/photo-analysis.*
+ls -la {project}/results/latest/photo-analysis.*
 ```
 
 **Expected**:
@@ -309,13 +309,13 @@ ls -la results/photo-analysis.*
 **Verify format**:
 ```bash
 # Markdown
-cat results/photo-analysis.md | head -20
+cat {project}/results/latest/photo-analysis.md | head -20
 
 # JSON
-jq '.metadata' results/photo-analysis.json
+jq '.metadata' {project}/results/latest/photo-analysis.json
 
 # CSV
-head -5 results/photo-analysis.csv
+head -5 {project}/results/latest/photo-analysis.csv
 ```
 
 ---

@@ -71,7 +71,8 @@ npm run analyze data/open-calls/nature-wildlife
 
 ### 5. View Results
 ```bash
-cat results/photo-analysis.md
+# Results saved to {project}/results/{timestamp}/ with 'latest' symlink (FR-3.12)
+cat data/open-calls/nature-wildlife/results/latest/photo-analysis.md
 ```
 
 ---
@@ -119,7 +120,7 @@ mkdir -p data/open-calls/my-competition/photos
 npm run analyze data/open-calls/my-competition
 ```
 
-5. **Results** in `results/`:
+5. **Results** in `{project}/results/{timestamp}/` (with `latest` symlink):
 - `photo-analysis.md` - Human-readable report
 - `photo-analysis.json` - Structured data
 - `photo-analysis.csv` - For Excel/Sheets

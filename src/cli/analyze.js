@@ -12,7 +12,7 @@ import { aggregateSetScores, rankSets } from '../analysis/set-score-aggregator.j
 import { selectCandidateSets, countCombinations } from '../processing/combination-generator.js';
 import { exportSetReports } from '../output/set-report-generator.js';
 import { logger } from '../utils/logger.js';
-import { readJson, fileExists, writeJson, projectPath } from '../utils/file-utils.js';
+import { readJson, fileExists, writeJson, projectPath, resolveOutputDir } from '../utils/file-utils.js';
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
 import { comparePrompts } from '../validation/ab-testing-framework.js';
@@ -63,7 +63,7 @@ program
 program
   .command('analyze <project-dir>')
   .description('Analyze photos in a project directory')
-  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
   .option('-p, --parallel <n>', 'Number of parallel analyses', '3')
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
@@ -146,11 +146,15 @@ program
         logger.warn(`Checkpoint interval clamped to valid range: ${checkpointInterval}`);
       }
 
+      // Resolve output directory relative to project (FR-3.12)
+      const outputDir = resolveOutputDir(projectDir, options.output);
+      logger.info(`Results will be saved to: ${outputDir}`);
+
       const batchResults = await processBatch(
         photosDir,
         analysisPrompt,
         {
-          outputDir: options.output,
+          outputDir,
           parallel: parseInt(options.parallel),
           checkpointInterval,
           clearCheckpoint: options.clearCheckpoint || false,
@@ -194,7 +198,7 @@ program
 
       // Generate and export reports
       logger.section('REPORT GENERATION');
-      exportReports(options.output, aggregation, aggregation.tiers, aggregation.statistics, {
+      exportReports(outputDir, aggregation, aggregation.tiers, aggregation.statistics, {
         formats: ['markdown', 'json', 'csv'],
         basename: 'photo-analysis',
         title: `${analysisPrompt.title} - Analysis Report`,
@@ -221,7 +225,7 @@ program
         displayTierRecommendations(smartTiers);
       }
 
-      logger.success(`Analysis complete! Results saved to: ${options.output}`);
+      logger.success(`Analysis complete! Results saved to: ${outputDir}`);
     } catch (error) {
       logger.error(error.message);
       if (process.env.NODE_ENV === 'development') {
@@ -429,7 +433,7 @@ program
   .command('analyze-set <project-dir>')
   .description('Analyze a predefined set of photos as a cohesive group (Polaroid mode)')
   .requiredOption('--photos <paths...>', 'Photo filenames (space-separated, relative to project photos dir)')
-  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
   .option('--skip-individual', 'Skip individual analysis (use existing results)')
   .option('--timeout <seconds>', 'Timeout per analysis in seconds (30-300)', '120')
   .action(async (projectDir, options) => {
@@ -564,8 +568,8 @@ program
         }
       }
 
-      // Export reports
-      const outputDir = join(projectDir, options.output);
+      // Export reports (FR-3.12: timestamped output directory)
+      const outputDir = resolveOutputDir(projectDir, options.output);
       exportSetReports(outputDir, [aggregated], null, setConfig, {
         title: analysisPrompt.title,
         theme: analysisPrompt.theme
@@ -588,7 +592,7 @@ program
   .command('suggest-sets <project-dir>')
   .description('Find optimal photo sets from previously analyzed photos')
   .option('-n, --top <n>', 'Number of top sets to suggest', '5')
-  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
   .option('--skip-vision', 'Skip vision-based set evaluation (use pre-scoring only)')
   .option('--max-candidates <n>', 'Max sets to evaluate with vision model', '10')
   .option('--timeout <seconds>', 'Timeout per set evaluation in seconds (30-300)', '120')
@@ -753,8 +757,8 @@ program
         logger.info(`Score range: ${ranked.statistics.min.toFixed(2)} - ${ranked.statistics.max.toFixed(2)}`);
       }
 
-      // Export reports
-      const outputDir = join(projectDir, options.output);
+      // Export reports (FR-3.12: timestamped output directory)
+      const outputDir = resolveOutputDir(projectDir, options.output);
       exportSetReports(outputDir, ranked.ranking, ranked.statistics, setConfig, {
         title: analysisPrompt.title,
         theme: analysisPrompt.theme

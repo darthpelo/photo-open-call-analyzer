@@ -152,7 +152,7 @@ mkdir data/open-calls/my-competition/photos
 npm run analyze data/open-calls/my-competition
 ```
 
-Results will be in the `results/` directory.
+Results will be in `data/open-calls/my-competition/results/{timestamp}/` with a `latest` symlink (FR-3.12).
 
 ## Features
 

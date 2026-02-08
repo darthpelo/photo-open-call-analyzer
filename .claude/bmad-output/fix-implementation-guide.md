@@ -12,7 +12,7 @@
 program
   .command('analyze <project-dir>')
   .description('Analyze photos in a project directory')
-  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')  // FR-3.12: now project-relative with timestamped subdirs
   .option('-p, --parallel <n>', 'Number of parallel analyses', '3')
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
@@ -28,7 +28,7 @@ program
 program
   .command('analyze <project-dir>')
   .description('Analyze photos in a project directory')
-  .option('-o, --output <dir>', 'Output directory for results', './results')
+  .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')  // FR-3.12: now project-relative with timestamped subdirs
   .option('-p, --parallel <n>', 'Number of parallel analyses', '3')
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
