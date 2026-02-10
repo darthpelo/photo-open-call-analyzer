@@ -260,6 +260,15 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Impact**: Per-open-call result isolation with full historical tracking (ADR-016)
 
+#### FR-3.13: Smart Photo Selection for analyze-set ✅
+- [x] `resolvePhotoSelection()` utility in `file-utils.js`
+- [x] Smart defaults: omit `--photos` to auto-select when count matches setSize
+- [x] Glob patterns: `--photos "urban-*.jpg"` for pattern-based selection
+- [x] Backward compatible: explicit filenames still work
+- [x] 15 unit tests, 605 total tests passing
+
+**Impact**: Significantly easier photo selection for set analysis (no more typing every filename)
+
 ---
 
 ## Milestone 4 (M4): Web UI & User Experience ⚪ PLANNED
@@ -357,9 +366,9 @@ Create a tool to help photographers select their best photos for open calls, usi
 ## Current Focus (Feb 2026)
 
 **Active Work**:
-- M3 Phase 1: Complete (TDD, Smart Mode, Polaroid Set Analysis, Results Directory)
-- FR-3.12: Consistent per-open-call results with timestamped history (ADR-016)
-- 590 tests passing, coverage thresholds enforced
+- M3 Phase 1: Complete (TDD, Smart Mode, Polaroid Set Analysis, Results Directory, Smart Photo Selection)
+- FR-3.13: Smart photo selection for analyze-set (smart defaults + glob patterns)
+- 605 tests passing, coverage thresholds enforced
 
 **Next Steps**:
 1. Implement analysis caching (FR-3.7)
@@ -413,6 +422,7 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 ## Changelog
 
+- **2026-02-09**: Added FR-3.13 Smart Photo Selection for analyze-set. Smart defaults (auto-select when count matches setSize) + glob patterns (--photos "urban-*.jpg")
 - **2026-02-08**: Added FR-3.12 Consistent Results Directory with Timestamped History (ADR-016). All CLI commands now save to {projectDir}/results/{timestamp}/ with latest symlink
 - **2026-02-07**: Added FR-3.11 Polaroid Set Analysis (set-level photo group evaluation for Polaroid-style exhibitions)
 - **2026-02-07**: Swapped M3/M4 priorities (Performance now M3, Web UI now M4). Added TDD enforcement and smart analysis mode as M3-Phase 1 deliverables (ADR-013, ADR-014)
