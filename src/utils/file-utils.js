@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, symlinkSync, lstatSync } from 'fs';
+import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, symlinkSync, lstatSync, globSync } from 'fs';
 import { dirname, resolve, join, isAbsolute } from 'path';
 import { fileURLToPath } from 'url';
 
@@ -108,4 +108,155 @@ export function resolveOutputDir(projectDir, outputPath) {
   }
 
   return timestampedDir;
+}
+
+/**
+ * Resolve photo selection for set analysis.
+ * Supports three modes:
+ *   1. Smart Default: --photos not provided, auto-select all if count matches setSize
+ *   2. Glob patterns: expand patterns like "urban-*.jpg" relative to photosDir
+ *   3. Literal filenames: direct file references (backward-compatible)
+ *
+ * @param {Object} options
+ * @param {string} options.photosDir - Absolute path to photos directory
+ * @param {string[]|undefined} options.photoArgs - Raw --photos arguments (undefined if not provided)
+ * @param {number} options.setSize - Expected set size from config
+ * @param {string[]} options.supportedFormats - Supported image extensions (lowercase, no dot)
+ * @returns {{ success: boolean, photos: string[], filenames: string[], mode: string, error: string|null }}
+ */
+export function resolvePhotoSelection({ photosDir, photoArgs, setSize, supportedFormats }) {
+  if (!photoArgs) {
+    return resolveSmartDefault(photosDir, setSize, supportedFormats);
+  }
+
+  const GLOB_CHARS = /[*?[\]{}]/;
+  const hasGlobs = photoArgs.some(arg => GLOB_CHARS.test(arg));
+
+  if (hasGlobs) {
+    return resolveGlobPatterns(photosDir, photoArgs, supportedFormats);
+  }
+
+  return resolveExplicitFiles(photosDir, photoArgs);
+}
+
+function listSupportedPhotos(directory, supportedFormats) {
+  const pattern = `*.{${supportedFormats.join(',')}}`;
+  const matches = globSync(pattern, { cwd: directory });
+  const unique = [...new Set(matches)].sort();
+  return unique.map(name => ({ name, path: join(directory, name) }));
+}
+
+function resolveSmartDefault(photosDir, setSize, supportedFormats) {
+  if (!existsSync(photosDir)) {
+    return {
+      success: false, photos: [], filenames: [], mode: 'smart-default',
+      error: `Photos directory not found: ${photosDir}`
+    };
+  }
+
+  const files = listSupportedPhotos(photosDir, supportedFormats);
+
+  if (files.length === 0) {
+    return {
+      success: false, photos: [], filenames: [], mode: 'smart-default',
+      error: 'No supported photo files found in photos directory'
+    };
+  }
+
+  if (files.length !== setSize) {
+    return {
+      success: false, photos: [], filenames: [], mode: 'smart-default',
+      error: `Smart default requires exactly ${setSize} photos in directory, found ${files.length}. ` +
+        `Use --photos to select specific files.\n` +
+        `Available photos (${files.length}): ${files.map(f => f.name).join(', ')}`
+    };
+  }
+
+  return {
+    success: true,
+    photos: files.map(f => f.path),
+    filenames: files.map(f => f.name),
+    mode: 'smart-default',
+    error: null
+  };
+}
+
+function resolveGlobPatterns(photosDir, photoArgs, supportedFormats) {
+  const GLOB_CHARS = /[*?[\]{}]/;
+  const resolvedNames = new Set();
+
+  for (const arg of photoArgs) {
+    if (GLOB_CHARS.test(arg)) {
+      const matches = globSync(arg, { cwd: photosDir });
+
+      if (matches.length === 0) {
+        return {
+          success: false, photos: [], filenames: [], mode: 'glob',
+          error: `Glob pattern "${arg}" matched 0 files in photos directory`
+        };
+      }
+
+      for (const match of matches) {
+        const ext = match.split('.').pop().toLowerCase();
+        if (supportedFormats.includes(ext)) {
+          resolvedNames.add(match);
+        }
+      }
+    } else {
+      resolvedNames.add(arg);
+    }
+  }
+
+  const filenames = [...resolvedNames].sort();
+  const missingFiles = [];
+  const photos = [];
+
+  for (const name of filenames) {
+    const fullPath = join(photosDir, name);
+    if (!existsSync(fullPath)) {
+      missingFiles.push(name);
+    } else {
+      photos.push(fullPath);
+    }
+  }
+
+  if (missingFiles.length > 0) {
+    return {
+      success: false, photos: [], filenames: [], mode: 'glob',
+      error: `Photo(s) not found: ${missingFiles.join(', ')}`
+    };
+  }
+
+  if (photos.length === 0) {
+    return {
+      success: false, photos: [], filenames: [], mode: 'glob',
+      error: 'No supported photo files matched the provided patterns'
+    };
+  }
+
+  return { success: true, photos, filenames, mode: 'glob', error: null };
+}
+
+function resolveExplicitFiles(photosDir, photoArgs) {
+  const filenames = [...new Set(photoArgs)].sort();
+  const photos = [];
+  const missingFiles = [];
+
+  for (const name of filenames) {
+    const fullPath = join(photosDir, name);
+    if (!existsSync(fullPath)) {
+      missingFiles.push(name);
+    } else {
+      photos.push(fullPath);
+    }
+  }
+
+  if (missingFiles.length > 0) {
+    return {
+      success: false, photos: [], filenames: [], mode: 'explicit',
+      error: `Photo(s) not found: ${missingFiles.join(', ')}`
+    };
+  }
+
+  return { success: true, photos, filenames, mode: 'explicit', error: null };
 }

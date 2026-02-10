@@ -67,7 +67,14 @@ ls data/open-calls/my-oc/results/latest/
 # Initialize with Polaroid template (setMode pre-configured)
 node src/cli/analyze.js init my-polaroid --template polaroid
 
-# Analyze a specific set of photos
+# Smart default: auto-selects all photos if count matches setSize
+node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/
+
+# Use glob patterns to select photos
+node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/ \
+  --photos "urban-*.jpg"
+
+# Explicit filenames (original syntax, still works)
 node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/ \
   --photos photo1.jpg photo2.jpg photo3.jpg photo4.jpg
 

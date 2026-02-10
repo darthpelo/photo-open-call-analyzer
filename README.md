@@ -449,15 +449,22 @@ npm run analyze test-prompt \
 #   --sample <n>           # Number of photos to test (default: 3)
 ```
 
-### Set Analysis Commands (New in FR-3.11)
+### Set Analysis Commands (FR-3.11 + FR-3.13)
 
 ```bash
-# Analyze a specific set of photos as a group
+# Smart default: auto-selects all photos if count matches setSize
+npm run analyze analyze-set data/open-calls/project-name/
+
+# Use glob patterns to select photos
+npm run analyze analyze-set data/open-calls/project-name/ \
+  --photos "urban-*.jpg"
+
+# Explicit filenames (original syntax)
 npm run analyze analyze-set data/open-calls/project-name/ \
   --photos photo1.jpg photo2.jpg photo3.jpg photo4.jpg
 
 # Options:
-#   --photos <paths...>     # Photo filenames (required, space-separated)
+#   --photos [paths...]     # Photo filenames or glob patterns (optional)
 #   --skip-individual       # Skip individual analysis (use existing results)
 #   --timeout <seconds>     # Timeout per analysis (default: 120)
 #   -o, --output <dir>      # Output directory relative to project (default: results)
@@ -750,6 +757,10 @@ ollama pull llava:7b
   - [x] Results saved to `{projectDir}/results/{timestamp}/` with `latest` symlink
   - [x] All CLI commands (`analyze`, `analyze-set`, `suggest-sets`) aligned
   - [x] ADR-015 architecture decision
+- [x] **FR-3.13**: Smart photo selection for analyze-set
+  - [x] Smart defaults: auto-select all photos when count matches setSize
+  - [x] Glob patterns: `--photos "urban-*.jpg"` for pattern-based selection
+  - [x] Backward compatible: explicit filenames still work
 - [x] **FR-3.4**: Guided project initialization wizard
 
 ### Future (M4+) - Advanced Features

@@ -12,7 +12,8 @@ import { aggregateSetScores, rankSets } from '../analysis/set-score-aggregator.j
 import { selectCandidateSets, countCombinations } from '../processing/combination-generator.js';
 import { exportSetReports } from '../output/set-report-generator.js';
 import { logger } from '../utils/logger.js';
-import { readJson, fileExists, writeJson, projectPath, resolveOutputDir } from '../utils/file-utils.js';
+import { readJson, fileExists, writeJson, projectPath, resolveOutputDir, resolvePhotoSelection } from '../utils/file-utils.js';
+import { SUPPORTED_FORMATS } from '../processing/photo-validator.js';
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
 import { comparePrompts } from '../validation/ab-testing-framework.js';
@@ -432,7 +433,7 @@ program
 program
   .command('analyze-set <project-dir>')
   .description('Analyze a predefined set of photos as a cohesive group (Polaroid mode)')
-  .requiredOption('--photos <paths...>', 'Photo filenames (space-separated, relative to project photos dir)')
+  .option('--photos [paths...]', 'Photo filenames or glob patterns (omit to auto-select if count matches set size)')
   .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
   .option('--skip-individual', 'Skip individual analysis (use existing results)')
   .option('--timeout <seconds>', 'Timeout per analysis in seconds (30-300)', '120')
@@ -458,27 +459,40 @@ program
       }
 
       const config = configResult.data;
-      const setConfig = config.setMode || { enabled: true, setSize: options.photos.length };
+      const setConfig = config.setMode || { enabled: true, setSize: 4 };
 
       if (!setConfig.setCriteria) {
         const { getDefaultSetCriteria } = await import('../analysis/set-prompt-builder.js');
         setConfig.setCriteria = getDefaultSetCriteria();
       }
 
-      // Validate photo count matches set size
-      const expectedSize = setConfig.setSize || options.photos.length;
-      if (options.photos.length !== expectedSize) {
-        logger.warn(`Expected ${expectedSize} photos for set, got ${options.photos.length}`);
+      // Resolve photo selection (FR-3.13: Smart Defaults + Glob Patterns)
+      const expectedSize = setConfig.setSize || 4;
+      const selection = resolvePhotoSelection({
+        photosDir,
+        photoArgs: options.photos,
+        setSize: expectedSize,
+        supportedFormats: SUPPORTED_FORMATS
+      });
+
+      if (!selection.success) {
+        logger.error(selection.error);
+        process.exit(1);
       }
 
-      // Resolve photo paths
-      const photoPaths = options.photos.map(p => join(photosDir, p));
-      for (const photoPath of photoPaths) {
-        if (!fileExists(photoPath)) {
-          logger.error(`Photo not found: ${photoPath}`);
-          process.exit(1);
-        }
+      const modeLabel = {
+        'smart-default': 'Auto-selected (all photos in directory)',
+        'glob': 'Matched via glob pattern(s)',
+        'explicit': 'Explicitly specified'
+      };
+      logger.info(`Photo selection: ${modeLabel[selection.mode]}`);
+      logger.info(`Selected ${selection.filenames.length} photos: ${selection.filenames.join(', ')}`);
+
+      if (selection.filenames.length !== expectedSize) {
+        logger.warn(`Expected ${expectedSize} photos for set, got ${selection.filenames.length}`);
       }
+
+      const photoPaths = selection.photos;
 
       // Load or generate analysis prompt
       let analysisPrompt;
