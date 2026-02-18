@@ -36,6 +36,12 @@
       "maxLength": 2000,
       "description": "Description of past winning photos and their characteristics (style, themes, technical quality)"
     },
+    "model": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 100,
+      "description": "Optional Ollama vision model override for this project (e.g., 'llava:13b', 'moondream'). See FR-3.9 / ADR-019."
+    },
     "context": {
       "type": "string",
       "maxLength": 2000,

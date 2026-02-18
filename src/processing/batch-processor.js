@@ -43,7 +43,8 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     checkpointInterval = 10,
     clearCheckpoint = false,
     analysisMode = 'auto', // ADR-014: smart auto-selection as default
-    noCache = false // FR-3.7: skip cache lookup when true
+    noCache = false, // FR-3.7: skip cache lookup when true
+    model = null // FR-3.9: resolved model override
   } = options;
 
   // FR-3.8: Determine concurrency mode
@@ -76,7 +77,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
 
   // Compute config hash for cache keys (FR-3.7)
   const configHash = openCallConfig ? computeConfigHash(openCallConfig) : '';
-  const modelName = getModelName();
+  const modelName = getModelName(model);
   let cacheHits = 0;
 
   // Try to load existing checkpoint

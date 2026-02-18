@@ -18,6 +18,8 @@ import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
 import { comparePrompts } from '../validation/ab-testing-framework.js';
 import { runInitWizard } from './init-wizard.js';
+import { resolveModel, listVisionModels, ensureModelAvailable } from '../utils/model-manager.js';
+import { getModelName } from '../utils/api-client.js';
 import { join, basename } from 'path';
 import ora from 'ora';
 
@@ -74,6 +76,7 @@ program
   .option('--analysis-mode <mode>', 'Analysis mode: single, multi, or auto (default: auto)', 'auto')
   .option('--no-cache', 'Skip cache lookup, force fresh analysis (FR-3.7)')
   .option('--clear-analysis-cache', 'Clear analysis cache before starting (FR-3.7)')
+  .option('--model <name>', 'Vision model to use (e.g., llava:7b, llava:13b, moondream) (FR-3.9)')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -114,6 +117,14 @@ program
       }
 
       const config = configResult.data;
+
+      // FR-3.9: Resolve model from chain (CLI > config > env > default)
+      const resolvedModel = resolveModel({
+        cliModel: options.model || null,
+        configModel: config.model || null,
+        envModel: process.env.OLLAMA_MODEL || null
+      });
+      logger.info(`Model: ${resolvedModel}`);
 
       // Load or generate analysis prompt
       let analysisPrompt;
@@ -171,7 +182,8 @@ program
           photoTimeout, // Pass timeout to batch processor (FR-2.3)
           analysisMode: options.analysisMode, // Pass analysis mode (FR-2.4 Phase 2)
           noCache: options.cache === false, // FR-3.7: --no-cache flag
-          clearAnalysisCache: options.clearAnalysisCache || false // FR-3.7: --clear-analysis-cache flag
+          clearAnalysisCache: options.clearAnalysisCache || false, // FR-3.7: --clear-analysis-cache flag
+          model: resolvedModel // FR-3.9: resolved model name
         },
         config  // Pass config for checkpoint validation
       );
@@ -253,7 +265,8 @@ program
 program
   .command('analyze-single <photo-path> [prompt-file]')
   .description('Analyze a single photo')
-  .action(async (photoPath, promptFile) => {
+  .option('--model <name>', 'Vision model to use (FR-3.9)')
+  .action(async (photoPath, promptFile, options) => {
     try {
       logger.section('SINGLE PHOTO ANALYSIS');
 
@@ -448,6 +461,7 @@ program
   .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
   .option('--skip-individual', 'Skip individual analysis (use existing results)')
   .option('--timeout <seconds>', 'Timeout per analysis in seconds (30-300)', '120')
+  .option('--model <name>', 'Vision model to use (FR-3.9)')
   .action(async (projectDir, options) => {
     try {
       logger.section('SET ANALYSIS (Polaroid Mode)');
@@ -799,10 +813,45 @@ program
     }
   });
 
+/**
+ * List installed vision models (FR-3.9)
+ */
+program
+  .command('list-models')
+  .description('List installed vision models from Ollama')
+  .action(async () => {
+    try {
+      logger.section('INSTALLED VISION MODELS');
+
+      const models = await listVisionModels();
+      const currentModel = getModelName();
+
+      if (models.length === 0) {
+        logger.warn('No vision models found. Install one with: ollama pull llava:7b');
+        process.exit(0);
+      }
+
+      models.forEach(name => {
+        const isDefault = name === currentModel;
+        const marker = isDefault ? '  * ' : '    ';
+        const suffix = isDefault ? ' (default)' : '';
+        logger.info(`${marker}${name}${suffix}`);
+      });
+
+      logger.info(`\nCurrent model: ${currentModel}`);
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models");
   process.exit(1);
 });
 

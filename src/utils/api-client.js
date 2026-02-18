@@ -22,11 +22,12 @@ export function getApiClient() {
 }
 
 /**
- * Get the configured model name
+ * Get the configured model name, with optional override.
+ * @param {string|null} [override=null] - Override model name (from CLI or config)
  * @returns {string} Model name
  */
-export function getModelName() {
-  return config.model;
+export function getModelName(override = null) {
+  return override || config.model;
 }
 
 /**
