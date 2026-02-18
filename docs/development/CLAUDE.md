@@ -147,6 +147,29 @@ photo-open-call-analyzer/
 - Explicit error handling
 - Structured logging with chalk
 
+### TDD Enforcement (ADR-013)
+
+**MANDATORY**: All new code MUST follow Test-Driven Development.
+
+1. **RED**: Write failing tests FIRST (before any implementation code)
+2. **GREEN**: Write the minimum code to make tests pass
+3. **REFACTOR**: Clean up while keeping tests green
+
+**Rules for all agents (especially /bmad-dev)**:
+- NEVER write implementation code before its test file exists and has been verified to fail
+- Test file MUST be created and committed (or at least written) before the module it tests
+- Coverage thresholds enforced: statements 80%, branches 70%, functions 80%, lines 80%
+- Pre-commit hooks run `vitest related` on staged files - tests must pass to commit
+- Every new module `src/foo/bar.js` requires `tests/bar.test.js`
+
+**Test conventions**:
+- Framework: Vitest (not Jest) with `import { describe, it, expect } from 'vitest'`
+- Temp directories for file-based tests: `fs.mkdtempSync(path.join(os.tmpdir(), 'test-'))`
+- Clean up in `afterEach` with `fs.rmSync(testDir, { recursive: true, force: true })`
+- Follow existing test patterns in `tests/checkpoint-manager.test.js`
+
+**Reference**: `docs/development/TDD-BEST-PRACTICES.md`, `docs/development/TDD-QUICK-REFERENCE.md`
+
 ### Commits
 - Conventional commits: `feat:`, `fix:`, `docs:`, `test:`
 - Messages in English

@@ -20,9 +20,12 @@ import {
   clearCache,
   getCacheStats
 } from './cache-manager.js';
+import { ConcurrencyManager } from './concurrency-manager.js';
 import { getModelName } from '../utils/api-client.js';
 import { validatePhoto, SUPPORTED_FORMATS } from './photo-validator.js';
 import { classifyError, ErrorType, getActionableMessage } from '../utils/error-classifier.js';
+
+const PERFORMANCE_LOG_INTERVAL = 10;
 
 /**
  * Process a batch of photos in a directory
@@ -42,6 +45,19 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     analysisMode = 'auto', // ADR-014: smart auto-selection as default
     noCache = false // FR-3.7: skip cache lookup when true
   } = options;
+
+  // FR-3.8: Determine concurrency mode
+  const isAutoParallel = parallel === 'auto';
+  const concurrencyMgr = new ConcurrencyManager({
+    maxSlots: isAutoParallel ? undefined : parallel,
+    autoScale: isAutoParallel
+  });
+
+  if (isAutoParallel) {
+    logger.info(`Concurrency: auto-scaling (starting at ${concurrencyMgr.getStats().max} slots)`);
+  } else {
+    logger.info(`Concurrency: fixed ${parallel} slots`);
+  }
 
   // Determine project directory (parent of photos directory)
   const projectDir = dirname(photosDirectory);
@@ -158,142 +174,157 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
       `${photoTimeout / 1000}s timeout)`);
   }
 
-  // Process photos in parallel batches
-  for (let i = 0; i < photosToAnalyze.length; i += parallel) {
-    const batch = photosToAnalyze.slice(i, i + parallel);
-    const batchPromises = batch.map(async (photo) => {
-      try {
-        // 1. VALIDATE PHOTO (FR-2.3)
-        const validation = await validatePhoto(photo.path);
-        
-        if (!validation.valid) {
-          // Invalid photo - skip with error
-          failedPhotos.push({
-            photo: photo.name,
-            reason: validation.error,
-            type: ErrorType.INVALID_FORMAT,
-            action: 'Convert to supported format or remove from directory'
-          });
-          logger.warn(`⚠️ Skipping ${photo.name}: ${validation.error}`);
-          return { success: false, error: validation.error, photoName: photo.name, skipped: true };
-        }
+  // FR-3.8: Process photos with slot-based concurrency (ADR-018)
+  let checkpointDirty = false;
 
-        // Log warning for large files
-        if (validation.warning) {
-          logger.debug(`⚠️ ${photo.name}: ${validation.warning}`);
-        }
+  const processPhoto = async (photo) => {
+    const slot = await concurrencyMgr.acquireSlot();
+    const startTime = performance.now();
+    try {
+      // 1. VALIDATE PHOTO (FR-2.3)
+      const validation = await validatePhoto(photo.path);
 
-        // 2. CHECK CACHE (FR-3.7 / ADR-017)
+      if (!validation.valid) {
+        failedPhotos.push({
+          photo: photo.name,
+          reason: validation.error,
+          type: ErrorType.INVALID_FORMAT,
+          action: 'Convert to supported format or remove from directory'
+        });
+        logger.warn(`⚠️ Skipping ${photo.name}: ${validation.error}`);
+        return { success: false, error: validation.error, photoName: photo.name, skipped: true };
+      }
+
+      // Log warning for large files
+      if (validation.warning) {
+        logger.debug(`⚠️ ${photo.name}: ${validation.warning}`);
+      }
+
+      // 2. CHECK CACHE (FR-3.7 / ADR-017)
+      if (!noCache && configHash) {
+        try {
+          const photoHash = await computePhotoHash(photo.path);
+          const cacheKey = computeCacheKey(photoHash, configHash, modelName);
+          const cached = getCachedResult(projectDir, cacheKey);
+
+          if (cached && cached.result) {
+            cacheHits++;
+            processed++;
+            logger.success(`[${processed}/${photos.length}] [CACHE HIT] ${photo.name}`);
+            return { success: true, data: cached.result, photoName: photo.name, cacheHit: true };
+          }
+        } catch (cacheErr) {
+          logger.debug(`Cache lookup failed for ${photo.name}: ${cacheErr.message}`);
+        }
+      }
+
+      // 3. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4) + AUTO (ADR-014)
+      const analysisResult = await analyzePhotoWithTimeout(photo.path, analysisPrompt, {
+        timeout: photoTimeout,
+        analysisMode: effectiveMode // Pass resolved mode (never 'auto')
+      });
+
+      if (analysisResult.success) {
+        // Store in cache (FR-3.7)
         if (!noCache && configHash) {
           try {
             const photoHash = await computePhotoHash(photo.path);
             const cacheKey = computeCacheKey(photoHash, configHash, modelName);
-            const cached = getCachedResult(projectDir, cacheKey);
-
-            if (cached && cached.result) {
-              cacheHits++;
-              processed++;
-              logger.success(`[${processed}/${photos.length}] [CACHE HIT] ${photo.name}`);
-              return { success: true, data: cached.result, photoName: photo.name, cacheHit: true };
-            }
+            setCachedResult(projectDir, cacheKey, analysisResult.data, {
+              photoFilename: photo.name,
+              photoHash,
+              configHash,
+              model: modelName
+            });
           } catch (cacheErr) {
-            logger.debug(`Cache lookup failed for ${photo.name}: ${cacheErr.message}`);
+            logger.debug(`Cache store failed for ${photo.name}: ${cacheErr.message}`);
           }
         }
 
-        // 3. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4) + AUTO (ADR-014)
-        const analysisResult = await analyzePhotoWithTimeout(photo.path, analysisPrompt, {
-          timeout: photoTimeout,
-          analysisMode: effectiveMode // Pass resolved mode (never 'auto')
-        });
+        processed++;
+        logger.success(`[${processed}/${photos.length}] Analyzed: ${photo.name}`);
 
-        if (analysisResult.success) {
-          // Store in cache (FR-3.7)
-          if (!noCache && configHash) {
-            try {
-              const photoHash = await computePhotoHash(photo.path);
-              const cacheKey = computeCacheKey(photoHash, configHash, modelName);
-              setCachedResult(projectDir, cacheKey, analysisResult.data, {
-                photoFilename: photo.name,
-                photoHash,
-                configHash,
-                model: modelName
-              });
-            } catch (cacheErr) {
-              logger.debug(`Cache store failed for ${photo.name}: ${cacheErr.message}`);
-            }
-          }
+        // Performance dashboard (FR-3.8): log stats periodically
+        if (processed % PERFORMANCE_LOG_INTERVAL === 0) {
+          const stats = concurrencyMgr.getStats();
+          logger.debug(`[PERF] ${stats.photosProcessed} photos | ${stats.photosPerSec} photos/sec | ${stats.active}/${stats.max} slots | ${stats.memoryMB}MB heap | avg ${stats.avgLatencyMs}ms`);
+        }
 
-          processed++;
-          logger.success(`[${processed}/${photos.length}] Analyzed: ${photo.name}`);
-          return { success: true, data: analysisResult.data, photoName: photo.name };
-        } else if (analysisResult.timedOut) {
-          // Timeout - add to failed
-          failedPhotos.push({
-            photo: photo.name,
-            reason: analysisResult.error,
-            type: ErrorType.TIMEOUT,
-            action: 'Reduce image size or increase --photo-timeout'
-          });
-          logger.warn(`⚠️ ${photo.name}: ${analysisResult.error}`);
-          return { success: false, error: analysisResult.error, photoName: photo.name, timedOut: true };
-        }
-        
-      } catch (error) {
-        // 3. CLASSIFY ERROR (FR-2.3)
-        const classified = classifyError(error, { photo: photo.name });
-        
-        // 4. HANDLE BASED ON TYPE
-        if (classified.type === ErrorType.OLLAMA_CONNECTION) {
-          // Save checkpoint and exit gracefully
-          logger.error('❌ Ollama connection lost. Saving checkpoint...');
-          if (checkpoint) {
-            await saveCheckpoint(checkpoint, projectDir);
-            logger.info('✓ Progress saved. Restart Ollama and re-run to resume.');
-          }
-          process.exit(1);
-        }
-        
-        // Other errors: add to failed, continue
+        return { success: true, data: analysisResult.data, photoName: photo.name };
+      } else if (analysisResult.timedOut) {
         failedPhotos.push({
           photo: photo.name,
-          reason: classified.message,
-          type: classified.type,
-          action: classified.actionable
+          reason: analysisResult.error,
+          type: ErrorType.TIMEOUT,
+          action: 'Reduce image size or increase --photo-timeout'
         });
-        
-        logger.error(`[${processed + 1}/${photos.length}] Failed: ${photo.name} - ${classified.message}`);
-        errors.push({ photo: photo.name, error: classified.message });
-        return { success: false, error: classified.message, photoName: photo.name };
+        logger.warn(`⚠️ ${photo.name}: ${analysisResult.error}`);
+        return { success: false, error: analysisResult.error, photoName: photo.name, timedOut: true };
       }
-    });
 
-    const batchResults = await Promise.all(batchPromises);
-    results.push(...batchResults);
+      return { success: false, error: 'Unknown analysis result', photoName: photo.name };
+    } catch (error) {
+      // CLASSIFY ERROR (FR-2.3)
+      const classified = classifyError(error, { photo: photo.name });
 
-    // Save checkpoint after each batch (if checkpoint enabled)
-    if (checkpoint && openCallConfig) {
-      const successfulInBatch = batchResults.filter(r => r.success);
-      const failedInBatch = batchResults.filter(r => !r.success).map(r => r.photoName);
-      
-      if (successfulInBatch.length > 0) {
-        const newPhotos = successfulInBatch.map(r => r.photoName);
-        const newResults = {};
-        successfulInBatch.forEach(r => {
-          newResults[r.photoName] = r.data.scores;
-        });
-        
-        updateCheckpoint(checkpoint, newPhotos, newResults, failedInBatch);
-        
-        // Also store failedPhotos details in checkpoint (FR-2.3)
-        checkpoint.progress.failedPhotos = failedPhotos.map(f => f.photo);
-        
-        // Save checkpoint every N photos (configurable interval)
-        if (processed % checkpointInterval === 0 || i + parallel >= photosToAnalyze.length) {
-          saveCheckpoint(checkpoint, projectDir);
+      // HANDLE BASED ON TYPE
+      if (classified.type === ErrorType.OLLAMA_CONNECTION) {
+        logger.error('❌ Ollama connection lost. Saving checkpoint...');
+        if (checkpoint) {
+          await saveCheckpoint(checkpoint, projectDir);
+          logger.info('✓ Progress saved. Restart Ollama and re-run to resume.');
         }
+        process.exit(1);
       }
+
+      failedPhotos.push({
+        photo: photo.name,
+        reason: classified.message,
+        type: classified.type,
+        action: classified.actionable
+      });
+
+      logger.error(`[${processed + 1}/${photos.length}] Failed: ${photo.name} - ${classified.message}`);
+      errors.push({ photo: photo.name, error: classified.message });
+      return { success: false, error: classified.message, photoName: photo.name };
+    } finally {
+      const latencyMs = performance.now() - startTime;
+      concurrencyMgr.reportLatency(slot, latencyMs);
+      concurrencyMgr.releaseSlot(slot);
     }
+  };
+
+  // Launch all photo tasks; slot acquisition gates actual concurrency
+  const allPromises = photosToAnalyze.map(async (photo) => {
+    const result = await processPhoto(photo);
+    results.push(result);
+
+    // Save checkpoint incrementally (if checkpoint enabled)
+    if (checkpoint && openCallConfig && result.success) {
+      const newResults = {};
+      newResults[result.photoName] = result.data.scores;
+      updateCheckpoint(checkpoint, [result.photoName], newResults, []);
+      checkpoint.progress.failedPhotos = failedPhotos.map(f => f.photo);
+      checkpointDirty = true;
+
+      if (processed % checkpointInterval === 0) {
+        saveCheckpoint(checkpoint, projectDir);
+        checkpointDirty = false;
+      }
+    } else if (checkpoint && openCallConfig && !result.success && !result.skipped) {
+      updateCheckpoint(checkpoint, [], {}, [result.photoName]);
+      checkpoint.progress.failedPhotos = failedPhotos.map(f => f.photo);
+      checkpointDirty = true;
+    }
+
+    return result;
+  });
+
+  await Promise.all(allPromises);
+
+  // Save any remaining dirty checkpoint
+  if (checkpointDirty && checkpoint) {
+    saveCheckpoint(checkpoint, projectDir);
   }
 
   // Delete checkpoint on successful completion
@@ -333,6 +364,10 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     logger.info(`Cache: ${cacheHits} hits / ${totalAnalyzed} photos (${hitRate}% hit rate)`);
   }
 
+  // Performance summary (FR-3.8 / ADR-018)
+  const perfStats = concurrencyMgr.getStats();
+  logger.info(`Performance: ${perfStats.photosProcessed} photos in ${perfStats.photosPerSec} photos/sec | avg ${perfStats.avgLatencyMs}ms | peak ${perfStats.max} slots | ${perfStats.memoryMB}MB heap`);
+
   return {
     success: errors.length === 0,
     total: photos.length,
@@ -342,6 +377,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     errors,
     failedPhotos, // Include failed photos with details (FR-2.3)
     cacheHits, // FR-3.7: number of cache hits
+    performanceStats: perfStats, // FR-3.8: concurrency performance stats
   };
 }
 
