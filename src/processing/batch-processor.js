@@ -11,6 +11,16 @@ import {
   initializeCheckpoint,
   updateCheckpoint
 } from './checkpoint-manager.js';
+import { computeConfigHash } from './checkpoint-manager.js';
+import {
+  computePhotoHash,
+  computeCacheKey,
+  getCachedResult,
+  setCachedResult,
+  clearCache,
+  getCacheStats
+} from './cache-manager.js';
+import { getModelName } from '../utils/api-client.js';
 import { validatePhoto, SUPPORTED_FORMATS } from './photo-validator.js';
 import { classifyError, ErrorType, getActionableMessage } from '../utils/error-classifier.js';
 
@@ -29,7 +39,8 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     skipExisting = false,
     checkpointInterval = 10,
     clearCheckpoint = false,
-    analysisMode = 'auto' // ADR-014: smart auto-selection as default
+    analysisMode = 'auto', // ADR-014: smart auto-selection as default
+    noCache = false // FR-3.7: skip cache lookup when true
   } = options;
 
   // Determine project directory (parent of photos directory)
@@ -40,6 +51,17 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     deleteCheckpoint(projectDir);
     logger.info('Existing checkpoint cleared');
   }
+
+  // Handle --clear-cache flag (FR-3.7)
+  if (options.clearAnalysisCache) {
+    clearCache(projectDir);
+    logger.info('Analysis cache cleared');
+  }
+
+  // Compute config hash for cache keys (FR-3.7)
+  const configHash = openCallConfig ? computeConfigHash(openCallConfig) : '';
+  const modelName = getModelName();
+  let cacheHits = 0;
 
   // Try to load existing checkpoint
   let checkpoint = loadCheckpoint(projectDir);
@@ -161,13 +183,47 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
           logger.debug(`⚠️ ${photo.name}: ${validation.warning}`);
         }
 
-        // 2. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4) + AUTO (ADR-014)
+        // 2. CHECK CACHE (FR-3.7 / ADR-017)
+        if (!noCache && configHash) {
+          try {
+            const photoHash = await computePhotoHash(photo.path);
+            const cacheKey = computeCacheKey(photoHash, configHash, modelName);
+            const cached = getCachedResult(projectDir, cacheKey);
+
+            if (cached && cached.result) {
+              cacheHits++;
+              processed++;
+              logger.success(`[${processed}/${photos.length}] [CACHE HIT] ${photo.name}`);
+              return { success: true, data: cached.result, photoName: photo.name, cacheHit: true };
+            }
+          } catch (cacheErr) {
+            logger.debug(`Cache lookup failed for ${photo.name}: ${cacheErr.message}`);
+          }
+        }
+
+        // 3. ANALYZE WITH TIMEOUT (FR-2.3) + MULTI-STAGE (FR-2.4) + AUTO (ADR-014)
         const analysisResult = await analyzePhotoWithTimeout(photo.path, analysisPrompt, {
           timeout: photoTimeout,
           analysisMode: effectiveMode // Pass resolved mode (never 'auto')
         });
 
         if (analysisResult.success) {
+          // Store in cache (FR-3.7)
+          if (!noCache && configHash) {
+            try {
+              const photoHash = await computePhotoHash(photo.path);
+              const cacheKey = computeCacheKey(photoHash, configHash, modelName);
+              setCachedResult(projectDir, cacheKey, analysisResult.data, {
+                photoFilename: photo.name,
+                photoHash,
+                configHash,
+                model: modelName
+              });
+            } catch (cacheErr) {
+              logger.debug(`Cache store failed for ${photo.name}: ${cacheErr.message}`);
+            }
+          }
+
           processed++;
           logger.success(`[${processed}/${photos.length}] Analyzed: ${photo.name}`);
           return { success: true, data: analysisResult.data, photoName: photo.name };
@@ -270,6 +326,13 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
       : { success: false, error: r.error }
   );
 
+  // Log cache stats (FR-3.7)
+  if (!noCache && cacheHits > 0) {
+    const totalAnalyzed = results.filter(r => r.success).length;
+    const hitRate = totalAnalyzed > 0 ? Math.round((cacheHits / totalAnalyzed) * 100) : 0;
+    logger.info(`Cache: ${cacheHits} hits / ${totalAnalyzed} photos (${hitRate}% hit rate)`);
+  }
+
   return {
     success: errors.length === 0,
     total: photos.length,
@@ -278,6 +341,7 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     results: mappedResults,
     errors,
     failedPhotos, // Include failed photos with details (FR-2.3)
+    cacheHits, // FR-3.7: number of cache hits
   };
 }
 

@@ -72,6 +72,8 @@ program
   .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
   .option('--show-tiers', 'Display tier breakdown in terminal')
   .option('--analysis-mode <mode>', 'Analysis mode: single, multi, or auto (default: auto)', 'auto')
+  .option('--no-cache', 'Skip cache lookup, force fresh analysis (FR-3.7)')
+  .option('--clear-analysis-cache', 'Clear analysis cache before starting (FR-3.7)')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -160,7 +162,9 @@ program
           checkpointInterval,
           clearCheckpoint: options.clearCheckpoint || false,
           photoTimeout, // Pass timeout to batch processor (FR-2.3)
-          analysisMode: options.analysisMode // Pass analysis mode (FR-2.4 Phase 2)
+          analysisMode: options.analysisMode, // Pass analysis mode (FR-2.4 Phase 2)
+          noCache: options.cache === false, // FR-3.7: --no-cache flag
+          clearAnalysisCache: options.clearAnalysisCache || false // FR-3.7: --clear-analysis-cache flag
         },
         config  // Pass config for checkpoint validation
       );
