@@ -269,6 +269,28 @@ npm test
 - Coordinate between agents
 - Document decisions
 
+## BMAD Context
+
+Domain: software
+Phase: analysis
+
+Available agents:
+- /bmad-analyst - Analysis and discovery
+- /bmad-pm - Detailed requirements
+- /bmad-architect - Solution design
+- /bmad-dev - Implementation
+- /bmad-qa - Testing and validation
+- /bmad-security - Security audit and threat modeling
+- /bmad-sm - Sprint planning and backlog management
+- /bmad-ux - UX design, wireframes, user flows
+
+Workflow:
+1. /bmad-analyst - Create brief
+2. /bmad-pm - Create requirements
+3. /bmad-architect - Create design
+4. /bmad-dev - Implement
+5. /bmad-qa - Validate
+
 ## Language Guidelines
 
 **IMPORTANT**: All documentation and code comments MUST be in English only.

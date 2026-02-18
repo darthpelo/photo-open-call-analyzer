@@ -1,0 +1,44 @@
+{
+  "domain": "software",
+  "phase": "development",
+  "created": "2026-02-17T00:00:00.000Z",
+  "updated": "2026-02-18T00:00:00.000Z",
+  "artifacts": [
+    {
+      "type": "brief",
+      "file": "project-brief.md",
+      "created": "2026-02-17"
+    },
+    {
+      "type": "architecture",
+      "file": "architecture.md",
+      "created": "2026-02-18"
+    },
+    {
+      "type": "story",
+      "file": "shards/stories/STORY-FR37-cache-manager.md",
+      "created": "2026-02-18"
+    },
+    {
+      "type": "story",
+      "file": "shards/stories/STORY-FR38-concurrency-manager.md",
+      "created": "2026-02-18"
+    },
+    {
+      "type": "story",
+      "file": "shards/stories/STORY-FR39-model-manager.md",
+      "created": "2026-02-18"
+    },
+    {
+      "type": "story",
+      "file": "shards/stories/STORY-FR310-winner-manager.md",
+      "created": "2026-02-18"
+    }
+  ],
+  "adrs": [
+    "docs/architecture/ADR-017-analysis-caching.md",
+    "docs/architecture/ADR-018-parallel-processing-optimization.md",
+    "docs/architecture/ADR-019-model-selection-management.md",
+    "docs/architecture/ADR-020-historical-winner-learning.md"
+  ]
+}
