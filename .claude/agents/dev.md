@@ -248,6 +248,22 @@ module.exports = {
 | **Designer** | UI specifications | API/data for UI |
 | **QA** | Bug reports | Fixes, updated tests |
 
+## TDD Enforcement (MANDATORY - ADR-013)
+
+**Every implementation MUST follow RED-GREEN-REFACTOR:**
+
+1. **RED**: Create `tests/<module>.test.js` with failing tests FIRST
+2. **GREEN**: Create `src/<path>/<module>.js` to make tests pass
+3. **REFACTOR**: Clean up while keeping tests green
+
+**Never write implementation code before its test file exists.**
+
+- Framework: Vitest (`import { describe, it, expect } from 'vitest'`)
+- Coverage: statements 80%, branches 70%, functions 80%, lines 80%
+- Run tests: `npx vitest run tests/<module>.test.js`
+- Run all: `npm test`
+- Follow patterns in `tests/checkpoint-manager.test.js` and `tests/cache-manager.test.js`
+
 ## Operational Notes
 
 - Always write tests for critical code
