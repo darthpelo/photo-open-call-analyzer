@@ -65,7 +65,7 @@ program
   .command('analyze <project-dir>')
   .description('Analyze photos in a project directory')
   .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
-  .option('-p, --parallel <n>', 'Number of parallel analyses', '3')
+  .option('-p, --parallel <n>', 'Number of parallel analyses or "auto" for adaptive scaling (FR-3.8)', '3')
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
@@ -153,12 +153,19 @@ program
       const outputDir = resolveOutputDir(projectDir, options.output);
       logger.info(`Results will be saved to: ${outputDir}`);
 
+      // FR-3.8: Parse parallel option (number or 'auto')
+      const parallelValue = options.parallel === 'auto' ? 'auto' : parseInt(options.parallel);
+      if (parallelValue !== 'auto' && (isNaN(parallelValue) || parallelValue < 1)) {
+        logger.error('Invalid --parallel value. Must be a positive number or "auto".');
+        process.exit(1);
+      }
+
       const batchResults = await processBatch(
         photosDir,
         analysisPrompt,
         {
           outputDir,
-          parallel: parseInt(options.parallel),
+          parallel: parallelValue,
           checkpointInterval,
           clearCheckpoint: options.clearCheckpoint || false,
           photoTimeout, // Pass timeout to batch processor (FR-2.3)
