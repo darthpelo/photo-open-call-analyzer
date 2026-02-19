@@ -107,14 +107,19 @@ photo-open-call-analyzer/
 │   │   ├── score-aggregator.js
 │   │   ├── set-analyzer.js       # Multi-image set analysis (FR-3.11)
 │   │   ├── set-prompt-builder.js # Set-level prompt generation
-│   │   └── set-score-aggregator.js # Composite set scoring
+│   │   ├── set-score-aggregator.js # Composite set scoring
+│   │   └── winner-manager.js     # Historical winner learning (FR-3.10)
 │   ├── processing/           # Batch processing
+│   │   ├── batch-processor.js    # Batch photo processing with caching & concurrency
+│   │   ├── cache-manager.js      # Per-project analysis cache (FR-3.7)
+│   │   ├── concurrency-manager.js # Slot-based adaptive concurrency (FR-3.8)
 │   │   └── combination-generator.js # C(N,K) set combinations
 │   ├── output/               # Report generation
 │   │   └── set-report-generator.js  # Set reports (MD/JSON/CSV)
 │   ├── cli/                  # CLI commands
 │   └── utils/
-│       ├── api-client.js     # Ollama client
+│       ├── api-client.js     # Ollama client (getModelName supports override)
+│       ├── model-manager.js  # Model selection & auto-pull (FR-3.9)
 │       ├── file-utils.js
 │       └── logger.js
 ├── data/
@@ -130,7 +135,11 @@ photo-open-call-analyzer/
 └── docs/
     └── architecture/
         ├── ADR-015-set-analysis.md  # Set analysis architecture decision
-        └── ADR-016-results-location.md  # Timestamped results (FR-3.12)
+        ├── ADR-016-results-location.md  # Timestamped results (FR-3.12)
+        ├── ADR-017-analysis-caching.md  # Per-project cache (FR-3.7)
+        ├── ADR-018-parallel-processing-optimization.md  # Slot-based concurrency (FR-3.8)
+        ├── ADR-019-model-selection-management.md  # Model resolution chain (FR-3.9)
+        └── ADR-020-historical-winner-learning.md  # Winner patterns (FR-3.10)
 ```
 
 ## Conventions
@@ -167,6 +176,8 @@ photo-open-call-analyzer/
 - Temp directories for file-based tests: `fs.mkdtempSync(path.join(os.tmpdir(), 'test-'))`
 - Clean up in `afterEach` with `fs.rmSync(testDir, { recursive: true, force: true })`
 - Follow existing test patterns in `tests/checkpoint-manager.test.js`
+- Use `performance.now()` (not `Date.now()`) for sub-millisecond timing in code tested by fast unit tests
+- Mock external services (`vi.mock`) before importing modules that depend on them (see `tests/model-manager.test.js`)
 
 **Reference**: `docs/development/TDD-BEST-PRACTICES.md`, `docs/development/TDD-QUICK-REFERENCE.md`
 
@@ -259,6 +270,16 @@ node src/cli/analyze.js suggest-sets ./data/open-calls/my-oc/ --top 5
 
 # View latest results
 ls ./data/open-calls/my-oc/results/latest/
+
+# Model management (FR-3.9)
+node src/cli/analyze.js list-models
+node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --model llava:13b
+node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --parallel auto
+
+# Winner learning (FR-3.10)
+node src/cli/analyze.js tag-winner ./data/open-calls/my-oc/ --photo winner.jpg --placement "1st"
+node src/cli/analyze.js winner-insights ./data/open-calls/my-oc/
+node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --compare-winners
 
 # Tests
 npm test
