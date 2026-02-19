@@ -20,6 +20,7 @@ import { comparePrompts } from '../validation/ab-testing-framework.js';
 import { runInitWizard } from './init-wizard.js';
 import { resolveModel, listVisionModels, ensureModelAvailable } from '../utils/model-manager.js';
 import { getModelName } from '../utils/api-client.js';
+import { tagWinner, loadWinners, extractPatterns, computeWinnerSimilarity, getWinnerInsights } from '../analysis/winner-manager.js';
 import { join, basename } from 'path';
 import ora from 'ora';
 
@@ -77,6 +78,7 @@ program
   .option('--no-cache', 'Skip cache lookup, force fresh analysis (FR-3.7)')
   .option('--clear-analysis-cache', 'Clear analysis cache before starting (FR-3.7)')
   .option('--model <name>', 'Vision model to use (e.g., llava:7b, llava:13b, moondream) (FR-3.9)')
+  .option('--compare-winners', 'Compare results against tagged winners (FR-3.10)')
   .action(async (projectDir, options) => {
     try {
       logger.section('PHOTO ANALYSIS');
@@ -247,6 +249,31 @@ program
         displayTierSummary(smartTiers);
         displayTierDetails(smartTiers);
         displayTierRecommendations(smartTiers);
+      }
+
+      // FR-3.10: Winner comparison (post-aggregation, non-invasive)
+      if (options.compareWinners) {
+        const winners = loadWinners(projectDir);
+        if (winners.length > 0) {
+          const patterns = extractPatterns(winners);
+          logger.section('WINNER COMPARISON');
+          logger.info(`Comparing against ${patterns.count} tagged winner(s)`);
+          logger.info(`Winner avg score: ${patterns.overallAverage}/10`);
+
+          for (const result of successfulResults) {
+            const photoScores = {};
+            if (result.scores?.individual) {
+              for (const [name, data] of Object.entries(result.scores.individual)) {
+                photoScores[name] = data.score || 0;
+              }
+            }
+            const similarity = computeWinnerSimilarity(photoScores, patterns);
+            const photoName = basename(result.photoPath);
+            logger.info(`  ${photoName}: winner similarity ${similarity}/10`);
+          }
+        } else {
+          logger.info('No winners tagged. Use "tag-winner" to tag competition winners.');
+        }
       }
 
       logger.success(`Analysis complete! Results saved to: ${outputDir}`);
@@ -814,6 +841,119 @@ program
   });
 
 /**
+ * Tag a photo as a competition winner (FR-3.10)
+ */
+program
+  .command('tag-winner <project-dir>')
+  .description('Tag a photo as a competition winner for pattern learning')
+  .requiredOption('--photo <name>', 'Photo filename (must exist in project results)')
+  .option('--placement <place>', 'Placement (e.g., "1st", "Honorable Mention")', '')
+  .option('--notes <text>', 'Notes about why this photo won', '')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('TAG WINNER');
+
+      // Load existing batch results to find the photo's scores
+      const resultsFile = join(projectDir, 'results', 'latest', 'batch-results.json');
+      if (!fileExists(resultsFile)) {
+        logger.error('No batch results found. Run "analyze" first.');
+        process.exit(1);
+      }
+
+      const batchResults = readJson(resultsFile);
+      const photoResult = (batchResults.results || []).find(
+        r => r.success && basename(r.photo) === options.photo
+      );
+
+      if (!photoResult) {
+        logger.error(`Photo "${options.photo}" not found in results or analysis failed.`);
+        logger.info('Available photos:');
+        (batchResults.results || [])
+          .filter(r => r.success)
+          .forEach(r => logger.info(`  ${basename(r.photo)}`));
+        process.exit(1);
+      }
+
+      // Load config for competition name
+      const configFile = join(projectDir, 'open-call.json');
+      let competition = '';
+      if (fileExists(configFile)) {
+        const config = readJson(configFile);
+        competition = config.title || '';
+      }
+
+      const result = tagWinner(projectDir, {
+        filename: options.photo,
+        scores: photoResult.scores
+      }, {
+        placement: options.placement,
+        competition,
+        notes: options.notes
+      });
+
+      if (result) {
+        logger.success(`Tagged "${options.photo}" as winner (${options.placement || 'unranked'})`);
+      } else {
+        logger.error('Failed to tag winner');
+        process.exit(1);
+      }
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
+/**
+ * Show winner insights and patterns (FR-3.10)
+ */
+program
+  .command('winner-insights <project-dir>')
+  .description('Show scoring patterns from tagged competition winners')
+  .action(async (projectDir) => {
+    try {
+      logger.section('WINNER INSIGHTS');
+
+      const insights = getWinnerInsights(projectDir);
+
+      if (!insights) {
+        logger.warn('No winners tagged yet. Use "tag-winner" to tag competition winners.');
+        process.exit(0);
+      }
+
+      const { patterns, winners } = insights;
+
+      logger.info(`Winners tagged: ${patterns.count}`);
+      logger.info(`Overall average score: ${patterns.overallAverage}/10`);
+
+      logger.section('SCORE PROFILE (Average)');
+      for (const [name, avg] of Object.entries(patterns.avgScoreProfile)) {
+        const min = patterns.minScores[name];
+        logger.info(`  ${name}: avg ${avg}/10 (min ${min})`);
+      }
+
+      logger.section('DOMINANT CRITERIA');
+      patterns.dominantCriteria.forEach(name => {
+        logger.info(`  ${name}: ${patterns.avgScoreProfile[name]}/10`);
+      });
+
+      logger.section('TAGGED WINNERS');
+      winners.forEach(w => {
+        const score = w.scores?.summary?.weighted_average || 'N/A';
+        logger.info(`  ${w.filename} - ${w.placement || 'unranked'} (${score}/10) ${w.competition ? `[${w.competition}]` : ''}`);
+      });
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
+/**
  * List installed vision models (FR-3.9)
  */
 program
@@ -851,7 +991,7 @@ program
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights");
   process.exit(1);
 });
 
