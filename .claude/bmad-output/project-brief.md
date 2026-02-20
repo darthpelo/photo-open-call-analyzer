@@ -1,15 +1,15 @@
-# Project Brief - Photo Open Call Analyzer
+# Project Brief: M4 — Open Call Analyzer Improvements
 
 **Domain**: Software
-**Phase**: M3 Phase 2 (Performance & Optimization)
-**Generated**: 2026-02-17
-**Source**: Existing ROADMAP.md and BACKLOG.md
+**Phase**: M4 (Enhanced Workflow & Calibration)
+**Generated**: 2026-02-20
+**Source**: `docs/improvements.md` gap analysis
 
 ---
 
 ## Vision
 
-Create a tool to help photographers select their best photos for open calls, using local AI (Ollama/LLaVA) to analyze both competition criteria and candidate photos.
+Evolve the Photo Open Call Analyzer into a more complete end-to-end submission assistant by adding AI-powered text generation, evaluator calibration, enhanced compliance checking, and refined scoring mechanics — all running locally via Ollama.
 
 **Core principles**: Local-first, free & open, privacy-preserving, transparent scoring.
 
@@ -21,76 +21,89 @@ Create a tool to help photographers select their best photos for open calls, usi
 |-----------|--------|------------------|
 | M1: MVP | Complete | End-to-end analysis, CLI, multi-format export |
 | M2: Enhanced Analysis | Complete | Templates, multi-stage prompting, resume, edge cases |
-| M3 Phase 1 | Complete | TDD enforcement, smart mode, Polaroid sets, timestamped results, smart photo selection |
-| M3 Phase 2 | **Next** | Caching, parallel optimization, model selection, winner learning |
-| M4: Web UI | Future (Q3 2026) | React + Vite dashboard, results visualization |
-
-**Metrics achieved**: 605 tests passing, 80%+ coverage, specificity 8.2/10, score consistency sigma 1.8.
+| M3 Phase 1 | Complete | TDD enforcement, smart mode, Polaroid sets, timestamped results |
+| M3 Phase 2 | Complete | Caching, parallel optimization, model selection, winner learning |
+| **M4** | **Next** | **Title/description generation, calibration, compliance, scoring weights** |
 
 ---
 
-## Scope: M3 Phase 2
+## Scope: M4
 
-### In Scope
+### New Modules
 
 | Feature | ID | Priority | Description |
 |---------|----|----------|-------------|
-| Analysis Caching | FR-3.7 | P1 | Photo content hash, local cache, hit rate reporting, clear cache |
-| Parallel Processing Optimization | FR-3.8 | P1 | Dynamic concurrency, memory optimization (<500MB/100 photos), auto-throttle |
-| Model Selection & Management | FR-3.9 | P1 | Pluggable models (llava:7b/13b, moondream, bakllava), auto-download, comparison |
-| Historical Winner Learning | FR-3.10 | P1 | Store winners, pattern extraction, similarity scoring, recommendations |
+| Title/Description Generator | FR-4.1 | P1 | AI-generated submission titles and descriptions via Ollama (English only) |
+| Benchmarking & Calibration | FR-4.2 | P1 | User-provided baseline photo sets to calibrate evaluator accuracy |
+
+### Enhancements to Existing Modules
+
+| Feature | ID | Priority | Description |
+|---------|----|----------|-------------|
+| Compliance Checker expansion | FR-4.3 | P1 | Submission-level rules: quantity limits, deadline, metadata |
+| Configurable scoring weights | FR-4.4 | P2 | Per-open-call weight config (default: 40/20/15/15/10) |
+| Open call templates library | FR-4.5 | P2 | Pre-built JSON templates (portrait, documentary, Polaroid) |
+| Optimized analysis prompts | FR-4.6 | P3 | Refined theme/jury prompts from improvements.md appendices |
+| Operational checklist | FR-4.7 | P3 | Per-open-call progress tracking via CLI |
 
 ### Out of Scope (M4)
-- Web UI and visualization
-- Interactive prompt refinement
-- Mobile/cross-platform
-- Platform integrations (Picter, PhotoShelter)
+
+- PDF report export (keep MD/JSON/CSV)
+- GUI / web interface (CLI only)
+- Multi-language text generation (English only)
+- Cloud LLM APIs (Ollama only)
+- Automated deadline notifications
 
 ---
 
-## Success Metrics (M3 Phase 2)
+## Success Criteria
 
 | Metric | Target |
 |--------|--------|
-| Cache hit rate | >= 20% on re-runs |
-| Parallel scaling | Linear up to 6 concurrent photos |
-| Memory usage | <= 500MB for 100-photo batch |
-| Model switching | < 30s for download + warmup |
-| Test coverage | >= 80% maintained |
+| Title/Desc generation | Contextually appropriate English texts via Ollama |
+| Calibration accuracy | Detects scoring drift against user baselines |
+| Compliance validation | Checks quantity limits + deadline + metadata |
+| Weight configurability | Respected by score aggregator, per open call |
+| Templates available | >= 3 (portrait, documentary, Polaroid) |
+| Test coverage | >= 80% maintained (TDD enforced) |
+| Stack | 100% local — no cloud dependencies |
 
 ---
 
 ## Stakeholders
 
-| Role | Name | Responsibility |
-|------|------|----------------|
-| Owner / User | Alessio | Solo developer, primary user, decision maker |
-| Active Project | instantart Arles 2026 | Polaroid open call (4-photo sets), awaiting photos |
+| Role | Responsibility |
+|------|----------------|
+| Owner / User (Alessio) | Solo developer, primary user, decision maker |
 
 ---
 
-## Technical Stack
+## Technical Constraints
 
-- **Runtime**: Node.js (ESM)
-- **AI**: Ollama + LLaVA (local vision model)
-- **Image Processing**: Sharp
-- **CLI**: Commander + Chalk + Ora
-- **Testing**: Jest, 605 tests, 80%+ coverage thresholds enforced
-
----
-
-## Recommended Next Steps
-
-1. `/bmad-pm` - Create detailed requirements (PRD) for FR-3.7 through FR-3.10
-2. `/bmad-architect` - Design caching strategy, concurrency model, model plugin architecture
-3. `/bmad-dev` - Implement features with TDD
-4. `/bmad-qa` - Validate against success metrics
+- **Local-only**: Ollama + LLaVA (vision), Ollama text models (generation)
+- **TDD mandatory**: Red-green-refactor for all new code (ADR-013)
+- **Branch protection**: Feature branches + PR workflow
+- **Build on existing architecture**: No major refactors
 
 ---
 
-## Open Questions
+## Risks
 
-1. **FR-3.7 Cache scope**: Per-project or global cache? (Impacts disk usage vs. cross-project reuse)
-2. **FR-3.9 Model priority**: Which alternative models to support first? (llava:13b for quality, moondream for speed)
-3. **FR-3.10 Winner data source**: Manual input or scrape from competition sites?
-4. **M3 Phase 2 order**: Sequential (3.7 → 3.8 → 3.9 → 3.10) or parallel development?
+| Risk | Impact | Mitigation |
+|------|--------|------------|
+| Ollama text quality for titles/descriptions | Medium | Prompt engineering, multi-shot examples, editable output |
+| Calibration requires curated baseline sets | Medium | Clear guidelines + example baseline structure |
+| Scoring weight changes may alter existing rankings | Low | Default weights match current implicit behavior |
+
+---
+
+## Technical Placement
+
+| Module | Location |
+|--------|----------|
+| Title/Description Generator | `src/output/title-description-generator.js` (new) |
+| Benchmarking Manager | `src/analysis/benchmarking-manager.js` (new) |
+| Compliance expansion | `src/processing/photo-validator.js` (extend) |
+| Weights config | `open-call.json` schema + `score-aggregator.js` (extend) |
+| Templates library | `data/templates/` (new directory) |
+| Checklist command | `src/cli/analyze.js` (extend CLI) |

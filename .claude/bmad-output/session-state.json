@@ -1,44 +1,41 @@
 {
   "domain": "software",
-  "phase": "development",
-  "created": "2026-02-17T00:00:00.000Z",
-  "updated": "2026-02-18T00:00:00.000Z",
+  "phase": "completed",
+  "created": "2026-02-20T15:00:00.000Z",
+  "updated": "2026-02-20T16:30:00.000Z",
+  "completed": "2026-02-20T16:30:00.000Z",
   "artifacts": [
-    {
-      "type": "brief",
-      "file": "project-brief.md",
-      "created": "2026-02-17"
-    },
-    {
-      "type": "architecture",
-      "file": "architecture.md",
-      "created": "2026-02-18"
-    },
-    {
-      "type": "story",
-      "file": "shards/stories/STORY-FR37-cache-manager.md",
-      "created": "2026-02-18"
-    },
-    {
-      "type": "story",
-      "file": "shards/stories/STORY-FR38-concurrency-manager.md",
-      "created": "2026-02-18"
-    },
-    {
-      "type": "story",
-      "file": "shards/stories/STORY-FR39-model-manager.md",
-      "created": "2026-02-18"
-    },
-    {
-      "type": "story",
-      "file": "shards/stories/STORY-FR310-winner-manager.md",
-      "created": "2026-02-18"
-    }
+    {"type": "brief", "file": "project-brief.md", "created": "2026-02-20"},
+    {"type": "prd", "file": "PRD.md", "created": "2026-02-20"},
+    {"type": "architecture", "file": "architecture.md", "created": "2026-02-20"},
+    {"type": "tdd-checklist", "file": "tdd-checklist.md", "created": "2026-02-20"},
+    {"type": "test-report", "file": "test-report.md", "created": "2026-02-20"}
   ],
-  "adrs": [
-    "docs/architecture/ADR-017-analysis-caching.md",
-    "docs/architecture/ADR-018-parallel-processing-optimization.md",
-    "docs/architecture/ADR-019-model-selection-management.md",
-    "docs/architecture/ADR-020-historical-winner-learning.md"
-  ]
+  "workflow": {
+    "type": "greenfield",
+    "current_step": "completed",
+    "completed_steps": ["init", "scope", "prioritize", "arch", "impl", "qa"],
+    "skipped_steps": ["security", "facilitate"],
+    "optional_phases": {
+      "ux": false,
+      "security": true,
+      "facilitate": true
+    },
+    "step_sequence": ["init", "scope", "prioritize", "arch", "security", "facilitate", "impl", "qa"],
+    "checkpoints": [
+      {"step": "init", "timestamp": "2026-02-20T15:00:00.000Z", "status": "completed", "artifact": null},
+      {"step": "scope", "timestamp": "2026-02-20T15:10:00.000Z", "status": "completed", "artifact": "project-brief.md"},
+      {"step": "prioritize", "timestamp": "2026-02-20T15:20:00.000Z", "status": "completed", "artifact": "PRD.md"},
+      {"step": "arch", "timestamp": "2026-02-20T15:40:00.000Z", "status": "completed", "artifact": "architecture.md"},
+      {"step": "security", "timestamp": "2026-02-20T15:40:00.000Z", "status": "skipped", "artifact": null},
+      {"step": "facilitate", "timestamp": "2026-02-20T15:40:00.000Z", "status": "skipped", "artifact": null},
+      {"step": "impl", "timestamp": "2026-02-20T16:15:00.000Z", "status": "completed", "artifact": "tdd-checklist.md"},
+      {"step": "qa", "timestamp": "2026-02-20T16:30:00.000Z", "status": "completed", "artifact": "test-report.md"}
+    ],
+    "context": {
+      "input_document": "docs/improvements.md",
+      "description": "Greenfield analysis of improvements.md proposal for Photo Open Call Analyzer enhancements",
+      "impl_scope": "FR-4.3 only (Submission Validator)"
+    }
+  }
 }
