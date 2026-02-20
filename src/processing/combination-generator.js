@@ -94,6 +94,8 @@ export function calculateDiversity(photos) {
   return Math.min(avgDistance / 10, 1);
 }
 
+const MAX_SAFE_COMBINATIONS = 10000;
+
 /**
  * Select top candidate sets using multi-phase pre-filtering.
  *
@@ -106,10 +108,11 @@ export function calculateDiversity(photos) {
  * @param {Object} options - Selection options
  * @param {number} [options.maxSetsToEvaluate=10] - Max sets to return
  * @param {number} [options.preFilterTopN=12] - Consider only top N photos
+ * @param {number} [options.maxCombinations=10000] - Safety limit for total combinations
  * @returns {Object[]} Top candidate sets with { photos, preScore, diversityBonus }
  */
 export function selectCandidateSets(rankedPhotos, setSize, options = {}) {
-  const { maxSetsToEvaluate = 10, preFilterTopN = 12 } = options;
+  const { maxSetsToEvaluate = 10, preFilterTopN = 12, maxCombinations = MAX_SAFE_COMBINATIONS } = options;
 
   if (!rankedPhotos || rankedPhotos.length < setSize) {
     return [];
@@ -120,6 +123,15 @@ export function selectCandidateSets(rankedPhotos, setSize, options = {}) {
 
   if (topPhotos.length < setSize) {
     return [];
+  }
+
+  // Safety check: prevent memory exhaustion from excessive combinations
+  const totalCombinations = countCombinations(topPhotos.length, setSize);
+  if (totalCombinations > maxCombinations) {
+    throw new Error(
+      `Too many combinations: C(${topPhotos.length},${setSize}) = ${totalCombinations} exceeds limit of ${maxCombinations}. ` +
+      `Reduce photo count or increase set size.`
+    );
   }
 
   // Phase 2: Score all combinations
