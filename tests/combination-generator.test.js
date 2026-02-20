@@ -142,6 +142,77 @@ describe('combination-generator', () => {
     });
   });
 
+  describe('selectCandidateSets - safety limit', () => {
+    const makePhoto = (name, score, scores = {}) => ({
+      filename: name, score, scores
+    });
+
+    it('should throw when combinations exceed MAX_SAFE_COMBINATIONS', () => {
+      // C(30, 6) = 593,775 - way over default 10,000 limit
+      const photos = Array.from({ length: 30 }, (_, i) =>
+        makePhoto(`photo${i}.jpg`, 9 - i * 0.1, { Theme: 9 - i * 0.1 })
+      );
+
+      expect(() => selectCandidateSets(photos, 6, { preFilterTopN: 30 }))
+        .toThrow(/too many combinations/i);
+    });
+
+    it('should allow combinations under the limit', () => {
+      // C(8, 4) = 70 - well under limit
+      const photos = Array.from({ length: 8 }, (_, i) =>
+        makePhoto(`photo${i}.jpg`, 9 - i * 0.5, { Theme: 9 - i * 0.5 })
+      );
+
+      const candidates = selectCandidateSets(photos, 4, {
+        maxSetsToEvaluate: 5,
+        preFilterTopN: 8
+      });
+
+      expect(candidates.length).toBeGreaterThan(0);
+    });
+
+    it('should respect custom maxCombinations option', () => {
+      // C(10, 4) = 210 - over custom limit of 100
+      const photos = Array.from({ length: 10 }, (_, i) =>
+        makePhoto(`photo${i}.jpg`, 9 - i * 0.3, { Theme: 9 - i * 0.3 })
+      );
+
+      expect(() => selectCandidateSets(photos, 4, {
+        preFilterTopN: 10,
+        maxCombinations: 100
+      })).toThrow(/too many combinations/i);
+    });
+
+    it('should allow C(23,4) = 8855 under default limit of 10000', () => {
+      const photos = Array.from({ length: 23 }, (_, i) =>
+        makePhoto(`photo${i}.jpg`, 9 - i * 0.1, { Theme: 9 - i * 0.1 })
+      );
+
+      const candidates = selectCandidateSets(photos, 4, { preFilterTopN: 23 });
+      expect(candidates.length).toBeGreaterThan(0);
+    });
+
+    it('should throw for C(24,4) = 10626 over default limit of 10000', () => {
+      const photos = Array.from({ length: 24 }, (_, i) =>
+        makePhoto(`photo${i}.jpg`, 9 - i * 0.1, { Theme: 9 - i * 0.1 })
+      );
+
+      expect(() => selectCandidateSets(photos, 4, { preFilterTopN: 24 }))
+        .toThrow(/too many combinations/i);
+    });
+
+    it('should use default limit of 10000 when maxCombinations not specified', () => {
+      // C(24,4) = 10626 > 10000 default
+      const photos = Array.from({ length: 24 }, (_, i) =>
+        makePhoto(`photo${i}.jpg`, 9 - i * 0.1, { Theme: 9 - i * 0.1 })
+      );
+
+      // No maxCombinations passed - should use default and throw
+      expect(() => selectCandidateSets(photos, 4, { preFilterTopN: 24 }))
+        .toThrow(/exceeds limit of 10000/);
+    });
+  });
+
   describe('selectCandidateSets', () => {
     const makePhoto = (name, score, scores = {}) => ({
       filename: name,

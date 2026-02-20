@@ -1,5 +1,5 @@
 import { readFileSync, writeFileSync, existsSync, mkdirSync, unlinkSync, symlinkSync, lstatSync, globSync } from 'fs';
-import { dirname, resolve, join, isAbsolute } from 'path';
+import { dirname, resolve, join, isAbsolute, sep } from 'path';
 import { fileURLToPath } from 'url';
 
 /**
@@ -111,6 +111,25 @@ export function resolveOutputDir(projectDir, outputPath) {
 }
 
 /**
+ * Validate that a path stays within an allowed base directory.
+ * Prevents path traversal attacks (e.g., ../../etc/passwd).
+ * @param {string} userPath - User-supplied path (relative or absolute)
+ * @param {string} allowedBase - Base directory that must contain the resolved path
+ * @returns {string} The resolved absolute path
+ * @throws {Error} If the resolved path escapes the allowed base
+ */
+export function validatePathContainment(userPath, allowedBase) {
+  const resolvedBase = resolve(allowedBase);
+  const resolvedPath = resolve(allowedBase, userPath);
+
+  if (resolvedPath !== resolvedBase && !resolvedPath.startsWith(resolvedBase + sep)) {
+    throw new Error(`Path traversal detected: ${userPath}`);
+  }
+
+  return resolvedPath;
+}
+
+/**
  * Resolve photo selection for set analysis.
  * Supports three modes:
  *   1. Smart Default: --photos not provided, auto-select all if count matches setSize
@@ -197,12 +216,25 @@ function resolveGlobPatterns(photosDir, photoArgs, supportedFormats) {
       }
 
       for (const match of matches) {
+        try {
+          validatePathContainment(match, photosDir);
+        } catch {
+          continue; // Skip glob results that escape photosDir
+        }
         const ext = match.split('.').pop().toLowerCase();
         if (supportedFormats.includes(ext)) {
           resolvedNames.add(match);
         }
       }
     } else {
+      try {
+        validatePathContainment(arg, photosDir);
+      } catch {
+        return {
+          success: false, photos: [], filenames: [], mode: 'glob',
+          error: `Path traversal detected in filename: ${arg}`
+        };
+      }
       resolvedNames.add(arg);
     }
   }
@@ -243,6 +275,14 @@ function resolveExplicitFiles(photosDir, photoArgs) {
   const missingFiles = [];
 
   for (const name of filenames) {
+    try {
+      validatePathContainment(name, photosDir);
+    } catch {
+      return {
+        success: false, photos: [], filenames: [], mode: 'explicit',
+        error: `Path traversal detected in filename: ${name}`
+      };
+    }
     const fullPath = join(photosDir, name);
     if (!existsSync(fullPath)) {
       missingFiles.push(name);
