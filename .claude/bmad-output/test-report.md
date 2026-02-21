@@ -1,107 +1,150 @@
-# Test Report: Security P1 Fixes
+# Test Report — Sprint M4-S1 (Full Verification)
 
 **Project**: Photo Open Call Analyzer
-**Feature**: SEC-M3-05 (Path Traversal), SEC-M3-08 (Combination Limit)
-**Date**: 2026-02-20
-**Verifier**: Quality Guardian
-**Branch**: `feat/security-p1-fixes`
+**Scope**: S1 Bug Fixes + FR-4.1 Title/Description Generator + FR-4.2 Benchmarking & Calibration + S4 Cleanup
+**Date**: 2026-02-21
+**Tester**: Quality Guardian
+**Branch**: `feat/improvements-analysis`
+
+---
+
+## Test Suite Results
+
+| Suite | Tests | Passed | Failed |
+|-------|-------|--------|--------|
+| submission-validator.test.js | 21 | 21 | 0 |
+| title-description-generator.test.js | 23 | 23 | 0 |
+| benchmarking-manager.test.js | 19 | 19 | 0 |
+| All other suites (regression) | 704 | 704 | 0 |
+| **Total** | **767** | **767** | **0** |
+
+**Duration**: 3.66s — zero regressions.
 
 ---
 
 ## TDD Compliance
 
-**Status**: PASS
+| Module | RED (tests fail?) | GREEN (tests pass?) | Verified |
+|--------|-------------------|---------------------|----------|
+| FR-4.3 submission-validator.js | ERR_MODULE_NOT_FOUND | 20/20 | PASS |
+| FR-4.1 title-description-generator.js | ERR_MODULE_NOT_FOUND (23 tests) | 23/23 | PASS |
+| FR-4.2 benchmarking-manager.js | ERR_MODULE_NOT_FOUND (19 tests) | 19/19 | PASS |
 
-- `tdd-checklist.md` present and populated
-- 11 TDD cycles documented with RED/GREEN/REFACTOR evidence
-- All behaviors tested BEFORE implementation
-- All acceptance criteria have corresponding tests
-
----
-
-## Test Results
-
-- **Test Files**: 31 passed, 0 failed
-- **Tests**: 701 passed, 0 failed
-- **Duration**: ~5s
-- **Regressions**: 0
+**TDD Verdict**: COMPLIANT — all modules tested before implementation.
 
 ---
 
-## Implementation Verification
+## S1: Bug Fixes Verification
 
-### SEC-M3-05: Path Traversal Protection
+| Fix | Description | Status |
+|-----|-------------|--------|
+| CLI wiring | `validateSubmission` wired into `validate --config` command | PASS |
+| suggest-sets path | Now uses `results/latest/batch-results.json` with fallback | PASS |
+| analyze-set path | Same fix applied to `--skip-individual` path | PASS |
 
-| Check | Result |
+**Details**: All three path lookups now try `results/latest/` first (FR-3.12 compliant), falling back to `results/` for backward compatibility.
+
+---
+
+## S2: FR-4.1 Title/Description Generator
+
+### Acceptance Criteria
+
+| # | Criterion | Test(s) | Status |
+|---|-----------|---------|--------|
+| AC-1 | `buildTextPrompt()` includes theme, jury, score, criteria, JSON format | 7 buildTextPrompt tests | PASS |
+| AC-2 | `generateTexts()` calls Ollama chat API | `should call Ollama chat API` | PASS |
+| AC-3 | Model resolution: CLI flag > config textModel > vision model | `should use textModel from options`, `should use config textModel` | PASS |
+| AC-4 | Title max 100 chars, description max 500 chars | `should truncate title`, `should truncate description` | PASS |
+| AC-5 | Handles Ollama API errors gracefully | `should handle Ollama API errors` | PASS |
+| AC-6 | Handles malformed JSON response | `should handle malformed JSON response` | PASS |
+| AC-7 | Batch mode iterates all analyzed photos | `should generate texts for all analyzed photos` | PASS |
+| AC-8 | Skips failed photos in batch results | `should skip failed photos` | PASS |
+| AC-9 | Saves `generated-texts.json` to results directory | `should save generated-texts.json` | PASS |
+| AC-10 | Deduplication: Jaccard > 0.7 triggers retry | `should retry with creative prompt` | PASS |
+| AC-11 | CLI `generate-texts` command with --photo and --text-model | Wired in analyze.js | PASS |
+| AC-12 | Throws on missing config/results | 2 error tests | PASS |
+
+**Coverage**: 12/12 acceptance criteria verified (100%).
+
+---
+
+## S3: FR-4.2 Benchmarking & Calibration
+
+### Acceptance Criteria
+
+| # | Criterion | Test(s) | Status |
+|---|-----------|---------|--------|
+| AC-1 | `validateBaselineStructure()` checks photos/, expected-scores.json, non-empty, referenced photos | 6 validation tests | PASS |
+| AC-2 | `loadBaseline()` returns photos with full paths + expected scores | 2 load tests | PASS |
+| AC-3 | `loadBaseline()` throws on invalid structure | `should throw on invalid baseline` | PASS |
+| AC-4 | `generateDriftReport()` computes per-criterion avg, absolute delta | `should average scores`, `should use absolute delta` | PASS |
+| AC-5 | Thresholds: OK <= 1.5, WARNING 1.5-3.0, CRITICAL > 3.0 | 3 threshold tests | PASS |
+| AC-6 | Generates recommendations for WARNING/CRITICAL | `should generate recommendations` | PASS |
+| AC-7 | Handles empty arrays gracefully | `should handle empty arrays` | PASS |
+| AC-8 | `runCalibration()` validates, analyzes, generates report | `should validate baseline and return report` | PASS |
+| AC-9 | Saves `calibration-report.json` to baseline directory | `should save calibration-report.json` | PASS |
+| AC-10 | CLI `calibrate` command with --model option | Wired in analyze.js | PASS |
+
+**Coverage**: 10/10 acceptance criteria verified (100%).
+
+---
+
+## S4: P3 Cleanup
+
+| Item | Status |
+|------|--------|
+| Remove unused `logger` import from submission-validator.js | PASS |
+| Add `minPhotos` boundary test (count === minPhotos) | PASS (21st test) |
+
+---
+
+## Architecture Compliance
+
+| Check | Status |
 |-------|--------|
-| `validatePathContainment` uses `resolve()` + `startsWith(base + sep)` | PASS |
-| Applied in `resolveExplicitFiles()` | PASS |
-| Applied in `resolveGlobPatterns()` (both glob results and literal args) | PASS |
-| `resolveSmartDefault()` safe (hardcoded glob pattern, no user input) | PASS - confirmed safe |
-| Error messages do not leak internal base paths | PASS |
-| Correctly handles `../../etc/passwd` | PASS |
-| Correctly handles `subdir/../../outside.jpg` | PASS |
-| Allows valid filenames like `photo.jpg`, `subdir/photo.jpg` | PASS |
-
-### SEC-M3-08: Combination Safety Limit
-
-| Check | Result |
-|-------|--------|
-| Safety check positioned BEFORE generator loop | PASS |
-| `MAX_SAFE_COMBINATIONS = 10000` default | PASS |
-| Custom `maxCombinations` option supported | PASS |
-| Error message includes C(n,k) values and actionable guidance | PASS |
-| `suggest-sets` CLI catches the throw gracefully (in outer try/catch) | PASS |
+| FR-4.1 in `src/output/` (Output Layer per architecture) | PASS |
+| FR-4.2 in `src/analysis/` (Analysis Layer per architecture) | PASS |
+| FR-4.3 in `src/processing/` (separate from photo-validator, ADR-023) | PASS |
+| All new schema fields optional (backward compatible) | PASS |
+| Reuses existing `api-client.js` for Ollama calls | PASS |
+| ESM module syntax throughout | PASS |
+| JSDoc on all exported functions | PASS |
+| No new npm dependencies | PASS |
 
 ---
 
 ## Issues Found
 
-### P2 - F1: Glob Traversal Test is Non-Assertive
+| # | Issue | Severity | Description |
+|---|-------|----------|-------------|
+| — | — | — | No issues found |
 
-**File**: `tests/file-utils.test.js` (glob traversal test)
-**Issue**: The test uses `if (result.success)` which means it passes vacuously when the glob matches nothing. The test never exercises the security guard.
-**Impact**: If the `validatePathContainment` call in `resolveGlobPatterns` were accidentally deleted, this test would still pass.
-**Fix**: Replace the conditional assertion with a hard assertion or create a test setup where `../*.jpg` actually matches files outside the sandbox.
-
-### P2 - F2: Missing Boundary Value Tests for Combination Limit
-
-**File**: `tests/combination-generator.test.js`
-**Issue**: No tests at the exact boundary of the 10,000 default limit. Current tests use values far from the boundary (70 vs 593,775).
-**Fix**: Add tests for:
-- `C(23,4) = 8855` - should NOT throw (under default limit)
-- `C(24,4) = 10626` - should throw (over default limit)
-- A test that verifies the default limit without passing `maxCombinations`
-
-### P3 - F3: Empty String Filename Passes Validation
-
-**Issue**: `validatePathContainment('', base)` resolves to `base` itself (a directory), which passes the check. Downstream, the directory path would fail at photo analysis with an opaque error.
-**Impact**: No security risk. UX issue only.
-
-### P3 - F4: `MAX_SAFE_COMBINATIONS` Not Exported
-
-**Issue**: Tests hardcode `10000`. If the constant changes, tests won't automatically reflect the new value.
-**Impact**: Maintainability concern only.
+All previously reported P2/P3 issues from the initial FR-4.3 report have been resolved in this sprint:
+- P2 CLI wiring: Fixed (S1)
+- P3 unused import: Fixed (S4)
+- P3 boundary test: Fixed (S4)
+- Pre-existing suggest-sets path bug: Fixed (S1)
 
 ---
 
 ## Quality Gate Verdict
 
-| Severity | Count | Items |
-|----------|-------|-------|
-| P0 (Critical) | 0 | - |
-| P1 (Significant) | 0 | - |
-| P2 (Minor) | 2 | Non-assertive glob test, missing boundary tests |
-| P3 (Informational) | 2 | Empty string edge case, unexported constant |
+| Severity | Count |
+|----------|-------|
+| P0 (Critical) | 0 |
+| P1 (Significant) | 0 |
+| P2 (Minor) | 0 |
+| P3 (Suggestion) | 0 |
 
-**Verdict**: **PASS**
+### Verdict: **PASS**
 
-Both security fixes are correctly implemented and working. The P2 test quality gaps should be addressed before merging but do not block the security fixes themselves.
+All sprint items implemented, all acceptance criteria met, all previously reported issues resolved. 767 tests passing, zero regressions. Ready for commit and PR.
 
 ---
 
 ## Recommendations
 
-1. Fix the glob traversal test to use hard assertions (P2-F1)
-2. Add boundary value tests for combination limit (P2-F2)
-3. Track P3 items in backlog
+1. Commit all sprint changes and create PR to main
+2. Run `/bmad-code-review` for multi-agent PR review before merge
+3. Next sprint: FR-4.4 (Scoring Weights), FR-4.5 (Templates), FR-4.8 (Photo Groups)

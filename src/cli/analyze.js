@@ -21,6 +21,9 @@ import { runInitWizard } from './init-wizard.js';
 import { resolveModel, listVisionModels, ensureModelAvailable } from '../utils/model-manager.js';
 import { getModelName } from '../utils/api-client.js';
 import { tagWinner, loadWinners, extractPatterns, computeWinnerSimilarity, getWinnerInsights } from '../analysis/winner-manager.js';
+import { validateSubmission } from '../processing/submission-validator.js';
+import { generateBatchTexts, generateTexts, buildTextPrompt } from '../output/title-description-generator.js';
+import { runCalibration, validateBaselineStructure } from '../analysis/benchmarking-manager.js';
 import { join, basename } from 'path';
 import ora from 'ora';
 
@@ -375,6 +378,25 @@ program
         if (result.data.customCriteria) {
           logger.info(`Custom criteria: ${result.data.customCriteria.length}`);
         }
+
+        // Submission rules validation (FR-4.3)
+        if (result.data.submissionRules) {
+          logger.section('SUBMISSION COMPLIANCE');
+          const submission = validateSubmission(directory, result.data);
+          if (submission.passed && submission.violations.length === 0) {
+            logger.success('✅ Submission compliant — no violations');
+          } else {
+            for (const v of submission.violations) {
+              const prefix = v.severity === 'ERROR' ? '❌' : '⚠️';
+              logger.info(`${prefix} [${v.severity}] ${v.rule}: expected ${v.expected}, got ${v.actual}`);
+            }
+            if (submission.passed) {
+              logger.warn('Submission has warnings but can proceed');
+            } else {
+              logger.error('Submission has compliance errors — fix before submitting');
+            }
+          }
+        }
       } else {
         // Validate photos
         const results = validatePhotos(directory);
@@ -577,8 +599,11 @@ program
           }
         }
       } else {
-        // Try to load from existing results
-        const resultsFile = join(projectDir, 'results', 'batch-results.json');
+        // Try to load from existing results (FR-3.12: try latest/ first, fall back to root)
+        let resultsFile = join(projectDir, 'results', 'latest', 'batch-results.json');
+        if (!fileExists(resultsFile)) {
+          resultsFile = join(projectDir, 'results', 'batch-results.json');
+        }
         if (fileExists(resultsFile)) {
           const batchResults = readJson(resultsFile);
           const photoNames = options.photos.map(p => basename(p));
@@ -667,8 +692,13 @@ program
       logger.section('SET SUGGESTION (Polaroid Mode)');
 
       const configFile = join(projectDir, 'open-call.json');
-      const resultsFile = join(projectDir, 'results', 'batch-results.json');
       const promptFile = join(projectDir, 'analysis-prompt.json');
+
+      // Try results/latest/ first (FR-3.12 timestamped results), fall back to results/
+      let resultsFile = join(projectDir, 'results', 'latest', 'batch-results.json');
+      if (!fileExists(resultsFile)) {
+        resultsFile = join(projectDir, 'results', 'batch-results.json');
+      }
 
       if (!fileExists(configFile)) {
         logger.error(`Configuration file not found: ${configFile}`);
@@ -677,7 +707,7 @@ program
 
       if (!fileExists(resultsFile)) {
         logger.error(`No batch results found. Run 'analyze' first.`);
-        logger.info(`Expected: ${resultsFile}`);
+        logger.info(`Expected: ${join(projectDir, 'results', 'latest', 'batch-results.json')}`);
         process.exit(1);
       }
 
@@ -988,10 +1018,156 @@ program
     }
   });
 
+/**
+ * Run calibration against a baseline set (FR-4.2)
+ */
+program
+  .command('calibrate <baseline-dir>')
+  .description('Run calibration against a baseline photo set to detect scoring drift')
+  .option('--model <name>', 'Vision model to use for calibration')
+  .action(async (baselineDir, options) => {
+    try {
+      logger.section('CALIBRATION (Benchmarking)');
+
+      // Validate baseline structure
+      const validation = validateBaselineStructure(baselineDir);
+      if (!validation.valid) {
+        logger.error('Invalid baseline structure:');
+        for (const err of validation.errors) {
+          logger.info(`  - ${err}`);
+        }
+        process.exit(1);
+      }
+
+      logger.success('Baseline structure valid');
+
+      const spinner = ora('Running calibration...').start();
+      const report = await runCalibration(baselineDir, { model: options.model });
+      spinner.succeed(`Calibration complete: ${report.photosEvaluated} photos evaluated`);
+
+      // Display results
+      logger.section('DRIFT REPORT');
+      logger.info(`Model: ${report.model}`);
+      logger.info(`Baseline: ${report.baselineSet}`);
+      logger.info(`Overall Status: ${report.overall_status}`);
+
+      for (const [name, data] of Object.entries(report.criteria)) {
+        const icon = data.status === 'OK' ? '✅' : data.status === 'WARNING' ? '⚠️' : '❌';
+        logger.info(`  ${icon} ${name}: expected ${data.expected_avg.toFixed(1)}, actual ${data.actual_avg.toFixed(1)} (delta: ${data.delta})`);
+      }
+
+      if (report.recommendations.length > 0) {
+        logger.section('RECOMMENDATIONS');
+        for (const rec of report.recommendations) {
+          logger.info(`  - ${rec}`);
+        }
+      }
+
+      logger.success(`Report saved to: ${join(baselineDir, 'calibration-report.json')}`);
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
+/**
+ * Generate titles and descriptions for analyzed photos (FR-4.1)
+ */
+program
+  .command('generate-texts <project-dir>')
+  .description('Generate submission titles and descriptions for analyzed photos')
+  .option('--photo <filename>', 'Generate for a single photo only')
+  .option('--text-model <model>', 'Text generation model (default: vision model)')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('TITLE/DESCRIPTION GENERATOR');
+
+      if (options.photo) {
+        // Single photo mode
+        const configPath = join(projectDir, 'open-call.json');
+        if (!fileExists(configPath)) {
+          logger.error(`Configuration file not found: ${configPath}`);
+          process.exit(1);
+        }
+
+        const configResult = await loadOpenCallConfig(configPath);
+        if (!configResult.success) {
+          logger.error('Configuration validation failed');
+          process.exit(1);
+        }
+
+        // Find the photo in batch results
+        let resultsPath = join(projectDir, 'results', 'latest', 'batch-results.json');
+        if (!fileExists(resultsPath)) {
+          resultsPath = join(projectDir, 'results', 'batch-results.json');
+        }
+        if (!fileExists(resultsPath)) {
+          logger.error('No batch results found. Run \'analyze\' first.');
+          process.exit(1);
+        }
+
+        const batchResults = readJson(resultsPath);
+        const photoResult = (batchResults.results || []).find(
+          r => r.success && basename(r.photo) === options.photo
+        );
+
+        if (!photoResult) {
+          logger.error(`Photo '${options.photo}' not found in analysis results`);
+          process.exit(1);
+        }
+
+        const spinner = ora(`Generating texts for ${options.photo}...`).start();
+        const result = await generateTexts(
+          { photo: options.photo, scores: photoResult.scores },
+          configResult.data,
+          { textModel: options.textModel }
+        );
+
+        if (result.error) {
+          spinner.fail(`Failed: ${result.error}`);
+          process.exit(1);
+        }
+
+        spinner.succeed('Generated!');
+        logger.info(`Title: ${result.title}`);
+        logger.info(`Description: ${result.description}`);
+      } else {
+        // Batch mode
+        const spinner = ora('Generating titles and descriptions...').start();
+        const results = await generateBatchTexts(projectDir, {
+          textModel: options.textModel
+        });
+
+        spinner.succeed(`Generated texts for ${results.length} photos`);
+
+        for (const r of results) {
+          logger.section(r.photo);
+          if (r.error) {
+            logger.error(`  Error: ${r.error}`);
+          } else {
+            logger.info(`  Title: ${r.title}`);
+            logger.info(`  Description: ${r.description}`);
+          }
+        }
+
+        logger.success('Results saved to results/latest/generated-texts.json');
+      }
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate");
   process.exit(1);
 });
 
