@@ -64,6 +64,13 @@ describe('Submission Validator (FR-4.3)', () => {
       expect(result.count).toBe(0);
     });
 
+    it('should return ok when count equals minPhotos (boundary)', () => {
+      createPhotos(3);
+      const result = checkPhotoCount(photosDir, { maxPhotos: 10, minPhotos: 3 });
+      expect(result.status).toBe('ok');
+      expect(result.count).toBe(3);
+    });
+
     it('should only count supported image files', () => {
       createPhotos(3, 'jpg');
       writeFileSync(join(photosDir, 'readme.txt'), 'not a photo');

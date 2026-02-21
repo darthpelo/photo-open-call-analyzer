@@ -8,7 +8,6 @@
 
 import { readdirSync, statSync, existsSync } from 'fs';
 import { join, extname } from 'path';
-import { logger } from '../utils/logger.js';
 import { SUPPORTED_FORMATS } from './photo-validator.js';
 
 /**
