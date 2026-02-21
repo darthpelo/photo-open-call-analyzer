@@ -103,6 +103,7 @@ photo-open-call-analyzer/
 ├── src/                      # Source code
 │   ├── analysis/             # Photo analysis logic
 │   │   ├── photo-analyzer.js # Core with Ollama/LLaVA
+│   │   ├── benchmarking-manager.js # Calibration & drift detection (FR-4.2)
 │   │   ├── prompt-generator.js
 │   │   ├── score-aggregator.js
 │   │   ├── set-analyzer.js       # Multi-image set analysis (FR-3.11)
@@ -113,9 +114,11 @@ photo-open-call-analyzer/
 │   │   ├── batch-processor.js    # Batch photo processing with caching & concurrency
 │   │   ├── cache-manager.js      # Per-project analysis cache (FR-3.7)
 │   │   ├── concurrency-manager.js # Slot-based adaptive concurrency (FR-3.8)
-│   │   └── combination-generator.js # C(N,K) set combinations
+│   │   ├── combination-generator.js # C(N,K) set combinations
+│   │   └── submission-validator.js  # Submission compliance checks (FR-4.3)
 │   ├── output/               # Report generation
-│   │   └── set-report-generator.js  # Set reports (MD/JSON/CSV)
+│   │   ├── set-report-generator.js  # Set reports (MD/JSON/CSV)
+│   │   └── title-description-generator.js # Title/desc generation (FR-4.1)
 │   ├── cli/                  # CLI commands
 │   └── utils/
 │       ├── api-client.js     # Ollama client (getModelName supports override)
@@ -139,7 +142,11 @@ photo-open-call-analyzer/
         ├── ADR-017-analysis-caching.md  # Per-project cache (FR-3.7)
         ├── ADR-018-parallel-processing-optimization.md  # Slot-based concurrency (FR-3.8)
         ├── ADR-019-model-selection-management.md  # Model resolution chain (FR-3.9)
-        └── ADR-020-historical-winner-learning.md  # Winner patterns (FR-3.10)
+        ├── ADR-020-historical-winner-learning.md  # Winner patterns (FR-3.10)
+        ├── ADR-021-text-generation-ollama.md       # Text gen via Ollama (FR-4.1)
+        ├── ADR-022-benchmarking-user-baselines.md  # Calibration baselines (FR-4.2)
+        ├── ADR-023-submission-validator-module.md   # Separate validator (FR-4.3)
+        └── ADR-024-photo-groups-set-generation.md   # Photo groups (FR-4.8)
 ```
 
 ## Conventions
@@ -155,6 +162,11 @@ photo-open-call-analyzer/
 - Async/await for asynchronous operations
 - Explicit error handling
 - Structured logging with chalk
+
+### Results Path Convention (FR-3.12)
+- Results are saved to `results/{ISO-timestamp}/` with a `latest` symlink
+- When reading results, always try `results/latest/` first, fall back to `results/`
+- Use `resolveOutputDir()` from `file-utils.js` for writing
 
 ### TDD Enforcement (ADR-013)
 
@@ -280,6 +292,16 @@ node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --parallel auto
 node src/cli/analyze.js tag-winner ./data/open-calls/my-oc/ --photo winner.jpg --placement "1st"
 node src/cli/analyze.js winner-insights ./data/open-calls/my-oc/
 node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --compare-winners
+
+# Title/description generation (FR-4.1)
+node src/cli/analyze.js generate-texts ./data/open-calls/my-oc/
+node src/cli/analyze.js generate-texts ./data/open-calls/my-oc/ --photo photo.jpg --text-model llama3:8b
+
+# Calibration & benchmarking (FR-4.2)
+node src/cli/analyze.js calibrate ./data/baselines/my-baseline/ --model llava:13b
+
+# Submission validation (FR-4.3, included in validate --config)
+node src/cli/analyze.js validate ./data/open-calls/my-oc/ --config
 
 # Tests
 npm test
