@@ -2,7 +2,10 @@
  * Combination generator and candidate set selection for set analysis.
  * Implements the combinatorial optimization for finding optimal K-from-N photo sets.
  * Part of FR-3.11: Polaroid Set Analysis (ADR-015).
+ * Extended with group-aware partitioning for FR-4.8: Photo Groups / Series Support.
  */
+
+import { resolvePhotoGroups } from './photo-group-resolver.js';
 
 /**
  * Count total combinations C(n, k).
@@ -154,4 +157,65 @@ export function selectCandidateSets(rankedPhotos, setSize, options = {}) {
   // Phase 3: Sort by pre-score and return top M
   scoredSets.sort((a, b) => b.preScore - a.preScore);
   return scoredSets.slice(0, maxSetsToEvaluate);
+}
+
+/**
+ * Select candidate sets with group-aware partitioning.
+ * When photoGroups are provided, runs selectCandidateSets independently per group.
+ * When photoGroups are not provided, delegates to selectCandidateSets (backward compatible).
+ *
+ * @param {Object[]} rankedPhotos - All photos sorted by score (desc)
+ * @param {number} setSize - Photos per set
+ * @param {Array<{name: string, pattern: string}>|undefined} photoGroups - Optional group definitions
+ * @param {string} photosDir - Path to photos/ directory (for glob resolution)
+ * @param {Object} [options={}] - Same options as selectCandidateSets
+ * @returns {Object}
+ *   Grouped: { grouped: true, groups: [{ name, candidates, photoCount, skipped, skipReason }], warnings: string[] }
+ *   Ungrouped: { grouped: false, candidates: Object[] }
+ */
+export function selectCandidateSetsByGroup(rankedPhotos, setSize, photoGroups, photosDir, options = {}) {
+  // No groups: backward compatible delegation
+  if (!photoGroups || photoGroups.length === 0) {
+    const candidates = selectCandidateSets(rankedPhotos, setSize, options);
+    return { grouped: false, candidates };
+  }
+
+  // Resolve groups using photo-group-resolver
+  const resolution = resolvePhotoGroups(photoGroups, rankedPhotos, photosDir);
+
+  if (!resolution.success) {
+    throw new Error(`Photo group resolution failed: ${resolution.error}`);
+  }
+
+  const groupResults = [];
+
+  for (const [groupName, groupPhotos] of resolution.groups) {
+    // Sort group photos by score descending (enforce order for selectCandidateSets)
+    const sortedGroupPhotos = [...groupPhotos].sort((a, b) => b.score - a.score);
+
+    if (sortedGroupPhotos.length < setSize) {
+      groupResults.push({
+        name: groupName,
+        candidates: [],
+        photoCount: sortedGroupPhotos.length,
+        skipped: true,
+        skipReason: `Only ${sortedGroupPhotos.length} photos, need ${setSize}`
+      });
+      continue;
+    }
+
+    const candidates = selectCandidateSets(sortedGroupPhotos, setSize, options);
+    groupResults.push({
+      name: groupName,
+      candidates,
+      photoCount: sortedGroupPhotos.length,
+      skipped: false
+    });
+  }
+
+  return {
+    grouped: true,
+    groups: groupResults,
+    warnings: resolution.warnings
+  };
 }

@@ -373,6 +373,84 @@ describe('Configuration Validator (EC-004: Config Invalid Cases)', () => {
     });
   });
 
+  describe('validateOpenCall - photoGroups validation (FR-4.8)', () => {
+    const validBaseConfig = {
+      title: 'Test Competition',
+      theme: 'Photography of nature and landscapes',
+      jury: ['Photographer 1', 'Photographer 2'],
+      pastWinners: 'Previous winners featured strong compositions with excellent lighting'
+    };
+
+    it('should accept valid photoGroups', () => {
+      const config = {
+        ...validBaseConfig,
+        photoGroups: [{ name: 'Rotterdam', pattern: 'rotterdam*.jpg' }]
+      };
+
+      const result = validateOpenCall(config);
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should accept config without photoGroups (backward compatible)', () => {
+      const result = validateOpenCall(validBaseConfig);
+
+      expect(result.valid).toBe(true);
+      expect(result.errors).toHaveLength(0);
+    });
+
+    it('should reject photoGroups with missing name', () => {
+      const config = {
+        ...validBaseConfig,
+        photoGroups: [{ pattern: '*.jpg' }]
+      };
+
+      const result = validateOpenCall(config);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it('should reject photoGroups with missing pattern', () => {
+      const config = {
+        ...validBaseConfig,
+        photoGroups: [{ name: 'Group A' }]
+      };
+
+      const result = validateOpenCall(config);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.length).toBeGreaterThan(0);
+    });
+
+    it('should reject empty photoGroups array', () => {
+      const config = {
+        ...validBaseConfig,
+        photoGroups: []
+      };
+
+      const result = validateOpenCall(config);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.message.includes('must have') || e.message.includes('minItems'))).toBe(
+        true
+      );
+    });
+
+    it('should reject photoGroups with empty name string', () => {
+      const config = {
+        ...validBaseConfig,
+        photoGroups: [{ name: '', pattern: '*.jpg' }]
+      };
+
+      const result = validateOpenCall(config);
+
+      expect(result.valid).toBe(false);
+      expect(result.errors.some((e) => e.message.includes('too short'))).toBe(true);
+    });
+  });
+
   describe('Unit Test: Config Validator (UT-003)', () => {
     it('UT-003.1: Valid config passes all validation checks', () => {
       const validConfigs = [

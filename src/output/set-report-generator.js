@@ -178,3 +178,177 @@ export function exportSetReports(outputDir, rankedSets, statistics, setConfig, o
   logger.info(`  ${join(outputDir, 'set-analysis.json')}`);
   logger.info(`  ${join(outputDir, 'set-analysis.csv')}`);
 }
+
+// ============================================
+// Grouped report functions (FR-4.8 Photo Groups)
+// ============================================
+
+/**
+ * Find the best group from grouped rankings.
+ * @param {Object[]} groupRankings - Array of { groupName, ranking, statistics }
+ * @returns {{ name: string, score: number }} Best group name and score
+ */
+function findBestGroup(groupRankings) {
+  let bestName = '';
+  let bestScore = -1;
+  for (const group of groupRankings) {
+    if (group.ranking.length > 0) {
+      const topScore = group.ranking[0].compositeScore || 0;
+      if (topScore > bestScore) {
+        bestScore = topScore;
+        bestName = group.groupName;
+      }
+    }
+  }
+  return { name: bestName, score: bestScore };
+}
+
+/**
+ * Generate grouped Markdown report for multi-group set analysis.
+ * Each group gets its own section using the existing generateSetMarkdownReport.
+ * @param {Object[]} groupRankings - Array of { groupName, ranking, statistics }
+ * @param {Object} setConfig - Set mode configuration
+ * @param {Object} [options={}] - Report options (title, theme)
+ * @returns {string} Markdown report content
+ */
+export function generateGroupedSetMarkdownReport(groupRankings, setConfig, options = {}) {
+  const title = options.title || 'Photo Set Analysis';
+  const theme = options.theme || '';
+  const now = new Date().toISOString();
+  const best = findBestGroup(groupRankings);
+
+  let md = `# ${title} - Grouped Set Analysis Report\n\n`;
+  md += `**Generated**: ${now}\n`;
+  if (theme) md += `**Theme**: ${theme}\n`;
+  md += `**Groups**: ${groupRankings.length}\n`;
+  md += `**Photos per set**: ${setConfig.setSize || 4}\n`;
+  md += `**Scoring**: ${setConfig.individualWeight || 40}% individual + ${setConfig.setWeight || 60}% set\n\n`;
+
+  // Group Summary table
+  md += `## Group Summary\n\n`;
+  md += `| Group | Best Score | Sets Evaluated |\n`;
+  md += `|-------|------------|----------------|\n`;
+  for (const group of groupRankings) {
+    const topScore = group.ranking.length > 0
+      ? group.ranking[0].compositeScore?.toFixed(2) || '-'
+      : '-';
+    md += `| ${group.groupName} | ${topScore} | ${group.ranking.length} |\n`;
+  }
+  md += '\n';
+
+  // Per-group sections
+  for (const group of groupRankings) {
+    md += `## Group: ${group.groupName}\n\n`;
+    // Reuse existing markdown generator for per-group content
+    const groupMd = generateSetMarkdownReport(
+      group.ranking,
+      group.statistics,
+      setConfig,
+      { ...options, title: group.groupName }
+    );
+    // Strip the top-level title line (first line + blank line) to avoid duplication
+    const lines = groupMd.split('\n');
+    const contentStart = lines.findIndex((line, i) => i > 0 && !line.startsWith('# '));
+    md += lines.slice(contentStart).join('\n');
+    md += '\n';
+  }
+
+  // Cross-group Recommendation
+  md += `## Recommendation\n\n`;
+  md += `**Best group**: ${best.name} (score: ${best.score.toFixed(2)})\n`;
+
+  return md;
+}
+
+/**
+ * Generate grouped JSON report for multi-group set analysis.
+ * @param {Object[]} groupRankings - Array of { groupName, ranking, statistics }
+ * @param {Object} setConfig - Set mode configuration
+ * @param {Object} [options={}] - Report options (title, theme)
+ * @returns {Object} JSON-serializable report
+ */
+export function generateGroupedSetJsonReport(groupRankings, setConfig, options = {}) {
+  const best = findBestGroup(groupRankings);
+
+  return {
+    metadata: {
+      title: options.title || 'Photo Set Analysis',
+      theme: options.theme || '',
+      generatedAt: new Date().toISOString(),
+      setSize: setConfig.setSize || 4,
+      individualWeight: setConfig.individualWeight || 40,
+      setWeight: setConfig.setWeight || 60,
+      grouped: true,
+      groupCount: groupRankings.length
+    },
+    groups: groupRankings.map(group => ({
+      name: group.groupName,
+      ranking: group.ranking.map(set => ({
+        rank: set.rank,
+        setId: set.setId,
+        compositeScore: set.compositeScore,
+        individualAverage: set.individualAverage,
+        setWeightedAverage: set.setWeightedAverage,
+        recommendation: set.recommendation,
+        suggestedOrder: set.suggestedOrder,
+        photos: set.photos?.map(p => ({
+          filename: p.filename,
+          individualScore: p.score
+        })),
+        setScores: set.setScores,
+        photoRoles: set.photoRoles,
+        weakestLink: set.weakestLink
+      })),
+      statistics: group.statistics || {}
+    })),
+    recommendation: {
+      bestGroup: best.name,
+      bestScore: best.score
+    }
+  };
+}
+
+/**
+ * Generate grouped CSV report for multi-group set analysis.
+ * Adds a Group column to the standard CSV format.
+ * @param {Object[]} groupRankings - Array of { groupName, ranking, statistics }
+ * @returns {string} CSV content
+ */
+export function generateGroupedSetCsvReport(groupRankings) {
+  let csv = 'Group,Rank,Set ID,Photos,Composite Score,Individual Avg,Set Score,Recommendation\n';
+
+  for (const group of groupRankings) {
+    for (const set of group.ranking) {
+      const photos = set.photos ? set.photos.map(p => p.filename).join(' | ') : '';
+      csv += `"${group.groupName}",${set.rank || ''},${set.setId || ''},"${photos}",${set.compositeScore?.toFixed(3) || ''},${set.individualAverage?.toFixed(3) || ''},${set.setWeightedAverage?.toFixed(3) || ''},"${set.recommendation || ''}"\n`;
+    }
+  }
+
+  return csv;
+}
+
+/**
+ * Export all grouped set reports to disk.
+ * @param {string} outputDir - Output directory
+ * @param {Object[]} groupRankings - Array of { groupName, ranking, statistics }
+ * @param {Object} setConfig - Set mode configuration
+ * @param {Object} [options={}] - Report options (title, theme)
+ */
+export function exportGroupedSetReports(outputDir, groupRankings, setConfig, options = {}) {
+  if (!existsSync(outputDir)) {
+    mkdirSync(outputDir, { recursive: true });
+  }
+
+  const mdContent = generateGroupedSetMarkdownReport(groupRankings, setConfig, options);
+  const jsonContent = generateGroupedSetJsonReport(groupRankings, setConfig, options);
+  const csvContent = generateGroupedSetCsvReport(groupRankings);
+
+  writeFileSync(join(outputDir, 'set-analysis.md'), mdContent);
+  writeFileSync(join(outputDir, 'set-analysis.json'), JSON.stringify(jsonContent, null, 2));
+  writeFileSync(join(outputDir, 'set-analysis.csv'), csvContent);
+
+  logger.info('Grouped set reports exported:');
+  logger.info(`  ${join(outputDir, 'set-analysis.md')}`);
+  logger.info(`  ${join(outputDir, 'set-analysis.json')}`);
+  logger.info(`  ${join(outputDir, 'set-analysis.csv')}`);
+}

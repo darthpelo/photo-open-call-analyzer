@@ -1,9 +1,13 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
+import { join } from 'path';
+import { tmpdir } from 'os';
 import {
   generateCombinations,
   countCombinations,
   selectCandidateSets,
-  calculateDiversity
+  calculateDiversity,
+  selectCandidateSetsByGroup
 } from '../src/processing/combination-generator.js';
 
 describe('combination-generator', () => {
@@ -306,5 +310,146 @@ describe('combination-generator', () => {
       expect(candidates.length).toBe(1);
       expect(candidates[0].photos.length).toBe(4);
     });
+  });
+});
+
+describe('selectCandidateSetsByGroup', () => {
+  let testDir, photosDir;
+
+  beforeEach(() => {
+    testDir = mkdtempSync(join(tmpdir(), 'combo-group-test-'));
+    photosDir = join(testDir, 'photos');
+    mkdirSync(photosDir);
+  });
+
+  afterEach(() => {
+    rmSync(testDir, { recursive: true, force: true });
+  });
+
+  function createTestPhotos(...filenames) {
+    for (const f of filenames) {
+      writeFileSync(join(photosDir, f), 'fake');
+    }
+  }
+
+  const makePhoto = (name, score, scores = {}) => ({
+    filename: name, score, scores
+  });
+
+  it('should behave like selectCandidateSets when photoGroups is undefined', () => {
+    const photos = Array.from({ length: 8 }, (_, i) =>
+      makePhoto(`photo${i}.jpg`, 9 - i * 0.5, { Theme: 9 - i * 0.5 })
+    );
+    const result = selectCandidateSetsByGroup(photos, 4, undefined, photosDir, {
+      maxSetsToEvaluate: 5, preFilterTopN: 8
+    });
+    expect(result.grouped).toBe(false);
+    expect(result.candidates.length).toBeGreaterThan(0);
+  });
+
+  it('should behave like selectCandidateSets when photoGroups is empty', () => {
+    const photos = Array.from({ length: 8 }, (_, i) =>
+      makePhoto(`photo${i}.jpg`, 9 - i * 0.5)
+    );
+    const result = selectCandidateSetsByGroup(photos, 4, [], photosDir, {
+      maxSetsToEvaluate: 5, preFilterTopN: 8
+    });
+    expect(result.grouped).toBe(false);
+  });
+
+  it('should generate candidates per group independently', () => {
+    createTestPhotos('r-1.jpg', 'r-2.jpg', 'r-3.jpg', 'r-4.jpg',
+                     'o-1.jpg', 'o-2.jpg', 'o-3.jpg', 'o-4.jpg');
+    const photos = [
+      makePhoto('r-1.jpg', 9, { T: 9 }), makePhoto('r-2.jpg', 8, { T: 8 }),
+      makePhoto('r-3.jpg', 7, { T: 7 }), makePhoto('r-4.jpg', 6, { T: 6 }),
+      makePhoto('o-1.jpg', 8.5, { T: 8.5 }), makePhoto('o-2.jpg', 7.5, { T: 7.5 }),
+      makePhoto('o-3.jpg', 6.5, { T: 6.5 }), makePhoto('o-4.jpg', 5.5, { T: 5.5 })
+    ];
+    const groups = [
+      { name: 'Rotterdam', pattern: 'r-*.jpg' },
+      { name: 'October', pattern: 'o-*.jpg' }
+    ];
+    const result = selectCandidateSetsByGroup(photos, 4, groups, photosDir, {
+      maxSetsToEvaluate: 3, preFilterTopN: 4
+    });
+    expect(result.grouped).toBe(true);
+    expect(result.groups).toHaveLength(2);
+    expect(result.groups[0].name).toBe('Rotterdam');
+    expect(result.groups[1].name).toBe('October');
+    expect(result.groups[0].candidates.length).toBeGreaterThan(0);
+    expect(result.groups[1].candidates.length).toBeGreaterThan(0);
+  });
+
+  it('should not mix photos across groups', () => {
+    createTestPhotos('a-1.jpg', 'a-2.jpg', 'a-3.jpg', 'a-4.jpg',
+                     'b-1.jpg', 'b-2.jpg', 'b-3.jpg', 'b-4.jpg');
+    const photos = [
+      makePhoto('a-1.jpg', 9), makePhoto('a-2.jpg', 8),
+      makePhoto('a-3.jpg', 7), makePhoto('a-4.jpg', 6),
+      makePhoto('b-1.jpg', 10), makePhoto('b-2.jpg', 9),
+      makePhoto('b-3.jpg', 8), makePhoto('b-4.jpg', 7)
+    ];
+    const groups = [
+      { name: 'A', pattern: 'a-*.jpg' },
+      { name: 'B', pattern: 'b-*.jpg' }
+    ];
+    const result = selectCandidateSetsByGroup(photos, 4, groups, photosDir, {
+      maxSetsToEvaluate: 3, preFilterTopN: 4
+    });
+    for (const candidate of result.groups[0].candidates) {
+      for (const photo of candidate.photos) {
+        expect(photo.filename).toMatch(/^a-/);
+      }
+    }
+    for (const candidate of result.groups[1].candidates) {
+      for (const photo of candidate.photos) {
+        expect(photo.filename).toMatch(/^b-/);
+      }
+    }
+  });
+
+  it('should skip groups with fewer photos than setSize', () => {
+    createTestPhotos('a-1.jpg', 'a-2.jpg',
+                     'b-1.jpg', 'b-2.jpg', 'b-3.jpg', 'b-4.jpg');
+    const photos = [
+      makePhoto('a-1.jpg', 9), makePhoto('a-2.jpg', 8),
+      makePhoto('b-1.jpg', 7), makePhoto('b-2.jpg', 6),
+      makePhoto('b-3.jpg', 5), makePhoto('b-4.jpg', 4)
+    ];
+    const groups = [
+      { name: 'A', pattern: 'a-*.jpg' },
+      { name: 'B', pattern: 'b-*.jpg' }
+    ];
+    const result = selectCandidateSetsByGroup(photos, 4, groups, photosDir, {
+      maxSetsToEvaluate: 3, preFilterTopN: 4
+    });
+    expect(result.groups[0].skipped).toBe(true);
+    expect(result.groups[0].candidates).toHaveLength(0);
+    expect(result.groups[0].skipReason).toBeTruthy();
+    expect(result.groups[1].skipped).toBe(false);
+  });
+
+  it('should throw when group resolution fails', () => {
+    createTestPhotos('a-1.jpg');
+    const photos = [makePhoto('a-1.jpg', 9)];
+    const groups = [{ name: 'Empty', pattern: 'nonexistent-*.jpg' }];
+    expect(() => selectCandidateSetsByGroup(photos, 4, groups, photosDir))
+      .toThrow(/resolution failed/i);
+  });
+
+  it('should include warnings from group resolution', () => {
+    createTestPhotos('a-1.jpg', 'a-2.jpg', 'a-3.jpg', 'a-4.jpg', 'orphan.jpg');
+    const photos = [
+      makePhoto('a-1.jpg', 9), makePhoto('a-2.jpg', 8),
+      makePhoto('a-3.jpg', 7), makePhoto('a-4.jpg', 6),
+      makePhoto('orphan.jpg', 5)
+    ];
+    const groups = [{ name: 'A', pattern: 'a-*.jpg' }];
+    const result = selectCandidateSetsByGroup(photos, 4, groups, photosDir, {
+      maxSetsToEvaluate: 3, preFilterTopN: 4
+    });
+    expect(result.warnings.length).toBeGreaterThan(0);
+    expect(result.warnings[0]).toContain('orphan.jpg');
   });
 });

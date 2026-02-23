@@ -81,6 +81,11 @@ node src/cli/analyze.js analyze-set data/open-calls/my-polaroid/ \
 # Find optimal sets from already-analyzed photos
 node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 5
 
+# Photo Groups (FR-4.8): constrain sets to series
+# Add to open-call.json: "photoGroups": [{ "name": "Rotterdam", "pattern": "rotterdam*.jpg" }]
+# Then suggest-sets generates combinations only within each group:
+node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 3
+
 # All results are saved to data/open-calls/my-polaroid/results/{timestamp}/
 # with a 'latest' symlink pointing to the most recent run
 ```
@@ -113,7 +118,8 @@ photo-open-call-analyzer/
 │   │   ├── batch-processor.js    # Batch photo processing with caching & concurrency
 │   │   ├── cache-manager.js      # Per-project analysis cache (FR-3.7)
 │   │   ├── concurrency-manager.js # Slot-based adaptive concurrency (FR-3.8)
-│   │   └── combination-generator.js # C(N,K) set combinations
+│   │   ├── combination-generator.js # C(N,K) set combinations + group-aware selection (FR-4.8)
+│   │   └── photo-group-resolver.js  # Photo series/group resolution via glob (FR-4.8)
 │   ├── output/               # Report generation
 │   │   └── set-report-generator.js  # Set reports (MD/JSON/CSV)
 │   ├── cli/                  # CLI commands
