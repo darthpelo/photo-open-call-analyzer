@@ -922,8 +922,7 @@ program
         const totalCombos = countCombinations(rankedPhotos.length, setSize);
         logger.info(`Total possible combinations: ${totalCombos}`);
 
-        const spinner = ora(`Pre-scoring combinations from top ${preFilterTopN} photos...`).start();
-        spinner.succeed(`Selected ${groupResult.candidates.length} candidate sets`);
+        logger.info(`Selected ${groupResult.candidates.length} candidate sets`);
 
         const evaluatedSets = await evaluateCandidateSets(
           groupResult.candidates, maxCandidates, topN, options, setConfig, analysisPrompt, projectDir, setSize
