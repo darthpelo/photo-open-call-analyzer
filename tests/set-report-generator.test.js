@@ -3,7 +3,11 @@ import {
   generateSetMarkdownReport,
   generateSetJsonReport,
   generateSetCsvReport,
-  exportSetReports
+  exportSetReports,
+  generateGroupedSetMarkdownReport,
+  generateGroupedSetJsonReport,
+  generateGroupedSetCsvReport,
+  exportGroupedSetReports
 } from '../src/output/set-report-generator.js';
 import { existsSync, writeFileSync, mkdirSync } from 'fs';
 
@@ -219,6 +223,143 @@ describe('set-report-generator', () => {
       existsSync.mockReturnValue(true);
       exportSetReports('/tmp/output', mockRankedSets, mockStatistics, mockSetConfig);
       expect(mkdirSync).not.toHaveBeenCalled();
+    });
+  });
+
+  // ============================================
+  // Grouped report tests (FR-4.8 Photo Groups)
+  // ============================================
+
+  const mockGroupRankings = [
+    {
+      groupName: 'Rotterdam',
+      ranking: [
+        {
+          rank: 1,
+          setId: 'set-1',
+          compositeScore: 8.5,
+          individualAverage: 8.0,
+          setWeightedAverage: 9.0,
+          recommendation: 'Strong Set',
+          photos: [
+            { filename: 'r-1.jpg', score: 8.5 },
+            { filename: 'r-2.jpg', score: 8.0 },
+            { filename: 'r-3.jpg', score: 7.5 },
+            { filename: 'r-4.jpg', score: 8.0 }
+          ],
+          setScores: { 'Visual Coherence': { score: 9, weight: 25, reasoning: 'Excellent' } },
+          suggestedOrder: [1, 3, 2, 4],
+          photoRoles: { 'Photo 1': 'Anchor' },
+          weakestLink: 'Photo 4'
+        }
+      ],
+      statistics: { total: 1, average: 8.5, min: 8.5, max: 8.5, median: 8.5 }
+    },
+    {
+      groupName: 'October',
+      ranking: [
+        {
+          rank: 1,
+          setId: 'set-1',
+          compositeScore: 7.2,
+          individualAverage: 7.0,
+          setWeightedAverage: 7.4,
+          recommendation: 'Good Set',
+          photos: [
+            { filename: 'o-1.jpg', score: 7.5 },
+            { filename: 'o-2.jpg', score: 7.0 },
+            { filename: 'o-3.jpg', score: 6.5 },
+            { filename: 'o-4.jpg', score: 7.0 }
+          ],
+          setScores: {},
+          suggestedOrder: [],
+          photoRoles: {},
+          weakestLink: null
+        }
+      ],
+      statistics: { total: 1, average: 7.2, min: 7.2, max: 7.2, median: 7.2 }
+    }
+  ];
+
+  const mockGroupSetConfig = { setSize: 4, individualWeight: 40, setWeight: 60 };
+
+  describe('generateGroupedSetMarkdownReport', () => {
+    it('should include group summary table', () => {
+      const md = generateGroupedSetMarkdownReport(mockGroupRankings, mockGroupSetConfig);
+      expect(md).toContain('Group Summary');
+      expect(md).toContain('Rotterdam');
+      expect(md).toContain('October');
+    });
+
+    it('should include per-group sections', () => {
+      const md = generateGroupedSetMarkdownReport(mockGroupRankings, mockGroupSetConfig);
+      expect(md).toContain('## Group: Rotterdam');
+      expect(md).toContain('## Group: October');
+    });
+
+    it('should include group count in metadata', () => {
+      const md = generateGroupedSetMarkdownReport(mockGroupRankings, mockGroupSetConfig);
+      expect(md).toContain('**Groups**: 2');
+    });
+
+    it('should include cross-group recommendation', () => {
+      const md = generateGroupedSetMarkdownReport(mockGroupRankings, mockGroupSetConfig);
+      expect(md).toContain('Recommendation');
+      expect(md).toContain('Rotterdam'); // best group
+    });
+  });
+
+  describe('generateGroupedSetJsonReport', () => {
+    it('should have grouped: true in metadata', () => {
+      const json = generateGroupedSetJsonReport(mockGroupRankings, mockGroupSetConfig);
+      expect(json.metadata.grouped).toBe(true);
+      expect(json.metadata.groupCount).toBe(2);
+    });
+
+    it('should include groups array with rankings', () => {
+      const json = generateGroupedSetJsonReport(mockGroupRankings, mockGroupSetConfig);
+      expect(json.groups).toHaveLength(2);
+      expect(json.groups[0].name).toBe('Rotterdam');
+      expect(json.groups[0].ranking).toHaveLength(1);
+    });
+
+    it('should include recommendation with best group', () => {
+      const json = generateGroupedSetJsonReport(mockGroupRankings, mockGroupSetConfig);
+      expect(json.recommendation.bestGroup).toBe('Rotterdam');
+      expect(json.recommendation.bestScore).toBeCloseTo(8.5);
+    });
+  });
+
+  describe('generateGroupedSetCsvReport', () => {
+    it('should include Group column in header', () => {
+      const csv = generateGroupedSetCsvReport(mockGroupRankings);
+      const header = csv.split('\n')[0];
+      expect(header).toContain('Group');
+    });
+
+    it('should include data rows from all groups', () => {
+      const csv = generateGroupedSetCsvReport(mockGroupRankings);
+      expect(csv).toContain('Rotterdam');
+      expect(csv).toContain('October');
+    });
+  });
+
+  describe('exportGroupedSetReports', () => {
+    it('should write set-analysis.md, .json, .csv to output directory', () => {
+      existsSync.mockReturnValue(true);
+      exportGroupedSetReports('/tmp/grouped-output', mockGroupRankings, mockGroupSetConfig);
+      expect(writeFileSync).toHaveBeenCalledTimes(3);
+
+      const paths = writeFileSync.mock.calls.map(c => c[0]);
+      expect(paths).toContain('/tmp/grouped-output/set-analysis.md');
+      expect(paths).toContain('/tmp/grouped-output/set-analysis.json');
+      expect(paths).toContain('/tmp/grouped-output/set-analysis.csv');
+    });
+
+    it('should create output directory if not exists', () => {
+      existsSync.mockReturnValue(false);
+      exportGroupedSetReports('/tmp/grouped-output', mockGroupRankings, mockGroupSetConfig);
+      expect(mkdirSync).toHaveBeenCalledWith('/tmp/grouped-output', { recursive: true });
     });
   });
 });

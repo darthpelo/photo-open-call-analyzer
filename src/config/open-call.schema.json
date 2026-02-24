@@ -112,6 +112,31 @@
         }
       }
     },
+    "photoGroups": {
+      "type": "array",
+      "description": "Optional photo sub-groups/series for constrained set generation (FR-4.8). When defined, suggest-sets generates combinations only within each group.",
+      "minItems": 1,
+      "maxItems": 20,
+      "items": {
+        "type": "object",
+        "required": ["name", "pattern"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100,
+            "description": "Human-readable group name (e.g., 'Rotterdam', 'October Series')"
+          },
+          "pattern": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Glob pattern to match filenames in photos/ directory (e.g., 'rotterdam*.jpg', '2025-10-*.jpg')"
+          }
+        }
+      }
+    },
     "setMode": {
       "type": "object",
       "description": "Configuration for set/group analysis (e.g., Polaroid 4-photo sets). See ADR-015.",
