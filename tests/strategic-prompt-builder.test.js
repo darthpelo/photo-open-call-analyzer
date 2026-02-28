@@ -3,9 +3,9 @@ import {
   buildSystemPrompt,
   buildAnalysisPrompt,
   getDefaultProfile
-} from '../src/analysis/bmed-prompt-builder.js';
+} from '../src/analysis/strategic-prompt-builder.js';
 
-describe('bmed-prompt-builder', () => {
+describe('strategic-prompt-builder', () => {
   describe('getDefaultProfile', () => {
     it('should return a photographer profile object', () => {
       const profile = getDefaultProfile();

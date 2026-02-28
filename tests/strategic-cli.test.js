@@ -1,7 +1,7 @@
 /**
- * BMed CLI Test Suite (FR-SI-3, FR-SI-4)
+ * Strategic CLI Test Suite (FR-SI-3, FR-SI-4)
  *
- * Tests for bmed-analyze CLI command edge cases:
+ * Tests for strategic-analyze CLI command edge cases:
  * - FR-SI-3: Markdown fallback summary when JSON extraction fails
  * - FR-SI-4: Directory/config validation and Ollama connectivity checks
  */
@@ -45,19 +45,19 @@ function runCli(args, { timeout = 10000 } = {}) {
   });
 }
 
-describe('bmed-analyze CLI (FR-SI-3, FR-SI-4)', () => {
+describe('strategic-analyze CLI (FR-SI-3, FR-SI-4)', () => {
   describe('FR-SI-4: Edge case validation', () => {
     it('should exit with error for non-existent project directory', async () => {
-      const result = await runCli(['bmed-analyze', '/tmp/nonexistent-project-dir-xyz']);
+      const result = await runCli(['strategic-analyze', '/tmp/nonexistent-project-dir-xyz']);
       expect(result.code).toBe(1);
       // logger.error writes to stdout via console.log
       expect(result.stdout).toContain('Project directory not found');
     });
 
     it('should exit with error when open-call.json is missing', async () => {
-      const tempDir = mkdtempSync(join(tmpdir(), 'bmed-cli-test-'));
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
       try {
-        const result = await runCli(['bmed-analyze', tempDir]);
+        const result = await runCli(['strategic-analyze', tempDir]);
         expect(result.code).toBe(1);
         expect(result.stdout).toContain('Configuration file not found');
       } finally {
@@ -66,11 +66,11 @@ describe('bmed-analyze CLI (FR-SI-3, FR-SI-4)', () => {
     });
 
     it('should exit with error for invalid open-call.json', async () => {
-      const tempDir = mkdtempSync(join(tmpdir(), 'bmed-cli-test-'));
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
       try {
         // Write an invalid config (missing required fields)
         writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify({}), 'utf-8');
-        const result = await runCli(['bmed-analyze', tempDir]);
+        const result = await runCli(['strategic-analyze', tempDir]);
         expect(result.code).toBe(1);
         expect(result.stdout).toContain('Configuration validation failed');
       } finally {

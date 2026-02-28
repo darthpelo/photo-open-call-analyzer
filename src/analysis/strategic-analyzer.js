@@ -1,5 +1,5 @@
 /**
- * Sebastiano (BMed) — Strategic curatorial analyzer.
+ * Sebastiano — Strategic curatorial analyzer.
  * Orchestrates prompt building, Ollama text model call, and output parsing.
  * Part of FR-B3 (strategic analysis) and FR-B7 (structured output).
  */
@@ -7,8 +7,8 @@
 import { Ollama } from 'ollama';
 import { getApiClient } from '../utils/api-client.js';
 import { resolveTextModel, ensureModelAvailable } from '../utils/model-manager.js';
-import { buildSystemPrompt, buildAnalysisPrompt, getDefaultProfile } from './bmed-prompt-builder.js';
-import { parseStrategicOutput, validateEvaluation } from './bmed-output-parser.js';
+import { buildSystemPrompt, buildAnalysisPrompt, getDefaultProfile } from './strategic-prompt-builder.js';
+import { parseStrategicOutput, validateEvaluation } from './strategic-output-parser.js';
 import { logger } from '../utils/logger.js';
 
 /**
@@ -17,7 +17,7 @@ import { logger } from '../utils/logger.js';
  * minutes to process the full prompt before emitting the first token).
  * @returns {Ollama}
  */
-function createBmedClient() {
+function createOllamaClient() {
   const host = process.env.OLLAMA_HOST || 'http://localhost:11434';
   return new Ollama({ host });
 }
@@ -56,7 +56,7 @@ export async function analyzeStrategically(openCallData, options = {}) {
   logger.debug(`System prompt length: ${systemPrompt.split(/\s+/).length} words`);
 
   // Use injected client (tests) or dedicated client (production)
-  const client = options._client || createBmedClient();
+  const client = options._client || createOllamaClient();
 
   // Stream to avoid undici headersTimeout — headers arrive immediately with
   // chunked responses, then tokens trickle in as the model generates them.

@@ -21,7 +21,8 @@ This tool helps photographers select their best photos to submit to open calls b
 | **Dev** | `.claude/agents/dev.md` | Implements analysis logic, APIs, automation |
 | **Designer** | `.claude/agents/designer.md` | UX/UI for results visualization |
 | **QA** | `.claude/agents/qa.md` | Testing, validation, quality assurance |
-| **Sebastiano (BMed)** | `.claude/agents/bmed.md` | Strategic curatorial advisor for open call positioning |
+| **Architect** | `.claude/agents/architect.md` | Solution design, architecture decisions |
+| **Sebastiano** | `.claude/agents/strategic-curator.md` | Strategic curatorial advisor for open call positioning |
 
 ## Main Workflow
 
@@ -100,36 +101,47 @@ photo-open-call-analyzer/
 ├── .claude/
 │   ├── agents/               # Agent definitions
 │   │   ├── art-critic.md
+│   │   ├── architect.md
 │   │   ├── project-owner.md
 │   │   ├── dev.md
 │   │   ├── designer.md
-│   │   └── qa.md
+│   │   ├── qa.md
+│   │   └── strategic-curator.md
 │   └── workflows/            # Reusable workflows
 │       └── analyze-open-call.md
 ├── src/                      # Source code
 │   ├── analysis/             # Photo analysis logic
-│   │   ├── photo-analyzer.js # Core with Ollama/LLaVA
+│   │   ├── photo-analyzer.js       # Core with Ollama/LLaVA
 │   │   ├── prompt-generator.js
 │   │   ├── score-aggregator.js
-│   │   ├── set-analyzer.js       # Multi-image set analysis (FR-3.11)
-│   │   ├── set-prompt-builder.js # Set-level prompt generation
+│   │   ├── smart-tiering.js        # Tier classification (top/mid/low)
+│   │   ├── benchmarking-manager.js # Model benchmarking
+│   │   ├── set-analyzer.js         # Multi-image set analysis (FR-3.11)
+│   │   ├── set-prompt-builder.js   # Set-level prompt generation
 │   │   ├── set-score-aggregator.js # Composite set scoring
-│   │   ├── winner-manager.js     # Historical winner learning (FR-3.10)
-│   │   ├── strategic-analyzer.js    # Sebastiano curatorial reasoning orchestrator
-│   │   ├── bmed-prompt-builder.js   # Sebastiano system prompt + context builder
-│   │   └── bmed-output-parser.js    # Dual output parser (MD + JSON)
+│   │   ├── winner-manager.js       # Historical winner learning (FR-3.10)
+│   │   ├── strategic-analyzer.js       # Sebastiano curatorial reasoning orchestrator
+│   │   ├── strategic-prompt-builder.js # Sebastiano system prompt + context builder
+│   │   └── strategic-output-parser.js  # Sebastiano dual output parser (MD + JSON)
 │   ├── processing/           # Batch processing
-│   │   ├── batch-processor.js    # Batch photo processing with caching & concurrency
-│   │   ├── cache-manager.js      # Per-project analysis cache (FR-3.7)
-│   │   ├── concurrency-manager.js # Slot-based adaptive concurrency (FR-3.8)
+│   │   ├── batch-processor.js      # Batch photo processing with caching & concurrency
+│   │   ├── cache-manager.js        # Per-project analysis cache (FR-3.7)
+│   │   ├── checkpoint-manager.js   # Crash recovery checkpoints
+│   │   ├── concurrency-manager.js  # Slot-based adaptive concurrency (FR-3.8)
 │   │   ├── combination-generator.js # C(N,K) set combinations + group-aware selection (FR-4.8)
-│   │   └── photo-group-resolver.js  # Photo series/group resolution via glob (FR-4.8)
+│   │   ├── photo-group-resolver.js # Photo series/group resolution via glob (FR-4.8)
+│   │   ├── photo-validator.js      # Photo file validation
+│   │   └── submission-validator.js # Open call submission rules validation
 │   ├── output/               # Report generation
-│   │   └── set-report-generator.js  # Set reports (MD/JSON/CSV)
+│   │   ├── report-generator.js          # Single-photo reports
+│   │   ├── set-report-generator.js      # Set reports (MD/JSON/CSV)
+│   │   └── title-description-generator.js # AI-generated titles/descriptions
 │   ├── cli/                  # CLI commands
 │   └── utils/
-│       ├── api-client.js     # Ollama client (getModelName supports override)
-│       ├── model-manager.js  # Model selection & auto-pull (FR-3.9)
+│       ├── api-client.js       # Ollama client (getModelName supports override)
+│       ├── model-manager.js    # Model selection & auto-pull (FR-3.9)
+│       ├── error-classifier.js # Error categorization
+│       ├── project-scaffold.js # Project init scaffolding
 │       ├── file-utils.js
 │       └── logger.js
 ├── data/
@@ -204,9 +216,14 @@ photo-open-call-analyzer/
   "sharp": "Image processing",
   "commander": "CLI",
   "chalk": "Colored output",
-  "ora": "Spinners"
+  "ora": "Spinners",
+  "ajv": "JSON schema validation",
+  "@inquirer/prompts": "Interactive CLI prompts",
+  "cli-table3": "CLI table formatting"
 }
 ```
+
+Dev: `vitest` (test framework), `@vitest/coverage-v8`, `husky` + `lint-staged` (pre-commit hooks).
 
 ## Environment Variables
 
@@ -229,37 +246,9 @@ photo-open-call-analyzer/
 
 > **Solo development note**: Since GitHub does not allow a PR author to approve their own PR, we use `--admin` to bypass the approval requirement while still keeping the PR-based workflow for traceability.
 
-**Creating Pull Requests** (REQUIRED method):
-```bash
-# Create PR description file
-cat > .pr-body.txt << 'EOF'
-## Summary
-Brief description of changes
+**Creating PRs**: Always use `gh pr create --body-file .pr-body.txt` (not `--body`) to avoid shell quoting issues. Use `gh pr merge <N> --merge --admin` since the sole maintainer cannot self-approve.
 
-## Implementation
-- Key changes
-
-## Testing
-- Test results
-EOF
-
-# Create PR with body-file (avoids line break issues)
-gh pr create --base main --head feature/m2-task-name \
-  --title "feat(scope): description" \
-  --body-file .pr-body.txt
-
-# Clean up
-rm .pr-body.txt
-
-# Merge with admin bypass (solo development)
-gh pr merge <PR_NUMBER> --merge --admin
-```
-
-**IMPORTANT**: Always use `--body-file` instead of `--body` to avoid shell quoting issues with complex descriptions.
-
-**IMPORTANT**: Always use `--admin` flag when merging PRs, as the sole maintainer cannot approve their own PRs.
-
-**See COPILOT.md for detailed workflow.**
+See `docs/development/COPILOT.md` for detailed PR workflow and body template.
 
 ## Useful Commands
 
@@ -291,9 +280,9 @@ node src/cli/analyze.js tag-winner ./data/open-calls/my-oc/ --photo winner.jpg -
 node src/cli/analyze.js winner-insights ./data/open-calls/my-oc/
 node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --compare-winners
 
-# Strategic Curatorial Analysis (Sebastiano/BMed)
-node src/cli/analyze.js bmed-analyze ./data/open-calls/my-oc/
-node src/cli/analyze.js bmed-analyze ./data/open-calls/my-oc/ --text-model llama3:8b
+# Strategic Curatorial Analysis (Sebastiano)
+node src/cli/analyze.js strategic-analyze ./data/open-calls/my-oc/
+node src/cli/analyze.js strategic-analyze ./data/open-calls/my-oc/ --text-model llama3:8b
 
 # Tests
 npm test
@@ -322,48 +311,21 @@ npm test
 - Bug reports in `../bugs/` (when needed)
 - Coverage target: 80%+
 
-### Sebastiano (BMed)
+### Sebastiano
 - Strategic curatorial advisor — does NOT analyze photos
 - Analyzes open calls, jury, positioning strategy
 - Two-phase: Claude Code (research) + Ollama phi3:mini (reasoning)
-- Output saved to `data/open-calls/{name}/bmed/`
+- Output saved to `data/open-calls/{name}/strategic/`
 - Cross-session memory via claude-mem
 
 ### Project Owner
-- Tracking in [ROADMAP.md](ROADMAP.md), [BACKLOG.md](BACKLOG.md)
 - Coordinate between agents
 - Document decisions
 
 ## BMAD Context
 
-Domain: software
-Phase: analysis
-
-Available agents:
-- /bmad-analyst - Analysis and discovery
-- /bmad-pm - Detailed requirements
-- /bmad-architect - Solution design
-- /bmad-dev - Implementation
-- /bmad-qa - Testing and validation
-- /bmad-security - Security audit and threat modeling
-- /bmad-sm - Sprint planning and backlog management
-- /bmad-ux - UX design, wireframes, user flows
-
-Workflow:
-1. /bmad-analyst - Create brief
-2. /bmad-pm - Create requirements
-3. /bmad-architect - Create design
-4. /bmad-dev - Implement
-5. /bmad-qa - Validate
+Uses BMAD plugin for structured development workflow: `/bmad-scope` -> `/bmad-prioritize` -> `/bmad-arch` -> `/bmad-impl` -> `/bmad-qa`. See available `/bmad-*` skills for full list.
 
 ## Language Guidelines
 
-**IMPORTANT**: All documentation and code comments MUST be in English only.
-
-- ✅ **DO**: Write all documentation in English
-- ✅ **DO**: Write all inline code comments in English
-- ✅ **DO**: Use English for commit messages
-- ✅ **DO**: Use English for issue descriptions
-- ❌ **DON'T**: Use Italian or any other language in documentation
-- ❌ **DON'T**: Use Italian in code comments
-- ❌ **DON'T**: Use Italian in variable/function names
+**IMPORTANT**: All code, comments, documentation, and commit messages MUST be in English only. Never use Italian or other languages.

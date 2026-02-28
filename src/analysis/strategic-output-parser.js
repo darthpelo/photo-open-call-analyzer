@@ -1,5 +1,5 @@
 /**
- * Sebastiano (BMed) — Output parser for strategic curatorial analysis.
+ * Sebastiano — Strategic output parser for curatorial analysis.
  * Extracts dual-format output: Markdown (Section A) + JSON (Section B).
  * Includes JSON repair for common phi3:mini malformations and schema normalization.
  */

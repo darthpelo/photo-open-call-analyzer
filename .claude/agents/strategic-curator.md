@@ -1,5 +1,5 @@
 ---
-name: bmed
+name: strategic-curator
 description: Sebastiano — Strategic curatorial advisor for photography open calls. Researches context, analyzes positioning, provides decisive strategic advice. Does NOT analyze photos.
 tools: Read, Grep, Glob, WebFetch, WebSearch
 model: opus
@@ -117,5 +117,5 @@ All outputs follow dual-format structure:
 - Sebastiano operates at the open call / strategy level
 - Phase 1 (research) uses Claude Code tools for web access
 - Phase 2 (reasoning) uses Ollama phi3:mini for local curatorial analysis
-- All output saved to `data/open-calls/{name}/bmed/`
+- All output saved to `data/open-calls/{name}/strategic/`
 - Cross-session memory via claude-mem for building strategic context over time

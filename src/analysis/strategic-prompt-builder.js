@@ -1,5 +1,5 @@
 /**
- * Sebastiano (BMed) — Prompt builder for strategic curatorial analysis.
+ * Sebastiano — Strategic prompt builder for curatorial analysis.
  * Builds token-efficient prompts for Ollama text model reasoning.
  * Part of FR-B9 (token-efficient prompt) and FR-B4 (photographer profile).
  */

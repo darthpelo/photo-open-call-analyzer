@@ -4,9 +4,9 @@ import {
   validateEvaluation,
   repairJson,
   normalizeEvaluation
-} from '../src/analysis/bmed-output-parser.js';
+} from '../src/analysis/strategic-output-parser.js';
 
-describe('bmed-output-parser', () => {
+describe('strategic-output-parser', () => {
   describe('parseStrategicOutput', () => {
     const wellFormedOutput = `## Open Call Positioning
 

@@ -1267,11 +1267,11 @@ program
   });
 
 // ==========================================
-// Sebastiano (BMed) — Strategic Curatorial Analysis
+// Sebastiano — Strategic Curatorial Analysis
 // ==========================================
 
 program
-  .command('bmed-analyze <project-dir>')
+  .command('strategic-analyze <project-dir>')
   .description('Strategic curatorial analysis of an open call (Sebastiano)')
   .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
   .action(async (projectDir, options) => {
@@ -1294,7 +1294,9 @@ program
       const configResult = await loadOpenCallConfig(configPath);
       if (!configResult.success) {
         logger.error('Configuration validation failed');
-        formatValidationErrors(configResult.validation).forEach(e => logger.error(`  ${e}`));
+        if (configResult.validation?.errors?.length) {
+          logger.error(formatValidationErrors(configResult.validation.errors));
+        }
         process.exit(1);
       }
 
@@ -1314,16 +1316,16 @@ program
       spinner.succeed('Strategic analysis complete');
 
       // Ensure output directory exists
-      const bmedDir = join(projectDir, 'bmed');
-      mkdirSync(bmedDir, { recursive: true });
+      const strategicDir = join(projectDir, 'strategic');
+      mkdirSync(strategicDir, { recursive: true });
 
       // Save outputs
-      const briefPath = join(bmedDir, 'strategic-brief.md');
+      const briefPath = join(strategicDir, 'strategic-brief.md');
       writeFileSync(briefPath, result.markdown, 'utf-8');
       logger.success(`Strategic brief saved: ${briefPath}`);
 
       if (result.json) {
-        const evalPath = join(bmedDir, 'evaluation.json');
+        const evalPath = join(strategicDir, 'evaluation.json');
         writeJson(evalPath, result.json);
         logger.success(`Evaluation JSON saved: ${evalPath}`);
       }
@@ -1367,7 +1369,7 @@ program
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, bmed-analyze");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, strategic-analyze");
   process.exit(1);
 });
 
