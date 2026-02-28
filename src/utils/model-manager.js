@@ -17,6 +17,7 @@ import { getApiClient, checkOllamaStatus } from './api-client.js';
 import { logger } from './logger.js';
 
 const DEFAULT_MODEL = 'llava:7b';
+const DEFAULT_TEXT_MODEL = 'phi3:mini';
 const VISION_MODEL_PATTERNS = ['llava', 'bakllava', 'moondream'];
 
 /**
@@ -30,6 +31,25 @@ const VISION_MODEL_PATTERNS = ['llava', 'bakllava', 'moondream'];
  */
 export function resolveModel({ cliModel, configModel, envModel } = {}) {
   return cliModel || configModel || envModel || DEFAULT_MODEL;
+}
+
+/**
+ * Resolve the text model for non-vision tasks (e.g., curatorial reasoning).
+ *
+ * Resolution chain:
+ * 1. CLI --text-model flag
+ * 2. open-call.json "textModel" field
+ * 3. OLLAMA_TEXT_MODEL environment variable
+ * 4. Default: phi3:mini
+ *
+ * @param {Object} options
+ * @param {string|null|undefined} [options.cliModel] - Model from CLI flag
+ * @param {string|null|undefined} [options.configModel] - Model from config
+ * @param {string|null|undefined} [options.envModel] - Model from env var
+ * @returns {string} Resolved text model name
+ */
+export function resolveTextModel({ cliModel, configModel, envModel } = {}) {
+  return cliModel || configModel || envModel || process.env.OLLAMA_TEXT_MODEL || DEFAULT_TEXT_MODEL;
 }
 
 /**

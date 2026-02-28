@@ -24,6 +24,8 @@ import { tagWinner, loadWinners, extractPatterns, computeWinnerSimilarity, getWi
 import { validateSubmission } from '../processing/submission-validator.js';
 import { generateBatchTexts, generateTexts, buildTextPrompt } from '../output/title-description-generator.js';
 import { runCalibration, validateBaselineStructure } from '../analysis/benchmarking-manager.js';
+import { analyzeStrategically } from '../analysis/strategic-analyzer.js';
+import { checkOllamaStatus } from '../utils/api-client.js';
 import { join, basename } from 'path';
 import ora from 'ora';
 
@@ -1264,10 +1266,110 @@ program
     }
   });
 
+// ==========================================
+// Sebastiano — Strategic Curatorial Analysis
+// ==========================================
+
+program
+  .command('strategic-analyze <project-dir>')
+  .description('Strategic curatorial analysis of an open call (Sebastiano)')
+  .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('STRATEGIC CURATORIAL ANALYSIS (Sebastiano)');
+
+      // FR-SI-4: Check project directory exists
+      const { existsSync, mkdirSync, writeFileSync } = await import('fs');
+      if (!existsSync(projectDir)) {
+        logger.error(`Project directory not found: ${projectDir}`);
+        process.exit(1);
+      }
+
+      const configPath = join(projectDir, 'open-call.json');
+      if (!fileExists(configPath)) {
+        logger.error(`Configuration file not found: ${configPath}`);
+        process.exit(1);
+      }
+
+      const configResult = await loadOpenCallConfig(configPath);
+      if (!configResult.success) {
+        logger.error('Configuration validation failed');
+        if (configResult.validation?.errors?.length) {
+          logger.error(formatValidationErrors(configResult.validation.errors));
+        }
+        process.exit(1);
+      }
+
+      // FR-SI-4: Check Ollama connectivity before analysis
+      const ollamaStatus = await checkOllamaStatus();
+      if (!ollamaStatus.connected) {
+        logger.error('Ollama is not running. Start it with: ollama serve');
+        process.exit(1);
+      }
+
+      const spinner = ora('Sebastiano is analyzing the open call...').start();
+
+      const result = await analyzeStrategically(configResult.data, {
+        textModel: options.textModel
+      });
+
+      spinner.succeed('Strategic analysis complete');
+
+      // Ensure output directory exists
+      const strategicDir = join(projectDir, 'strategic');
+      mkdirSync(strategicDir, { recursive: true });
+
+      // Save outputs
+      const briefPath = join(strategicDir, 'strategic-brief.md');
+      writeFileSync(briefPath, result.markdown, 'utf-8');
+      logger.success(`Strategic brief saved: ${briefPath}`);
+
+      if (result.json) {
+        const evalPath = join(strategicDir, 'evaluation.json');
+        writeJson(evalPath, result.json);
+        logger.success(`Evaluation JSON saved: ${evalPath}`);
+      }
+
+      // Display summary
+      logger.section('SUMMARY');
+      if (result.json) {
+        logger.info(`Call alignment: ${result.json.call_alignment_score}/10`);
+        logger.info(`Competitiveness: ${result.json.overall_competitiveness}`);
+        if (result.json.recommended_approach) {
+          logger.info(`Approach: ${result.json.recommended_approach}`);
+        }
+      } else {
+        // FR-SI-3: Markdown fallback when JSON extraction fails
+        const scoreMatch = result.markdown.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+        const compMatch = result.markdown.match(/competitiveness[^)]*?(low|medium|high)/i)
+          || result.markdown.match(/(low|medium|high)\s+competitiveness/i);
+        if (scoreMatch) {
+          logger.info(`Call alignment (from markdown): ${scoreMatch[1]}/10`);
+        }
+        if (compMatch) {
+          logger.info(`Competitiveness (from markdown): ${compMatch[1].toLowerCase()}`);
+        }
+        logger.warn('JSON not extracted — see strategic-brief.md for full analysis');
+      }
+      logger.info(`Model used: ${result.model}`);
+
+      if (!result.validation.valid) {
+        logger.warn('Output validation warnings:');
+        result.validation.errors.forEach(e => logger.warn(`  ${e}`));
+      }
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, strategic-analyze");
   process.exit(1);
 });
 
