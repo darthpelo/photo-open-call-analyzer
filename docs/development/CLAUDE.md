@@ -325,7 +325,7 @@ npm test
 ### Sebastiano (BMed)
 - Strategic curatorial advisor — does NOT analyze photos
 - Analyzes open calls, jury, positioning strategy
-- Two-phase: Claude Code (research) + Ollama phi3:medium (reasoning)
+- Two-phase: Claude Code (research) + Ollama phi3:mini (reasoning)
 - Output saved to `data/open-calls/{name}/bmed/`
 - Cross-session memory via claude-mem
 

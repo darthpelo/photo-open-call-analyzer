@@ -11,7 +11,7 @@ vi.mock('../src/utils/model-manager.js', async (importOriginal) => {
   const actual = await importOriginal();
   return {
     ...actual,
-    resolveTextModel: vi.fn(() => 'phi3:medium'),
+    resolveTextModel: vi.fn(() => 'phi3:mini'),
     ensureModelAvailable: vi.fn(async () => true)
   };
 });
@@ -86,7 +86,7 @@ Submit architectural series.
 
   it('should ensure model is available', async () => {
     await analyzeStrategically(mockOpenCallData, { _client: mockClient });
-    expect(ensureModelAvailable).toHaveBeenCalledWith('phi3:medium');
+    expect(ensureModelAvailable).toHaveBeenCalledWith('phi3:mini');
   });
 
   it('should call Ollama chat with text model (no images)', async () => {
@@ -94,7 +94,7 @@ Submit architectural series.
 
     expect(mockChat).toHaveBeenCalledTimes(1);
     const callArgs = mockChat.mock.calls[0][0];
-    expect(callArgs.model).toBe('phi3:medium');
+    expect(callArgs.model).toBe('phi3:mini');
     expect(callArgs.messages).toBeDefined();
     expect(callArgs.messages.length).toBeGreaterThanOrEqual(1);
 
@@ -128,7 +128,7 @@ Submit architectural series.
 
   it('should return model name used', async () => {
     const result = await analyzeStrategically(mockOpenCallData, { _client: mockClient });
-    expect(result.model).toBe('phi3:medium');
+    expect(result.model).toBe('phi3:mini');
   });
 
   it('should accept textModel override', async () => {

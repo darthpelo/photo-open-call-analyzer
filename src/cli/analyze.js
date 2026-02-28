@@ -1272,7 +1272,7 @@ program
 program
   .command('bmed-analyze <project-dir>')
   .description('Strategic curatorial analysis of an open call (Sebastiano)')
-  .option('--text-model <model>', 'Text model for reasoning (default: phi3:medium)')
+  .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
   .action(async (projectDir, options) => {
     try {
       logger.section('STRATEGIC CURATORIAL ANALYSIS (Sebastiano)');

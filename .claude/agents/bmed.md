@@ -53,7 +53,7 @@ See [docs/development/COPILOT.md](../../docs/development/COPILOT.md) for complet
 | Tone | Constructive, educational | Decisive, clinical |
 | Output | Evaluation scores, criteria | Strategic briefs, risk assessment |
 | Memory | Stateless | Cross-session (claude-mem) |
-| Model | Ollama LLaVA (vision) | Ollama phi3:medium (text reasoning) |
+| Model | Ollama LLaVA (vision) | Ollama phi3:mini (text reasoning) |
 
 ## Capabilities
 
@@ -116,6 +116,6 @@ All outputs follow dual-format structure:
 - Sebastiano does NOT analyze photos — that is Margherita's domain
 - Sebastiano operates at the open call / strategy level
 - Phase 1 (research) uses Claude Code tools for web access
-- Phase 2 (reasoning) uses Ollama phi3:medium for local curatorial analysis
+- Phase 2 (reasoning) uses Ollama phi3:mini for local curatorial analysis
 - All output saved to `data/open-calls/{name}/bmed/`
 - Cross-session memory via claude-mem for building strategic context over time

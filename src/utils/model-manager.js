@@ -17,7 +17,7 @@ import { getApiClient, checkOllamaStatus } from './api-client.js';
 import { logger } from './logger.js';
 
 const DEFAULT_MODEL = 'llava:7b';
-const DEFAULT_TEXT_MODEL = 'phi3:medium';
+const DEFAULT_TEXT_MODEL = 'phi3:mini';
 const VISION_MODEL_PATTERNS = ['llava', 'bakllava', 'moondream'];
 
 /**
@@ -40,7 +40,7 @@ export function resolveModel({ cliModel, configModel, envModel } = {}) {
  * 1. CLI --text-model flag
  * 2. open-call.json "textModel" field
  * 3. OLLAMA_TEXT_MODEL environment variable
- * 4. Default: phi3:medium
+ * 4. Default: phi3:mini
  *
  * @param {Object} options
  * @param {string|null|undefined} [options.cliModel] - Model from CLI flag
