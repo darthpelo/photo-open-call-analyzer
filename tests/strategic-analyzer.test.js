@@ -29,9 +29,7 @@ describe('strategic-analyzer', () => {
     context: 'Independent photobook publisher, Italy'
   };
 
-  const mockOllamaResponse = {
-    message: {
-      content: `## Open Call Positioning
+  const mockResponseContent = `## Open Call Positioning
 
 This call targets emerging photographers with documentary sensibility.
 
@@ -63,13 +61,23 @@ Submit architectural series.
     "risk_level": "medium"
   }
 }
-\`\`\``
-    }
-  };
+\`\`\``;
+
+  /**
+   * Create an async iterable that yields the full content as a single chunk,
+   * matching the streaming response format from Ollama.
+   */
+  function mockStream(content) {
+    return {
+      async *[Symbol.asyncIterator]() {
+        yield { message: { content } };
+      }
+    };
+  }
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockChat.mockResolvedValue(mockOllamaResponse);
+    mockChat.mockResolvedValue(mockStream(mockResponseContent));
   });
 
   it('should return an object with markdown and json', async () => {
@@ -89,12 +97,13 @@ Submit architectural series.
     expect(ensureModelAvailable).toHaveBeenCalledWith('phi3:mini');
   });
 
-  it('should call Ollama chat with text model (no images)', async () => {
+  it('should call Ollama chat with text model in streaming mode (no images)', async () => {
     await analyzeStrategically(mockOpenCallData, { _client: mockClient });
 
     expect(mockChat).toHaveBeenCalledTimes(1);
     const callArgs = mockChat.mock.calls[0][0];
     expect(callArgs.model).toBe('phi3:mini');
+    expect(callArgs.stream).toBe(true);
     expect(callArgs.messages).toBeDefined();
     expect(callArgs.messages.length).toBeGreaterThanOrEqual(1);
 

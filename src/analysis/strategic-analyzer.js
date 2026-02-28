@@ -11,18 +11,15 @@ import { buildSystemPrompt, buildAnalysisPrompt, getDefaultProfile } from './bme
 import { parseStrategicOutput, validateEvaluation } from './bmed-output-parser.js';
 import { logger } from '../utils/logger.js';
 
-const BMED_REQUEST_TIMEOUT = 600000; // 10 min — large prompts + text generation
-
 /**
- * Create an Ollama client with extended timeout for large text models.
+ * Create an Ollama client for strategic analysis.
+ * Uses streaming mode to avoid undici headersTimeout (phi3:mini may take
+ * minutes to process the full prompt before emitting the first token).
  * @returns {Ollama}
  */
 function createBmedClient() {
   const host = process.env.OLLAMA_HOST || 'http://localhost:11434';
-  return new Ollama({
-    host,
-    fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(BMED_REQUEST_TIMEOUT) })
-  });
+  return new Ollama({ host });
 }
 
 /**
@@ -58,9 +55,12 @@ export async function analyzeStrategically(openCallData, options = {}) {
   logger.debug(`Sebastiano using model: ${model}`);
   logger.debug(`System prompt length: ${systemPrompt.split(/\s+/).length} words`);
 
-  // Use injected client (tests) or dedicated client with extended timeout (production)
+  // Use injected client (tests) or dedicated client (production)
   const client = options._client || createBmedClient();
-  const response = await client.chat({
+
+  // Stream to avoid undici headersTimeout — headers arrive immediately with
+  // chunked responses, then tokens trickle in as the model generates them.
+  const stream = await client.chat({
     model,
     messages: [
       { role: 'system', content: systemPrompt },
@@ -69,10 +69,14 @@ export async function analyzeStrategically(openCallData, options = {}) {
     options: {
       temperature: options.temperature ?? 0.5,
       num_predict: options.maxTokens ?? 2000
-    }
+    },
+    stream: true
   });
 
-  const rawText = response.message.content;
+  let rawText = '';
+  for await (const chunk of stream) {
+    rawText += chunk.message.content;
+  }
   const { markdown, json } = parseStrategicOutput(rawText);
   const validation = json ? validateEvaluation(json) : { valid: false, errors: ['No JSON extracted'] };
 

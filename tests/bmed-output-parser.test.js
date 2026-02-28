@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import {
   parseStrategicOutput,
-  validateEvaluation
+  validateEvaluation,
+  repairJson,
+  normalizeEvaluation
 } from '../src/analysis/bmed-output-parser.js';
 
 describe('bmed-output-parser', () => {
@@ -78,11 +80,71 @@ Submit with emphasis on architectural series. Lead with strongest conceptual ima
       expect(result.json).toBeNull();
     });
 
-    it('should handle output with malformed JSON', () => {
+    it('should handle output with irreparably malformed JSON', () => {
       const badJson = '## Analysis\n\nSome text\n\n```json\n{ bad json here }\n```';
       const result = parseStrategicOutput(badJson);
       expect(result.markdown).toContain('Some text');
       expect(result.json).toBeNull();
+    });
+
+    it('should repair and parse JSON with trailing commas', () => {
+      const trailingComma = '## Analysis\n\n```json\n{"call_alignment_score": 8, "overall_competitiveness": "high",}\n```';
+      const result = parseStrategicOutput(trailingComma);
+      expect(result.json).not.toBeNull();
+      expect(result.json.call_alignment_score).toBe(8);
+    });
+
+    it('should repair and parse JSON with unclosed braces', () => {
+      const unclosed = '## Analysis\n\n```json\n{"call_alignment_score": 7, "overall_competitiveness": "medium", "scoring": {"visual_impact_fit": 8}\n```';
+      const result = parseStrategicOutput(unclosed);
+      expect(result.json).not.toBeNull();
+      expect(result.json.call_alignment_score).toBe(7);
+    });
+
+    it('should repair real phi3:mini malformed output (Lyricalmyrical pattern)', () => {
+      const phi3Output = `## Analysis\n\n\`\`\`json
+{
+  "call_alignment_score": 9,
+  "overall_competitiveness": "medium",
+  "key_risks": [
+    {
+      "description": "Some risk here"
+    },
+      "strategy": "Some strategy"
+    }
+  ],
+  "recommended_approach": {
+    "visual_impact_fit": 9,
+    "conceptual_coherence_fit": 8.5,
+    "editorial_fit": 9,
+    "distinctiveness_potential": 8,
+    "dialogue_potential": 7.5,
+    "risk_level": "medium"
+  }
+}
+\`\`\``;
+      const result = parseStrategicOutput(phi3Output);
+      expect(result.json).not.toBeNull();
+      expect(result.json.call_alignment_score).toBe(9);
+    });
+
+    it('should normalize scoring fields from recommended_approach', () => {
+      const misShaped = `## Analysis\n\n\`\`\`json
+{
+  "call_alignment_score": 8,
+  "overall_competitiveness": "high",
+  "recommended_approach": {
+    "visual_impact_fit": 9,
+    "editorial_fit": 8,
+    "risk_level": "medium"
+  }
+}
+\`\`\``;
+      const result = parseStrategicOutput(misShaped);
+      expect(result.json).not.toBeNull();
+      expect(result.json.scoring).toBeDefined();
+      expect(result.json.scoring.visual_impact_fit).toBe(9);
+      expect(typeof result.json.recommended_approach).toBe('string');
     });
 
     it('should handle empty input', () => {
@@ -102,6 +164,139 @@ Submit with emphasis on architectural series. Lead with strongest conceptual ima
       const result = parseStrategicOutput(inlineJson);
       expect(result.json).not.toBeNull();
       expect(result.json.call_alignment_score).toBe(6.5);
+    });
+  });
+
+  describe('repairJson', () => {
+    it('should fix trailing commas before closing brace', () => {
+      const repaired = repairJson('{"a": 1, "b": 2,}');
+      expect(JSON.parse(repaired)).toEqual({ a: 1, b: 2 });
+    });
+
+    it('should fix trailing commas before closing bracket', () => {
+      const repaired = repairJson('{"arr": [1, 2, 3,]}');
+      expect(JSON.parse(repaired)).toEqual({ arr: [1, 2, 3] });
+    });
+
+    it('should close unclosed braces', () => {
+      const repaired = repairJson('{"a": 1, "b": {"c": 2}');
+      expect(JSON.parse(repaired)).toEqual({ a: 1, b: { c: 2 } });
+    });
+
+    it('should close unclosed brackets', () => {
+      const repaired = repairJson('{"arr": [1, 2, 3}');
+      const parsed = JSON.parse(repaired);
+      expect(parsed.arr).toContain(1);
+    });
+
+    it('should return original string if already valid', () => {
+      const valid = '{"a": 1}';
+      expect(repairJson(valid)).toBe(valid);
+    });
+
+    it('should handle single quotes around values', () => {
+      const repaired = repairJson("{'a': 'hello'}");
+      expect(JSON.parse(repaired)).toEqual({ a: 'hello' });
+    });
+
+    it('should handle mixed issues (trailing comma + unclosed)', () => {
+      const repaired = repairJson('{"a": 1, "b": [1, 2,]');
+      const parsed = JSON.parse(repaired);
+      expect(parsed.a).toBe(1);
+    });
+
+    it('should handle empty string', () => {
+      expect(repairJson('')).toBe('');
+    });
+
+    it('should fix wrong closer type (] instead of })', () => {
+      const repaired = repairJson('{"a": {"b": 1]}');
+      const parsed = JSON.parse(repaired);
+      expect(parsed.a.b).toBe(1);
+    });
+  });
+
+  describe('normalizeEvaluation', () => {
+    it('should return object unchanged when already correct', () => {
+      const correct = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        recommended_approach: 'lead with conceptual work',
+        scoring: { visual_impact_fit: 9 }
+      };
+      const result = normalizeEvaluation(correct);
+      expect(result.recommended_approach).toBe('lead with conceptual work');
+      expect(result.scoring.visual_impact_fit).toBe(9);
+    });
+
+    it('should move scoring fields from recommended_approach to scoring', () => {
+      const misplaced = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        recommended_approach: {
+          visual_impact_fit: 9,
+          editorial_fit: 8,
+          risk_level: 'medium'
+        }
+      };
+      const result = normalizeEvaluation(misplaced);
+      expect(result.scoring.visual_impact_fit).toBe(9);
+      expect(result.scoring.editorial_fit).toBe(8);
+      expect(result.scoring.risk_level).toBe('medium');
+      expect(typeof result.recommended_approach).toBe('string');
+    });
+
+    it('should flatten key_risks objects to strings', () => {
+      const objectRisks = {
+        call_alignment_score: 7,
+        overall_competitiveness: 'medium',
+        key_risks: [
+          { description: 'heavy competition' },
+          { description: 'theme misalignment' }
+        ]
+      };
+      const result = normalizeEvaluation(objectRisks);
+      expect(result.key_risks).toEqual(['heavy competition', 'theme misalignment']);
+    });
+
+    it('should keep key_risks unchanged when already strings', () => {
+      const stringRisks = {
+        call_alignment_score: 7,
+        overall_competitiveness: 'medium',
+        key_risks: ['risk one', 'risk two']
+      };
+      const result = normalizeEvaluation(stringRisks);
+      expect(result.key_risks).toEqual(['risk one', 'risk two']);
+    });
+
+    it('should move root-level scoring fields into scoring object', () => {
+      const rootScoring = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        visual_impact_fit: 9,
+        conceptual_coherence_fit: 7,
+        risk_level: 'low'
+      };
+      const result = normalizeEvaluation(rootScoring);
+      expect(result.scoring.visual_impact_fit).toBe(9);
+      expect(result.scoring.conceptual_coherence_fit).toBe(7);
+      expect(result.scoring.risk_level).toBe('low');
+      expect(result.visual_impact_fit).toBeUndefined();
+    });
+
+    it('should not mutate the input object', () => {
+      const input = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        recommended_approach: { visual_impact_fit: 9 }
+      };
+      const original = JSON.parse(JSON.stringify(input));
+      normalizeEvaluation(input);
+      expect(input).toEqual(original);
+    });
+
+    it('should handle null input gracefully', () => {
+      expect(normalizeEvaluation(null)).toBeNull();
     });
   });
 

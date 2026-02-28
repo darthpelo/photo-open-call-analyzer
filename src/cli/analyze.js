@@ -25,6 +25,7 @@ import { validateSubmission } from '../processing/submission-validator.js';
 import { generateBatchTexts, generateTexts, buildTextPrompt } from '../output/title-description-generator.js';
 import { runCalibration, validateBaselineStructure } from '../analysis/benchmarking-manager.js';
 import { analyzeStrategically } from '../analysis/strategic-analyzer.js';
+import { checkOllamaStatus } from '../utils/api-client.js';
 import { join, basename } from 'path';
 import ora from 'ora';
 
@@ -1277,6 +1278,13 @@ program
     try {
       logger.section('STRATEGIC CURATORIAL ANALYSIS (Sebastiano)');
 
+      // FR-SI-4: Check project directory exists
+      const { existsSync, mkdirSync, writeFileSync } = await import('fs');
+      if (!existsSync(projectDir)) {
+        logger.error(`Project directory not found: ${projectDir}`);
+        process.exit(1);
+      }
+
       const configPath = join(projectDir, 'open-call.json');
       if (!fileExists(configPath)) {
         logger.error(`Configuration file not found: ${configPath}`);
@@ -1290,6 +1298,13 @@ program
         process.exit(1);
       }
 
+      // FR-SI-4: Check Ollama connectivity before analysis
+      const ollamaStatus = await checkOllamaStatus();
+      if (!ollamaStatus.connected) {
+        logger.error('Ollama is not running. Start it with: ollama serve');
+        process.exit(1);
+      }
+
       const spinner = ora('Sebastiano is analyzing the open call...').start();
 
       const result = await analyzeStrategically(configResult.data, {
@@ -1300,7 +1315,6 @@ program
 
       // Ensure output directory exists
       const bmedDir = join(projectDir, 'bmed');
-      const { mkdirSync, writeFileSync } = await import('fs');
       mkdirSync(bmedDir, { recursive: true });
 
       // Save outputs
@@ -1322,6 +1336,18 @@ program
         if (result.json.recommended_approach) {
           logger.info(`Approach: ${result.json.recommended_approach}`);
         }
+      } else {
+        // FR-SI-3: Markdown fallback when JSON extraction fails
+        const scoreMatch = result.markdown.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+        const compMatch = result.markdown.match(/competitiveness[^)]*?(low|medium|high)/i)
+          || result.markdown.match(/(low|medium|high)\s+competitiveness/i);
+        if (scoreMatch) {
+          logger.info(`Call alignment (from markdown): ${scoreMatch[1]}/10`);
+        }
+        if (compMatch) {
+          logger.info(`Competitiveness (from markdown): ${compMatch[1].toLowerCase()}`);
+        }
+        logger.warn('JSON not extracted — see strategic-brief.md for full analysis');
       }
       logger.info(`Model used: ${result.model}`);
 
