@@ -21,6 +21,7 @@ This tool helps photographers select their best photos to submit to open calls b
 | **Dev** | `.claude/agents/dev.md` | Implements analysis logic, APIs, automation |
 | **Designer** | `.claude/agents/designer.md` | UX/UI for results visualization |
 | **QA** | `.claude/agents/qa.md` | Testing, validation, quality assurance |
+| **Sebastiano (BMed)** | `.claude/agents/bmed.md` | Strategic curatorial advisor for open call positioning |
 
 ## Main Workflow
 
@@ -113,7 +114,10 @@ photo-open-call-analyzer/
 │   │   ├── set-analyzer.js       # Multi-image set analysis (FR-3.11)
 │   │   ├── set-prompt-builder.js # Set-level prompt generation
 │   │   ├── set-score-aggregator.js # Composite set scoring
-│   │   └── winner-manager.js     # Historical winner learning (FR-3.10)
+│   │   ├── winner-manager.js     # Historical winner learning (FR-3.10)
+│   │   ├── strategic-analyzer.js    # Sebastiano curatorial reasoning orchestrator
+│   │   ├── bmed-prompt-builder.js   # Sebastiano system prompt + context builder
+│   │   └── bmed-output-parser.js    # Dual output parser (MD + JSON)
 │   ├── processing/           # Batch processing
 │   │   ├── batch-processor.js    # Batch photo processing with caching & concurrency
 │   │   ├── cache-manager.js      # Per-project analysis cache (FR-3.7)
@@ -287,6 +291,10 @@ node src/cli/analyze.js tag-winner ./data/open-calls/my-oc/ --photo winner.jpg -
 node src/cli/analyze.js winner-insights ./data/open-calls/my-oc/
 node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --compare-winners
 
+# Strategic Curatorial Analysis (Sebastiano/BMed)
+node src/cli/analyze.js bmed-analyze ./data/open-calls/my-oc/
+node src/cli/analyze.js bmed-analyze ./data/open-calls/my-oc/ --text-model llama3:8b
+
 # Tests
 npm test
 ```
@@ -313,6 +321,13 @@ npm test
 - Tests in `tests/` (project root)
 - Bug reports in `../bugs/` (when needed)
 - Coverage target: 80%+
+
+### Sebastiano (BMed)
+- Strategic curatorial advisor — does NOT analyze photos
+- Analyzes open calls, jury, positioning strategy
+- Two-phase: Claude Code (research) + Ollama phi3:medium (reasoning)
+- Output saved to `data/open-calls/{name}/bmed/`
+- Cross-session memory via claude-mem
 
 ### Project Owner
 - Tracking in [ROADMAP.md](ROADMAP.md), [BACKLOG.md](BACKLOG.md)
