@@ -4,11 +4,26 @@
  * Part of FR-B3 (strategic analysis) and FR-B7 (structured output).
  */
 
+import { Ollama } from 'ollama';
 import { getApiClient } from '../utils/api-client.js';
 import { resolveTextModel, ensureModelAvailable } from '../utils/model-manager.js';
 import { buildSystemPrompt, buildAnalysisPrompt, getDefaultProfile } from './bmed-prompt-builder.js';
 import { parseStrategicOutput, validateEvaluation } from './bmed-output-parser.js';
 import { logger } from '../utils/logger.js';
+
+const BMED_REQUEST_TIMEOUT = 300000; // 5 min — large text models need warm-up
+
+/**
+ * Create an Ollama client with extended timeout for large text models.
+ * @returns {Ollama}
+ */
+function createBmedClient() {
+  const host = process.env.OLLAMA_HOST || 'http://localhost:11434';
+  return new Ollama({
+    host,
+    fetch: (url, init) => fetch(url, { ...init, signal: AbortSignal.timeout(BMED_REQUEST_TIMEOUT) })
+  });
+}
 
 /**
  * Run strategic curatorial analysis on an open call.
@@ -21,6 +36,7 @@ import { logger } from '../utils/logger.js';
  * @param {Object} [options.photographerProfile] - Custom profile (or default)
  * @param {number} [options.temperature=0.5] - Model temperature
  * @param {number} [options.maxTokens=2000] - Max response tokens
+ * @param {Object} [options._client] - Injectable client for testing
  * @returns {Promise<{ markdown: string, json: Object|null, model: string, validation: Object }>}
  */
 export async function analyzeStrategically(openCallData, options = {}) {
@@ -42,7 +58,8 @@ export async function analyzeStrategically(openCallData, options = {}) {
   logger.debug(`Sebastiano using model: ${model}`);
   logger.debug(`System prompt length: ${systemPrompt.split(/\s+/).length} words`);
 
-  const client = getApiClient();
+  // Use injected client (tests) or dedicated client with extended timeout (production)
+  const client = options._client || createBmedClient();
   const response = await client.chat({
     model,
     messages: [

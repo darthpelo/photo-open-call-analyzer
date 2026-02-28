@@ -1,10 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockChat = vi.fn();
+const mockClient = { chat: mockChat };
 vi.mock('../src/utils/api-client.js', () => ({
-  getApiClient: vi.fn(() => ({
-    chat: mockChat
-  })),
+  getApiClient: vi.fn(() => mockClient),
   getModelName: vi.fn(() => 'llava:7b')
 }));
 
@@ -74,24 +73,24 @@ Submit architectural series.
   });
 
   it('should return an object with markdown and json', async () => {
-    const result = await analyzeStrategically(mockOpenCallData);
+    const result = await analyzeStrategically(mockOpenCallData, { _client: mockClient });
     expect(result).toHaveProperty('markdown');
     expect(result).toHaveProperty('json');
     expect(result).toHaveProperty('model');
   });
 
   it('should resolve text model via resolveTextModel', async () => {
-    await analyzeStrategically(mockOpenCallData);
+    await analyzeStrategically(mockOpenCallData, { _client: mockClient });
     expect(resolveTextModel).toHaveBeenCalled();
   });
 
   it('should ensure model is available', async () => {
-    await analyzeStrategically(mockOpenCallData);
+    await analyzeStrategically(mockOpenCallData, { _client: mockClient });
     expect(ensureModelAvailable).toHaveBeenCalledWith('phi3:medium');
   });
 
   it('should call Ollama chat with text model (no images)', async () => {
-    await analyzeStrategically(mockOpenCallData);
+    await analyzeStrategically(mockOpenCallData, { _client: mockClient });
 
     expect(mockChat).toHaveBeenCalledTimes(1);
     const callArgs = mockChat.mock.calls[0][0];
@@ -106,7 +105,7 @@ Submit architectural series.
   });
 
   it('should include open call data in the prompt', async () => {
-    await analyzeStrategically(mockOpenCallData);
+    await analyzeStrategically(mockOpenCallData, { _client: mockClient });
 
     const callArgs = mockChat.mock.calls[0][0];
     const allContent = callArgs.messages.map(m => m.content).join(' ');
@@ -115,26 +114,26 @@ Submit architectural series.
   });
 
   it('should parse markdown from response', async () => {
-    const result = await analyzeStrategically(mockOpenCallData);
+    const result = await analyzeStrategically(mockOpenCallData, { _client: mockClient });
     expect(result.markdown).toContain('## Open Call Positioning');
     expect(result.markdown).toContain('## Strategic Assessment');
   });
 
   it('should parse JSON from response', async () => {
-    const result = await analyzeStrategically(mockOpenCallData);
+    const result = await analyzeStrategically(mockOpenCallData, { _client: mockClient });
     expect(result.json).not.toBeNull();
     expect(result.json.call_alignment_score).toBe(7.8);
     expect(result.json.overall_competitiveness).toBe('high');
   });
 
   it('should return model name used', async () => {
-    const result = await analyzeStrategically(mockOpenCallData);
+    const result = await analyzeStrategically(mockOpenCallData, { _client: mockClient });
     expect(result.model).toBe('phi3:medium');
   });
 
   it('should accept textModel override', async () => {
     resolveTextModel.mockReturnValue('llama3:8b');
-    await analyzeStrategically(mockOpenCallData, { textModel: 'llama3:8b' });
+    await analyzeStrategically(mockOpenCallData, { textModel: 'llama3:8b', _client: mockClient });
 
     const callArgs = mockChat.mock.calls[0][0];
     expect(callArgs.model).toBe('llama3:8b');
@@ -143,12 +142,12 @@ Submit architectural series.
   it('should handle Ollama error gracefully', async () => {
     mockChat.mockRejectedValue(new Error('Ollama connection refused'));
 
-    await expect(analyzeStrategically(mockOpenCallData)).rejects.toThrow('Ollama connection refused');
+    await expect(analyzeStrategically(mockOpenCallData, { _client: mockClient })).rejects.toThrow('Ollama connection refused');
   });
 
   it('should accept research context', async () => {
     const researchContext = { juryDetails: 'Ian Willms is a documentary photographer' };
-    await analyzeStrategically(mockOpenCallData, { researchContext });
+    await analyzeStrategically(mockOpenCallData, { researchContext, _client: mockClient });
 
     const callArgs = mockChat.mock.calls[0][0];
     const allContent = callArgs.messages.map(m => m.content).join(' ');
@@ -157,7 +156,7 @@ Submit architectural series.
 
   it('should accept memory context', async () => {
     const memoryContext = 'Past analysis shows jury prefers conceptual work';
-    await analyzeStrategically(mockOpenCallData, { memoryContext });
+    await analyzeStrategically(mockOpenCallData, { memoryContext, _client: mockClient });
 
     const callArgs = mockChat.mock.calls[0][0];
     const allContent = callArgs.messages.map(m => m.content).join(' ');
