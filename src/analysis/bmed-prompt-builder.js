@@ -11,8 +11,12 @@
 export function getDefaultProfile() {
   return {
     coreLanguage: 'double exposure, urban architecture',
-    orientation: 'photobook-oriented thinking',
-    context: 'independent publishing, European photography open calls'
+    technique: 'in-camera double exposure (analog and digital), layering urban structures and textures',
+    subjects: 'city architecture, building facades, urban geometry, structural patterns, construction sites',
+    aesthetic: 'high contrast, geometric composition, architectural abstraction, both b&w and color',
+    strengths: 'formal tension through layering, visual complexity from superimposed urban elements, distinctive recognizable style',
+    orientation: 'photobook-oriented thinking, sequential narrative through images',
+    context: 'independent publishing, European photography open calls, emerging photographer'
   };
 }
 
@@ -31,8 +35,12 @@ export function buildSystemPrompt(profile) {
 
 ROLE: Analyze open calls strategically. No reassurance. No hedging. Clear decisions.
 
-PHOTOGRAPHER PRACTICE:
-- Language: ${profile.coreLanguage}
+THE PHOTOGRAPHER (evaluate the open call FOR this specific artist — do NOT confuse with jury themes):
+- Visual language: ${profile.coreLanguage}
+- Technique: ${profile.technique || 'not specified'}
+- Subjects: ${profile.subjects || 'not specified'}
+- Aesthetic: ${profile.aesthetic || 'not specified'}
+- Strengths: ${profile.strengths || 'not specified'}
 - Orientation: ${profile.orientation}
 - Context: ${profile.context}
 

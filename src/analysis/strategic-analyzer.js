@@ -11,7 +11,7 @@ import { buildSystemPrompt, buildAnalysisPrompt, getDefaultProfile } from './bme
 import { parseStrategicOutput, validateEvaluation } from './bmed-output-parser.js';
 import { logger } from '../utils/logger.js';
 
-const BMED_REQUEST_TIMEOUT = 300000; // 5 min — large text models need warm-up
+const BMED_REQUEST_TIMEOUT = 600000; // 10 min — large prompts + text generation
 
 /**
  * Create an Ollama client with extended timeout for large text models.

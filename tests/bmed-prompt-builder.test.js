@@ -10,6 +10,10 @@ describe('bmed-prompt-builder', () => {
     it('should return a photographer profile object', () => {
       const profile = getDefaultProfile();
       expect(profile).toHaveProperty('coreLanguage');
+      expect(profile).toHaveProperty('technique');
+      expect(profile).toHaveProperty('subjects');
+      expect(profile).toHaveProperty('aesthetic');
+      expect(profile).toHaveProperty('strengths');
       expect(profile).toHaveProperty('orientation');
       expect(profile).toHaveProperty('context');
     });
@@ -18,6 +22,12 @@ describe('bmed-prompt-builder', () => {
       const profile = getDefaultProfile();
       expect(profile.coreLanguage).toMatch(/double exposure/i);
       expect(profile.coreLanguage).toMatch(/urban architecture/i);
+    });
+
+    it('should include technique details', () => {
+      const profile = getDefaultProfile();
+      expect(profile.technique).toMatch(/double exposure/i);
+      expect(profile.subjects).toMatch(/architecture/i);
     });
 
     it('should include photobook orientation', () => {
