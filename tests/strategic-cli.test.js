@@ -1,5 +1,5 @@
 /**
- * Strategic CLI Test Suite (FR-SI-3, FR-SI-4, FR-S2-4/5/6)
+ * Strategic CLI Test Suite (FR-SI-3, FR-SI-4, FR-S2-4/5/6, FR-S3-5)
  *
  * Tests for strategic CLI commands:
  * - FR-SI-3: Markdown fallback summary when JSON extraction fails
@@ -7,13 +7,14 @@
  * - FR-S2-4: strategic-research command
  * - FR-S2-5: strategic-advise command
  * - FR-S2-6: strategic-analyze research integration
+ * - FR-S3-5: strategic-discover command (URL auto-discovery)
  */
 
 import { describe, it, expect } from 'vitest';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from 'fs';
 import { tmpdir } from 'os';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -147,6 +148,94 @@ describe('strategic-analyze CLI (FR-SI-3, FR-SI-4)', () => {
       } finally {
         rmSync(tempDir, { recursive: true, force: true });
       }
+    });
+  });
+
+  describe('FR-S3-5: strategic-discover command', () => {
+    it('should exit with error for non-existent project directory', async () => {
+      const result = await runCli(['strategic-discover', '/tmp/nonexistent-project-dir-xyz']);
+      expect(result.code).toBe(1);
+      expect(result.stdout).toContain('Project directory not found');
+    });
+
+    it('should exit with error when open-call.json is missing', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const result = await runCli(['strategic-discover', tempDir]);
+        expect(result.code).toBe(1);
+        expect(result.stdout).toContain('Configuration file not found');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should display URL suggestions in --dry-run mode', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const config = {
+          title: 'Test Call',
+          theme: 'Nature photography',
+          jury: ['Marco Delogu'],
+          pastWinners: 'Previous winners focused on landscape.'
+        };
+        writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify(config), 'utf-8');
+        const result = await runCli(['strategic-discover', tempDir, '--dry-run']);
+        expect(result.code).toBe(0);
+        expect(result.stdout).toContain('marco-delogu');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should display suggestion count in --dry-run mode', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const config = {
+          title: 'Test Call',
+          theme: 'Nature photography',
+          jury: ['Anna Rossi'],
+          pastWinners: 'Previous winners focused on landscape.'
+        };
+        writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify(config), 'utf-8');
+        const result = await runCli(['strategic-discover', tempDir, '--dry-run']);
+        expect(result.code).toBe(0);
+        expect(result.stdout).toContain('URL(s) suggested');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should include organizer URLs when organizer field is present', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const config = {
+          title: 'Test Call',
+          theme: 'Nature photography',
+          jury: ['Marco Delogu'],
+          pastWinners: 'Previous winners focused on landscape.',
+          organizer: 'Loosenart Gallery'
+        };
+        writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify(config), 'utf-8');
+        const result = await runCli(['strategic-discover', tempDir, '--dry-run']);
+        expect(result.code).toBe(0);
+        expect(result.stdout).toContain('organizer');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('FR-S3-4: --no-memory flag', () => {
+    it('strategic-analyze --help should show --no-memory option', async () => {
+      const result = await runCli(['strategic-analyze', '--help']);
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain('--no-memory');
+    });
+
+    it('strategic-advise --help should show --no-memory option', async () => {
+      const result = await runCli(['strategic-advise', '--help']);
+      expect(result.code).toBe(0);
+      expect(result.stdout).toContain('--no-memory');
     });
   });
 
