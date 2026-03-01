@@ -1,9 +1,12 @@
 /**
- * Strategic CLI Test Suite (FR-SI-3, FR-SI-4)
+ * Strategic CLI Test Suite (FR-SI-3, FR-SI-4, FR-S2-4/5/6)
  *
- * Tests for strategic-analyze CLI command edge cases:
+ * Tests for strategic CLI commands:
  * - FR-SI-3: Markdown fallback summary when JSON extraction fails
  * - FR-SI-4: Directory/config validation and Ollama connectivity checks
+ * - FR-S2-4: strategic-research command
+ * - FR-S2-5: strategic-advise command
+ * - FR-S2-6: strategic-analyze research integration
  */
 
 import { describe, it, expect } from 'vitest';
@@ -71,6 +74,74 @@ describe('strategic-analyze CLI (FR-SI-3, FR-SI-4)', () => {
         // Write an invalid config (missing required fields)
         writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify({}), 'utf-8');
         const result = await runCli(['strategic-analyze', tempDir]);
+        expect(result.code).toBe(1);
+        expect(result.stdout).toContain('Configuration validation failed');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('FR-S2-4: strategic-research command', () => {
+    it('should exit with error for non-existent project directory', async () => {
+      const result = await runCli(['strategic-research', '/tmp/nonexistent-project-dir-xyz']);
+      expect(result.code).toBe(1);
+      expect(result.stdout).toContain('Project directory not found');
+    });
+
+    it('should exit with error when open-call.json is missing', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const result = await runCli(['strategic-research', tempDir]);
+        expect(result.code).toBe(1);
+        expect(result.stdout).toContain('Configuration file not found');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should handle config with no researchUrls gracefully', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const config = {
+          title: 'Test Call',
+          theme: 'Nature photography',
+          jury: ['Test Juror'],
+          pastWinners: 'Previous winners focused on landscape.'
+        };
+        writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify(config), 'utf-8');
+        const result = await runCli(['strategic-research', tempDir]);
+        expect(result.code).toBe(0);
+        expect(result.stdout).toMatch(/no research urls|0 sources/i);
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('FR-S2-5: strategic-advise command', () => {
+    it('should exit with error for non-existent project directory', async () => {
+      const result = await runCli(['strategic-advise', '/tmp/nonexistent-project-dir-xyz']);
+      expect(result.code).toBe(1);
+      expect(result.stdout).toContain('Project directory not found');
+    });
+
+    it('should exit with error when open-call.json is missing', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        const result = await runCli(['strategic-advise', tempDir]);
+        expect(result.code).toBe(1);
+        expect(result.stdout).toContain('Configuration file not found');
+      } finally {
+        rmSync(tempDir, { recursive: true, force: true });
+      }
+    });
+
+    it('should exit with error for invalid open-call.json', async () => {
+      const tempDir = mkdtempSync(join(tmpdir(), 'strategic-cli-test-'));
+      try {
+        writeFileSync(join(tempDir, 'open-call.json'), JSON.stringify({}), 'utf-8');
+        const result = await runCli(['strategic-advise', tempDir]);
         expect(result.code).toBe(1);
         expect(result.stdout).toContain('Configuration validation failed');
       } finally {

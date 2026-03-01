@@ -25,6 +25,7 @@ import { validateSubmission } from '../processing/submission-validator.js';
 import { generateBatchTexts, generateTexts, buildTextPrompt } from '../output/title-description-generator.js';
 import { runCalibration, validateBaselineStructure } from '../analysis/benchmarking-manager.js';
 import { analyzeStrategically } from '../analysis/strategic-analyzer.js';
+import { researchOpenCall, readCachedResearch } from '../analysis/strategic-researcher.js';
 import { checkOllamaStatus } from '../utils/api-client.js';
 import { join, basename } from 'path';
 import ora from 'ora';
@@ -1270,35 +1271,87 @@ program
 // Sebastiano — Strategic Curatorial Analysis
 // ==========================================
 
+/**
+ * Shared validation for strategic commands.
+ * @returns {{ data: Object }} configResult or exits with code 1
+ */
+async function validateStrategicProject(projectDir) {
+  const { existsSync } = await import('fs');
+  if (!existsSync(projectDir)) {
+    logger.error(`Project directory not found: ${projectDir}`);
+    process.exit(1);
+  }
+
+  const configPath = join(projectDir, 'open-call.json');
+  if (!fileExists(configPath)) {
+    logger.error(`Configuration file not found: ${configPath}`);
+    process.exit(1);
+  }
+
+  const configResult = await loadOpenCallConfig(configPath);
+  if (!configResult.success) {
+    logger.error('Configuration validation failed');
+    if (configResult.validation?.errors?.length) {
+      logger.error(formatValidationErrors(configResult.validation.errors));
+    }
+    process.exit(1);
+  }
+
+  return configResult;
+}
+
+/**
+ * Display strategic analysis summary including verdict.
+ */
+function displayStrategicSummary(result) {
+  logger.section('SUMMARY');
+  if (result.json) {
+    logger.info(`Call alignment: ${result.json.call_alignment_score}/10`);
+    logger.info(`Competitiveness: ${result.json.overall_competitiveness}`);
+    if (result.json.verdict) {
+      const verdictDisplay = result.json.verdict.toUpperCase();
+      const confidence = result.json.verdict_confidence != null
+        ? ` (${result.json.verdict_confidence}% confidence)`
+        : '';
+      logger.info(`Verdict: ${verdictDisplay}${confidence}`);
+      if (result.json.verdict_reasoning) {
+        logger.info(`Reasoning: ${result.json.verdict_reasoning}`);
+      }
+    }
+    if (result.json.recommended_approach) {
+      logger.info(`Approach: ${result.json.recommended_approach}`);
+    }
+  } else {
+    // FR-SI-3: Markdown fallback when JSON extraction fails
+    const scoreMatch = result.markdown.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
+    const compMatch = result.markdown.match(/competitiveness[^)]*?(low|medium|high)/i)
+      || result.markdown.match(/(low|medium|high)\s+competitiveness/i);
+    if (scoreMatch) {
+      logger.info(`Call alignment (from markdown): ${scoreMatch[1]}/10`);
+    }
+    if (compMatch) {
+      logger.info(`Competitiveness (from markdown): ${compMatch[1].toLowerCase()}`);
+    }
+    logger.warn('JSON not extracted — see strategic-brief.md for full analysis');
+  }
+  logger.info(`Model used: ${result.model}`);
+
+  if (!result.validation.valid) {
+    logger.warn('Output validation warnings:');
+    result.validation.errors.forEach(e => logger.warn(`  ${e}`));
+  }
+}
+
 program
   .command('strategic-analyze <project-dir>')
   .description('Strategic curatorial analysis of an open call (Sebastiano)')
   .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
+  .option('--no-research', 'Skip cached research context injection')
   .action(async (projectDir, options) => {
     try {
       logger.section('STRATEGIC CURATORIAL ANALYSIS (Sebastiano)');
 
-      // FR-SI-4: Check project directory exists
-      const { existsSync, mkdirSync, writeFileSync } = await import('fs');
-      if (!existsSync(projectDir)) {
-        logger.error(`Project directory not found: ${projectDir}`);
-        process.exit(1);
-      }
-
-      const configPath = join(projectDir, 'open-call.json');
-      if (!fileExists(configPath)) {
-        logger.error(`Configuration file not found: ${configPath}`);
-        process.exit(1);
-      }
-
-      const configResult = await loadOpenCallConfig(configPath);
-      if (!configResult.success) {
-        logger.error('Configuration validation failed');
-        if (configResult.validation?.errors?.length) {
-          logger.error(formatValidationErrors(configResult.validation.errors));
-        }
-        process.exit(1);
-      }
+      const configResult = await validateStrategicProject(projectDir);
 
       // FR-SI-4: Check Ollama connectivity before analysis
       const ollamaStatus = await checkOllamaStatus();
@@ -1307,15 +1360,27 @@ program
         process.exit(1);
       }
 
+      // FR-S2-6: Inject cached research context if available
+      let researchContext = null;
+      if (options.research !== false) {
+        const cached = readCachedResearch(projectDir);
+        if (cached) {
+          researchContext = cached;
+          logger.info('Using cached research context');
+        }
+      }
+
       const spinner = ora('Sebastiano is analyzing the open call...').start();
 
       const result = await analyzeStrategically(configResult.data, {
-        textModel: options.textModel
+        textModel: options.textModel,
+        researchContext
       });
 
       spinner.succeed('Strategic analysis complete');
 
       // Ensure output directory exists
+      const { mkdirSync, writeFileSync } = await import('fs');
       const strategicDir = join(projectDir, 'strategic');
       mkdirSync(strategicDir, { recursive: true });
 
@@ -1330,33 +1395,129 @@ program
         logger.success(`Evaluation JSON saved: ${evalPath}`);
       }
 
-      // Display summary
-      logger.section('SUMMARY');
-      if (result.json) {
-        logger.info(`Call alignment: ${result.json.call_alignment_score}/10`);
-        logger.info(`Competitiveness: ${result.json.overall_competitiveness}`);
-        if (result.json.recommended_approach) {
-          logger.info(`Approach: ${result.json.recommended_approach}`);
-        }
-      } else {
-        // FR-SI-3: Markdown fallback when JSON extraction fails
-        const scoreMatch = result.markdown.match(/(\d+(?:\.\d+)?)\s*\/\s*10/);
-        const compMatch = result.markdown.match(/competitiveness[^)]*?(low|medium|high)/i)
-          || result.markdown.match(/(low|medium|high)\s+competitiveness/i);
-        if (scoreMatch) {
-          logger.info(`Call alignment (from markdown): ${scoreMatch[1]}/10`);
-        }
-        if (compMatch) {
-          logger.info(`Competitiveness (from markdown): ${compMatch[1].toLowerCase()}`);
-        }
-        logger.warn('JSON not extracted — see strategic-brief.md for full analysis');
+      displayStrategicSummary(result);
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
       }
-      logger.info(`Model used: ${result.model}`);
+      process.exit(1);
+    }
+  });
 
-      if (!result.validation.valid) {
-        logger.warn('Output validation warnings:');
-        result.validation.errors.forEach(e => logger.warn(`  ${e}`));
+// FR-S2-4: Research-only command
+program
+  .command('strategic-research <project-dir>')
+  .description('Research open call context (jury, gallery, past editions) — no Ollama required')
+  .option('--fresh-research', 'Force re-fetch even if cache is fresh')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('STRATEGIC RESEARCH (Sebastiano)');
+
+      const configResult = await validateStrategicProject(projectDir);
+
+      const spinner = ora('Researching open call context...').start();
+
+      const result = await researchOpenCall(configResult.data, {
+        projectDir,
+        freshResearch: options.freshResearch || false
+      });
+
+      if (result.cached) {
+        spinner.succeed('Using cached research context (< 24h old)');
+      } else {
+        const okCount = result.sources.filter(s => s.status === 'ok').length;
+        const totalCount = result.sources.length;
+        spinner.succeed(`Research complete: ${okCount}/${totalCount} sources fetched`);
       }
+
+      // Display results
+      logger.section('RESEARCH SUMMARY');
+      const contextKeys = Object.keys(result.context);
+      if (contextKeys.length === 0) {
+        logger.info('No research URLs configured — 0 sources fetched');
+        logger.info('Add "researchUrls" to open-call.json for web research');
+      } else {
+        for (const key of contextKeys) {
+          const wordCount = result.context[key].split(/\s+/).length;
+          logger.info(`${key}: ${wordCount} words`);
+        }
+      }
+
+      if (result.sources.length > 0) {
+        for (const source of result.sources) {
+          const icon = source.status === 'ok' ? 'ok' : 'FAIL';
+          logger.info(`  [${icon}] ${source.label || source.url}${source.status === 'error' ? ` — ${source.error}` : ''}`);
+        }
+      }
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
+// FR-S2-5: Full pipeline (research + reasoning)
+program
+  .command('strategic-advise <project-dir>')
+  .description('Full strategic pipeline: research + curatorial analysis (Sebastiano)')
+  .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
+  .option('--fresh-research', 'Force re-fetch research even if cache is fresh')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('STRATEGIC ADVISORY (Sebastiano)');
+
+      const configResult = await validateStrategicProject(projectDir);
+
+      // Phase 1: Research
+      const researchSpinner = ora('Phase 1: Researching open call context...').start();
+
+      const research = await researchOpenCall(configResult.data, {
+        projectDir,
+        freshResearch: options.freshResearch || false
+      });
+
+      if (research.cached) {
+        researchSpinner.succeed('Phase 1: Using cached research context');
+      } else {
+        const okCount = research.sources.filter(s => s.status === 'ok').length;
+        researchSpinner.succeed(`Phase 1: Research complete (${okCount} sources)`);
+      }
+
+      // Phase 2: Ollama reasoning
+      const ollamaStatus = await checkOllamaStatus();
+      if (!ollamaStatus.connected) {
+        logger.error('Ollama is not running. Start it with: ollama serve');
+        process.exit(1);
+      }
+
+      const analysisSpinner = ora('Phase 2: Sebastiano is analyzing...').start();
+
+      const result = await analyzeStrategically(configResult.data, {
+        textModel: options.textModel,
+        researchContext: Object.keys(research.context).length > 0 ? research.context : null
+      });
+
+      analysisSpinner.succeed('Phase 2: Strategic analysis complete');
+
+      // Save outputs
+      const { mkdirSync, writeFileSync } = await import('fs');
+      const strategicDir = join(projectDir, 'strategic');
+      mkdirSync(strategicDir, { recursive: true });
+
+      const briefPath = join(strategicDir, 'strategic-brief.md');
+      writeFileSync(briefPath, result.markdown, 'utf-8');
+      logger.success(`Strategic brief saved: ${briefPath}`);
+
+      if (result.json) {
+        const evalPath = join(strategicDir, 'evaluation.json');
+        writeJson(evalPath, result.json);
+        logger.success(`Evaluation JSON saved: ${evalPath}`);
+      }
+
+      displayStrategicSummary(result);
     } catch (error) {
       logger.error(error.message);
       if (process.env.NODE_ENV === 'development') {
@@ -1369,7 +1530,7 @@ program
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, strategic-analyze");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, strategic-analyze, strategic-research, strategic-advise");
   process.exit(1);
 });
 
