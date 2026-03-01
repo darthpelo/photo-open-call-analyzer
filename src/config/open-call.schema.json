@@ -137,6 +137,28 @@
         }
       }
     },
+    "researchUrls": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["url"],
+        "additionalProperties": false,
+        "properties": {
+          "label": {
+            "type": "string",
+            "maxLength": 50,
+            "description": "Human label for this source (e.g., 'jury portfolio', 'gallery about')"
+          },
+          "url": {
+            "type": "string",
+            "pattern": "^https?://",
+            "description": "URL to fetch for research context"
+          }
+        }
+      },
+      "description": "Optional URLs for strategic research phase (jury sites, gallery pages, past winner links). Used by strategic-research and strategic-advise commands."
+    },
     "setMode": {
       "type": "object",
       "description": "Configuration for set/group analysis (e.g., Polaroid 4-photo sets). See ADR-015.",

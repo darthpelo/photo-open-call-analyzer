@@ -381,5 +381,98 @@ Submit with emphasis on architectural series. Lead with strongest conceptual ima
       const result = validateEvaluation(invalid);
       expect(result.valid).toBe(false);
     });
+
+    it('should accept valid verdict fields', () => {
+      const valid = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        verdict: 'go',
+        verdict_confidence: 85,
+        verdict_reasoning: 'Strong alignment with jury preferences'
+      };
+      const result = validateEvaluation(valid);
+      expect(result.valid).toBe(true);
+    });
+
+    it('should accept all valid verdict values', () => {
+      for (const verdict of ['go', 'no-go', 'conditional']) {
+        const result = validateEvaluation({
+          call_alignment_score: 5,
+          overall_competitiveness: 'medium',
+          verdict,
+          verdict_confidence: 50
+        });
+        expect(result.valid).toBe(true);
+      }
+    });
+
+    it('should reject invalid verdict value', () => {
+      const invalid = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        verdict: 'maybe'
+      };
+      const result = validateEvaluation(invalid);
+      expect(result.valid).toBe(false);
+    });
+
+    it('should reject verdict_confidence out of range', () => {
+      const tooHigh = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        verdict: 'go',
+        verdict_confidence: 150
+      };
+      expect(validateEvaluation(tooHigh).valid).toBe(false);
+
+      const negative = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        verdict: 'go',
+        verdict_confidence: -10
+      };
+      expect(validateEvaluation(negative).valid).toBe(false);
+    });
+
+    it('should accept evaluation without verdict fields (backward compatible)', () => {
+      const noVerdict = {
+        call_alignment_score: 7,
+        overall_competitiveness: 'medium'
+      };
+      const result = validateEvaluation(noVerdict);
+      expect(result.valid).toBe(true);
+    });
+  });
+
+  describe('normalizeEvaluation — verdict handling', () => {
+    it('should keep verdict fields in place when correctly positioned', () => {
+      const correct = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        verdict: 'go',
+        verdict_confidence: 90,
+        verdict_reasoning: 'Strong fit'
+      };
+      const result = normalizeEvaluation(correct);
+      expect(result.verdict).toBe('go');
+      expect(result.verdict_confidence).toBe(90);
+      expect(result.verdict_reasoning).toBe('Strong fit');
+    });
+
+    it('should extract verdict from scoring object if misplaced', () => {
+      const misplaced = {
+        call_alignment_score: 8,
+        overall_competitiveness: 'high',
+        scoring: {
+          visual_impact_fit: 9,
+          verdict: 'conditional',
+          verdict_confidence: 60
+        }
+      };
+      const result = normalizeEvaluation(misplaced);
+      expect(result.verdict).toBe('conditional');
+      expect(result.verdict_confidence).toBe(60);
+      expect(result.scoring.verdict).toBeUndefined();
+    });
   });
 });

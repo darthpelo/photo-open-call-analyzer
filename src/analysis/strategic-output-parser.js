@@ -6,6 +6,7 @@
 
 const VALID_COMPETITIVENESS = ['low', 'medium', 'high', 'very_high'];
 const VALID_RISK_LEVELS = ['low', 'medium', 'high'];
+const VALID_VERDICTS = ['go', 'no-go', 'conditional'];
 
 const SCORING_FIELDS = [
   'visual_impact_fit', 'conceptual_coherence_fit', 'editorial_fit',
@@ -125,7 +126,18 @@ export function normalizeEvaluation(json) {
     });
   }
 
-  // 3. Move root-level scoring fields into scoring object
+  // 3. Extract verdict fields from scoring if misplaced
+  const VERDICT_FIELDS = ['verdict', 'verdict_confidence', 'verdict_reasoning'];
+  if (result.scoring && typeof result.scoring === 'object') {
+    for (const field of VERDICT_FIELDS) {
+      if (result.scoring[field] !== undefined && result[field] === undefined) {
+        result[field] = result.scoring[field];
+        delete result.scoring[field];
+      }
+    }
+  }
+
+  // 4. Move root-level scoring fields into scoring object
   const rootScoringFields = {};
   for (const field of SCORING_FIELDS) {
     if (result[field] !== undefined) {
@@ -234,6 +246,19 @@ export function validateEvaluation(json) {
   if (json.scoring) {
     if (json.scoring.risk_level && !VALID_RISK_LEVELS.includes(json.scoring.risk_level)) {
       errors.push(`scoring.risk_level must be one of: ${VALID_RISK_LEVELS.join(', ')}`);
+    }
+  }
+
+  // Optional verdict fields (FR-S2-3)
+  if (json.verdict !== undefined) {
+    if (!VALID_VERDICTS.includes(json.verdict)) {
+      errors.push(`verdict must be one of: ${VALID_VERDICTS.join(', ')}`);
+    }
+  }
+  if (json.verdict_confidence !== undefined) {
+    if (typeof json.verdict_confidence !== 'number' ||
+        json.verdict_confidence < 0 || json.verdict_confidence > 100) {
+      errors.push('verdict_confidence must be a number between 0 and 100');
     }
   }
 

@@ -94,6 +94,22 @@ describe('strategic-prompt-builder', () => {
       expect(lower).toMatch(/decisive|direct|no reassurance|no hedging/);
     });
 
+    it('should include verdict instructions', () => {
+      const prompt = buildSystemPrompt(getDefaultProfile());
+      const lower = prompt.toLowerCase();
+      expect(lower).toContain('verdict');
+      expect(lower).toMatch(/go.*no-go.*conditional|go\|no-go\|conditional/);
+      expect(lower).toContain('verdict_confidence');
+      expect(lower).toContain('verdict_reasoning');
+    });
+
+    it('should still be under 800 tokens with verdict instructions', () => {
+      const prompt = buildSystemPrompt(getDefaultProfile());
+      const wordCount = prompt.split(/\s+/).length;
+      const estimatedTokens = Math.ceil(wordCount * 1.3);
+      expect(estimatedTokens).toBeLessThan(800);
+    });
+
     it('should accept custom profile', () => {
       const customProfile = {
         coreLanguage: 'street photography, black and white',

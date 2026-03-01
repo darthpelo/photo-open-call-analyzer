@@ -55,7 +55,14 @@ Section A — Markdown analysis with these headings:
 ## Recommendation
 
 Section B — JSON block with:
-{"call_alignment_score": 0-10, "overall_competitiveness": "low|medium|high|very_high", "strategic_positioning": "", "key_risks": [], "recommended_approach": "", "scoring": {"visual_impact_fit": 0-10, "conceptual_coherence_fit": 0-10, "editorial_fit": 0-10, "distinctiveness_potential": 0-10, "dialogue_potential": 0-10, "risk_level": "low|medium|high"}}
+{"call_alignment_score": 0-10, "overall_competitiveness": "low|medium|high|very_high", "strategic_positioning": "", "key_risks": [], "recommended_approach": "", "verdict": "go|no-go|conditional", "verdict_confidence": 0-100, "verdict_reasoning": "one sentence", "scoring": {"visual_impact_fit": 0-10, "conceptual_coherence_fit": 0-10, "editorial_fit": 0-10, "distinctiveness_potential": 0-10, "dialogue_potential": 0-10, "risk_level": "low|medium|high"}}
+
+VERDICT RULES:
+- "go" if alignment >= 7 and no critical risks
+- "no-go" if alignment < 4 or multiple critical risks
+- "conditional" otherwise — state specific conditions
+- verdict_confidence: your certainty in the verdict (0-100)
+- verdict_reasoning: one decisive sentence
 
 RULES:
 - Evaluate from the photographer's specific practice, not generically
