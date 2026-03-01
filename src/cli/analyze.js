@@ -26,6 +26,8 @@ import { generateBatchTexts, generateTexts, buildTextPrompt } from '../output/ti
 import { runCalibration, validateBaselineStructure } from '../analysis/benchmarking-manager.js';
 import { analyzeStrategically } from '../analysis/strategic-analyzer.js';
 import { researchOpenCall, readCachedResearch } from '../analysis/strategic-researcher.js';
+import { generateUrlSuggestions, validateUrls } from '../analysis/url-discoverer.js';
+import { retrieveMemoryContext, saveAnalysisMemory } from '../analysis/strategic-memory.js';
 import { checkOllamaStatus } from '../utils/api-client.js';
 import { join, basename } from 'path';
 import ora from 'ora';
@@ -1347,6 +1349,7 @@ program
   .description('Strategic curatorial analysis of an open call (Sebastiano)')
   .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
   .option('--no-research', 'Skip cached research context injection')
+  .option('--no-memory', 'Skip cross-session memory retrieval and save')
   .action(async (projectDir, options) => {
     try {
       logger.section('STRATEGIC CURATORIAL ANALYSIS (Sebastiano)');
@@ -1370,11 +1373,25 @@ program
         }
       }
 
+      // FR-S3-3: Retrieve cross-session memory context
+      let memoryContext = null;
+      if (!options.noMemory) {
+        try {
+          memoryContext = retrieveMemoryContext(configResult.data);
+          if (memoryContext) {
+            logger.info('Using cross-session memory context');
+          }
+        } catch (memErr) {
+          logger.warn(`Memory retrieval failed: ${memErr.message}`);
+        }
+      }
+
       const spinner = ora('Sebastiano is analyzing the open call...').start();
 
       const result = await analyzeStrategically(configResult.data, {
         textModel: options.textModel,
-        researchContext
+        researchContext,
+        memoryContext
       });
 
       spinner.succeed('Strategic analysis complete');
@@ -1393,6 +1410,11 @@ program
         const evalPath = join(strategicDir, 'evaluation.json');
         writeJson(evalPath, result.json);
         logger.success(`Evaluation JSON saved: ${evalPath}`);
+      }
+
+      // FR-S3-1: Save analysis to cross-session memory
+      if (!options.noMemory) {
+        await saveAnalysisMemory(configResult.data, result);
       }
 
       displayStrategicSummary(result);
@@ -1465,6 +1487,7 @@ program
   .description('Full strategic pipeline: research + curatorial analysis (Sebastiano)')
   .option('--text-model <model>', 'Text model for reasoning (default: phi3:mini)')
   .option('--fresh-research', 'Force re-fetch research even if cache is fresh')
+  .option('--no-memory', 'Skip cross-session memory retrieval and save')
   .action(async (projectDir, options) => {
     try {
       logger.section('STRATEGIC ADVISORY (Sebastiano)');
@@ -1486,6 +1509,19 @@ program
         researchSpinner.succeed(`Phase 1: Research complete (${okCount} sources)`);
       }
 
+      // FR-S3-3: Retrieve cross-session memory context
+      let memoryContext = null;
+      if (!options.noMemory) {
+        try {
+          memoryContext = retrieveMemoryContext(configResult.data);
+          if (memoryContext) {
+            logger.info('Using cross-session memory context');
+          }
+        } catch (memErr) {
+          logger.warn(`Memory retrieval failed: ${memErr.message}`);
+        }
+      }
+
       // Phase 2: Ollama reasoning
       const ollamaStatus = await checkOllamaStatus();
       if (!ollamaStatus.connected) {
@@ -1497,7 +1533,8 @@ program
 
       const result = await analyzeStrategically(configResult.data, {
         textModel: options.textModel,
-        researchContext: Object.keys(research.context).length > 0 ? research.context : null
+        researchContext: Object.keys(research.context).length > 0 ? research.context : null,
+        memoryContext
       });
 
       analysisSpinner.succeed('Phase 2: Strategic analysis complete');
@@ -1517,7 +1554,118 @@ program
         logger.success(`Evaluation JSON saved: ${evalPath}`);
       }
 
+      // FR-S3-1: Save analysis to cross-session memory
+      if (!options.noMemory) {
+        await saveAnalysisMemory(configResult.data, result);
+      }
+
       displayStrategicSummary(result);
+    } catch (error) {
+      logger.error(error.message);
+      if (process.env.NODE_ENV === 'development') {
+        console.error(error);
+      }
+      process.exit(1);
+    }
+  });
+
+// FR-S3-5: URL auto-discovery command
+program
+  .command('strategic-discover <project-dir>')
+  .description('Discover research URLs from jury/gallery names (Sebastiano)')
+  .option('--validate', 'Validate URLs with HEAD requests before displaying')
+  .option('--dry-run', 'Display suggestions without interactive selection')
+  .action(async (projectDir, options) => {
+    try {
+      logger.section('URL DISCOVERY (Sebastiano)');
+
+      const configResult = await validateStrategicProject(projectDir);
+      const config = configResult.data;
+
+      // Generate URL suggestions
+      let suggestions = generateUrlSuggestions(config);
+
+      if (suggestions.length === 0) {
+        logger.info('No URL suggestions generated — add jury names or organizer to open-call.json');
+        logger.info('No URL suggestions found.');
+        return;
+      }
+
+      // Optional validation
+      if (options.validate) {
+        const spinner = ora('Validating URLs...').start();
+        suggestions = await validateUrls(suggestions);
+        const reachableCount = suggestions.filter(s => s.reachable).length;
+        spinner.succeed(`Validation complete: ${reachableCount}/${suggestions.length} reachable`);
+      }
+
+      // Display suggestions table
+      logger.section('URL SUGGESTIONS');
+      for (const s of suggestions) {
+        const status = s.reachable != null ? (s.reachable ? ' [OK]' : ` [${s.status || 'FAIL'}]`) : '';
+        logger.info(`  ${s.source.padEnd(10)} ${s.label.padEnd(20)} ${s.url}${status}`);
+      }
+      logger.info(`\n  ${suggestions.length} URL(s) suggested`);
+
+      // Dry-run: just display, no interactive selection
+      if (options.dryRun) {
+        return;
+      }
+
+      // Interactive selection via @inquirer/prompts
+      const { checkbox } = await import('@inquirer/prompts');
+      const choices = suggestions.map(s => ({
+        name: `${s.label}: ${s.url}`,
+        value: s.url,
+        checked: s.reachable !== false // Pre-check reachable or unvalidated
+      }));
+
+      let selectedUrls;
+      try {
+        selectedUrls = await checkbox({
+          message: 'Select URLs to add to researchUrls:',
+          choices
+        });
+      } catch (error) {
+        // User pressed Ctrl+C — clean exit
+        if (error.name === 'ExitPromptError') {
+          logger.info('Selection cancelled.');
+          return;
+        }
+        throw error;
+      }
+
+      if (selectedUrls.length === 0) {
+        logger.info('No URLs selected.');
+        return;
+      }
+
+      // Build label map for selected URLs
+      const labelMap = {};
+      for (const s of suggestions) {
+        labelMap[s.url] = s.label;
+      }
+
+      // Read existing config, merge researchUrls, write back
+      const { readFileSync, writeFileSync } = await import('fs');
+      const configPath = join(projectDir, 'open-call.json');
+      const rawConfig = JSON.parse(readFileSync(configPath, 'utf-8'));
+
+      const existingUrls = rawConfig.researchUrls || [];
+      const existingUrlSet = new Set(existingUrls.map(u => typeof u === 'string' ? u : u.url));
+
+      const newEntries = selectedUrls
+        .filter(url => !existingUrlSet.has(url))
+        .map(url => ({ url, label: labelMap[url] || 'discovered' }));
+
+      if (newEntries.length === 0) {
+        logger.info('All selected URLs already exist in researchUrls.');
+        return;
+      }
+
+      rawConfig.researchUrls = [...existingUrls, ...newEntries];
+      writeFileSync(configPath, JSON.stringify(rawConfig, null, 2) + '\n', 'utf-8');
+      logger.success(`Added ${newEntries.length} URL(s) to ${configPath}`);
     } catch (error) {
       logger.error(error.message);
       if (process.env.NODE_ENV === 'development') {
@@ -1530,7 +1678,7 @@ program
 program.on('command:*', (unknownCommand) => {
   logger.error(`Unknown command: ${unknownCommand[0]}`);
   logger.info("Did you mean 'npm run analyze <command>'?");
-  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, strategic-analyze, strategic-research, strategic-advise");
+  logger.info("Available commands: init, analyze, analyze-single, analyze-set, suggest-sets, validate, validate-prompt, test-prompt, list-models, tag-winner, winner-insights, generate-texts, calibrate, strategic-analyze, strategic-research, strategic-advise, strategic-discover");
   process.exit(1);
 });
 
