@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { analyzePhoto } from '../analysis/photo-analyzer.js';
-import { processBatch, validatePhotos } from '../processing/batch-processor.js';
+import { processBatch, validatePhotos, parsePhotoTimeoutOption } from '../processing/batch-processor.js';
 import { aggregateScores, integrateSmartTiering } from '../analysis/score-aggregator.js';
 import { exportReports } from '../output/report-generator.js';
 import { displayTierSummary, displayTierDetails, displayTierRecommendations } from './tier-display.js';
@@ -80,7 +80,7 @@ program
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
-  .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300)', '60')
+  .option('--photo-timeout <seconds>', 'Timeout per photo analysis in seconds (30-300), or "auto" for adaptive probe', 'auto')
   .option('--show-tiers', 'Display tier breakdown in terminal')
   .option('--analysis-mode <mode>', 'Analysis mode: single, multi, or auto (default: auto)', 'auto')
   .option('--no-cache', 'Skip cache lookup, force fresh analysis (FR-3.7)')
@@ -91,12 +91,14 @@ program
     try {
       logger.section('PHOTO ANALYSIS');
 
-      // Validate photo timeout (FR-2.3)
-      const photoTimeout = parseInt(options.photoTimeout, 10) * 1000; // Convert to milliseconds
-      if (isNaN(photoTimeout) || photoTimeout < 30000 || photoTimeout > 300000) {
-        logger.error('Invalid --photo-timeout value. Must be between 30 and 300 seconds.');
+      // Validate photo timeout (FR-2.3, ADR-023: adaptive probe)
+      const timeoutParsed = parsePhotoTimeoutOption(options.photoTimeout);
+      if (timeoutParsed.error) {
+        logger.error(timeoutParsed.error);
         process.exit(1);
       }
+      const photoTimeout = timeoutParsed.photoTimeout;
+      const explicitTimeout = timeoutParsed.explicitTimeout;
 
       // Check project structure
       const photosDir = join(projectDir, 'photos');
@@ -190,6 +192,7 @@ program
           checkpointInterval,
           clearCheckpoint: options.clearCheckpoint || false,
           photoTimeout, // Pass timeout to batch processor (FR-2.3)
+          explicitTimeout, // ADR-023: whether timeout was explicitly set
           analysisMode: options.analysisMode, // Pass analysis mode (FR-2.4 Phase 2)
           noCache: options.cache === false, // FR-3.7: --no-cache flag
           clearAnalysisCache: options.clearAnalysisCache || false, // FR-3.7: --clear-analysis-cache flag
