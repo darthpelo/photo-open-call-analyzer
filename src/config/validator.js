@@ -56,6 +56,14 @@ export function validateOpenCall(config) {
     return { valid: true, errors: [] };
   }
 
+  const FIELD_EXAMPLES = {
+    title: '"Sony World Photography Awards 2025"',
+    theme: '"Street photography capturing urban life and human connection"',
+    jury: '["Anne Murayama — Founder/Director, Ephemere Tokyo"]',
+    pastWinners: '"Winners showed bold color palettes with strong narrative depth..."',
+    customCriteria: '[{ "name": "Creativity", "weight": 30, "description": "..." }]'
+  };
+
   // Format AJV errors into user-friendly messages
   const errors = (validate.errors || []).map((error) => {
     const field = error.instancePath || 'root';
@@ -65,7 +73,10 @@ export function validateOpenCall(config) {
     switch (error.keyword) {
       case 'required':
         message = `Missing required field: "${error.params.missingProperty}"`;
-        suggestion = `Add "${error.params.missingProperty}" field to open-call.json. Check the template for format.`;
+        const exampleValue = FIELD_EXAMPLES[error.params.missingProperty];
+        suggestion = exampleValue
+          ? `Add "${error.params.missingProperty}" field to open-call.json. Example: ${exampleValue}`
+          : `Add "${error.params.missingProperty}" field to open-call.json. Check the template for format.`;
         break;
 
       case 'type':
@@ -74,13 +85,13 @@ export function validateOpenCall(config) {
         break;
 
       case 'minLength':
-        message = `Field "${field}" is too short (minimum ${error.params.minLength} characters)`;
-        suggestion = `Provide a longer value for "${field}" (at least ${error.params.minLength} characters)`;
+        message = `Field "${field}" is too short (minimum ${error.params.limit} characters)`;
+        suggestion = `Provide a longer value for "${field}" (at least ${error.params.limit} characters)`;
         break;
 
       case 'maxLength':
-        message = `Field "${field}" is too long (maximum ${error.params.maxLength} characters)`;
-        suggestion = `Shorten the value for "${field}" to ${error.params.maxLength} characters or less`;
+        message = `Field "${field}" is too long (maximum ${error.params.limit} characters)`;
+        suggestion = `Shorten the value for "${field}" to ${error.params.limit} characters or less`;
         break;
 
       case 'minItems':

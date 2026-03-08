@@ -28,6 +28,35 @@ import { classifyError, ErrorType, getActionableMessage } from '../utils/error-c
 const PERFORMANCE_LOG_INTERVAL = 10;
 
 /**
+ * ADR-023: Calculate adaptive timeout from probe duration.
+ * Applies 3x multiplier with 90s floor and 300s cap.
+ * @param {number} probeMs - Probe duration in milliseconds
+ * @returns {number} Timeout in milliseconds
+ */
+export function calculateProbeTimeout(probeMs) {
+  let timeout = Math.max(Math.round(probeMs * 3), 90000);
+  timeout = Math.min(timeout, 300000);
+  return timeout;
+}
+
+/**
+ * ADR-023: Parse --photo-timeout CLI option.
+ * Accepts 'auto' or numeric string (30-300 seconds).
+ * @param {string} value - CLI option value
+ * @returns {Object} { photoTimeout, explicitTimeout, error? }
+ */
+export function parsePhotoTimeoutOption(value) {
+  if (value === 'auto') {
+    return { photoTimeout: null, explicitTimeout: false };
+  }
+  const seconds = parseInt(value, 10);
+  if (isNaN(seconds) || seconds < 30 || seconds > 300) {
+    return { error: 'Invalid --photo-timeout value. Must be between 30 and 300 seconds, or "auto".' };
+  }
+  return { photoTimeout: seconds * 1000, explicitTimeout: true };
+}
+
+/**
  * Process a batch of photos in a directory
  * @param {string} photosDirectory - Directory containing photos
  * @param {Object} analysisPrompt - Analysis prompt with criteria
@@ -159,20 +188,84 @@ export async function processBatch(photosDirectory, analysisPrompt, options = {}
     }
   }
 
-  // Get timeout from options (FR-2.3)
-  const photoTimeout = options.photoTimeout || 60000; // Default 60s
+  // Get timeout from options (FR-2.3, ADR-023)
+  let photoTimeout = options.photoTimeout || 60000; // Default 60s
 
   // Resolve analysis mode: auto-select if mode is 'auto' (ADR-014)
   let effectiveMode = analysisMode;
   if (analysisMode === 'auto') {
     effectiveMode = smartSelectAnalysisMode({
       photoCount: photosToAnalyze.length,
-      timeoutMs: photoTimeout,
+      timeoutMs: photoTimeout || 60000,
       criteriaCount: analysisPrompt.criteria?.length || 5
     });
     logger.info(`Auto-selected analysis mode: ${effectiveMode} ` +
       `(${photosToAnalyze.length} photos, ${analysisPrompt.criteria?.length || 5} criteria, ` +
-      `${photoTimeout / 1000}s timeout)`);
+      `${(photoTimeout || 60000) / 1000}s timeout)`);
+  }
+
+  // ADR-023: First-photo probe for adaptive timeout
+  if (!options.explicitTimeout && photosToAnalyze.length > 0) {
+    logger.info('Probing first photo to calibrate timeout...');
+    const probePhoto = photosToAnalyze[0];
+    const probeStart = performance.now();
+
+    try {
+      const probeValidation = await validatePhoto(probePhoto.path);
+      if (probeValidation.valid) {
+        const probeResult = await analyzePhotoWithTimeout(probePhoto.path, analysisPrompt, {
+          timeout: 300000, // generous 5min probe timeout
+          analysisMode: effectiveMode
+        });
+        const probeMs = performance.now() - probeStart;
+
+        if (probeResult.success) {
+          photoTimeout = calculateProbeTimeout(probeMs);
+          logger.info(`Probe: ${probePhoto.name} analyzed in ${(probeMs / 1000).toFixed(1)}s -> timeout set to ${(photoTimeout / 1000).toFixed(0)}s`);
+
+          // Store probe result so main loop skips this photo
+          processed++;
+          results.push({ success: true, data: probeResult.data, photoName: probePhoto.name });
+          logger.success(`[${processed}/${photos.length}] Analyzed: ${probePhoto.name}`);
+
+          // Cache probe result (FR-3.7)
+          if (!noCache && configHash) {
+            try {
+              const photoHash = await computePhotoHash(probePhoto.path);
+              const cacheKey = computeCacheKey(photoHash, configHash, modelName);
+              setCachedResult(projectDir, cacheKey, probeResult.data, {
+                photoFilename: probePhoto.name,
+                photoHash,
+                configHash,
+                model: modelName
+              });
+            } catch (cacheErr) {
+              logger.debug(`Cache store failed for probe ${probePhoto.name}: ${cacheErr.message}`);
+            }
+          }
+
+          // Update checkpoint with probe result
+          if (checkpoint && openCallConfig) {
+            const newResults = {};
+            newResults[probePhoto.name] = probeResult.data.scores;
+            updateCheckpoint(checkpoint, [probePhoto.name], newResults, []);
+            saveCheckpoint(checkpoint, projectDir);
+          }
+
+          // Remove probe photo from remaining list
+          photosToAnalyze = photosToAnalyze.slice(1);
+        } else {
+          photoTimeout = 300000;
+          logger.warn('Probe analysis failed - using maximum timeout (300s)');
+        }
+      } else {
+        photoTimeout = 120000;
+        logger.warn(`Probe photo invalid - using default timeout (120s)`);
+      }
+    } catch (err) {
+      photoTimeout = 300000;
+      logger.warn(`Probe error: ${err.message} - using maximum timeout (300s)`);
+    }
   }
 
   // FR-3.8: Process photos with slot-based concurrency (ADR-018)

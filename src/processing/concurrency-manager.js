@@ -43,8 +43,15 @@ export class ConcurrencyManager {
     if (options.maxSlots !== undefined && !autoScale) {
       this._maxSlots = options.maxSlots;
     } else if (autoScale && options.maxSlots === undefined) {
-      this._maxSlots = Math.min(os.cpus().length - 1, 4);
-      this._maxSlots = Math.max(1, this._maxSlots);
+      // ADR-024: RAM-based smart concurrency default
+      const totalMemGB = os.totalmem() / (1024 ** 3);
+      if (totalMemGB >= 32) {
+        this._maxSlots = 3;
+      } else if (totalMemGB >= 16) {
+        this._maxSlots = 2;
+      } else {
+        this._maxSlots = 1;
+      }
     } else {
       this._maxSlots = options.maxSlots || 3;
     }
