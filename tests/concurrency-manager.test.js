@@ -12,6 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
+import os from 'os';
 import { ConcurrencyManager } from '../src/processing/concurrency-manager.js';
 
 describe('ConcurrencyManager - Unit Tests', () => {
@@ -28,16 +29,65 @@ describe('ConcurrencyManager - Unit Tests', () => {
       expect(stats.active).toBe(0);
     });
 
-    it('should default maxSlots to min(cpus-1, 4) in auto mode', () => {
+    it('should default maxSlots to RAM-based calculation in auto mode', () => {
       const mgr = new ConcurrencyManager({ autoScale: true });
       const stats = mgr.getStats();
       expect(stats.max).toBeGreaterThanOrEqual(1);
-      expect(stats.max).toBeLessThanOrEqual(4);
+      expect(stats.max).toBeLessThanOrEqual(3);
     });
 
     it('should accept memoryThresholdMB option', () => {
       const mgr = new ConcurrencyManager({ maxSlots: 2, memoryThresholdMB: 300 });
       expect(mgr).toBeDefined();
+    });
+  });
+
+  // ============================================
+  // ADR-024: RAM-based smart concurrency default
+  // ============================================
+
+  describe('RAM-based auto slot calculation (ADR-024)', () => {
+    it('should use 1 slot when system has less than 16GB RAM', () => {
+      const spy = vi.spyOn(os, 'totalmem').mockReturnValue(8 * 1024 ** 3); // 8GB
+      const mgr = new ConcurrencyManager({ autoScale: true });
+      expect(mgr.getStats().max).toBe(1);
+      spy.mockRestore();
+    });
+
+    it('should use 2 slots when system has 16GB RAM', () => {
+      const spy = vi.spyOn(os, 'totalmem').mockReturnValue(16 * 1024 ** 3); // 16GB
+      const mgr = new ConcurrencyManager({ autoScale: true });
+      expect(mgr.getStats().max).toBe(2);
+      spy.mockRestore();
+    });
+
+    it('should use 2 slots when system has 24GB RAM', () => {
+      const spy = vi.spyOn(os, 'totalmem').mockReturnValue(24 * 1024 ** 3); // 24GB
+      const mgr = new ConcurrencyManager({ autoScale: true });
+      expect(mgr.getStats().max).toBe(2);
+      spy.mockRestore();
+    });
+
+    it('should use 3 slots when system has 32GB RAM', () => {
+      const spy = vi.spyOn(os, 'totalmem').mockReturnValue(32 * 1024 ** 3); // 32GB
+      const mgr = new ConcurrencyManager({ autoScale: true });
+      expect(mgr.getStats().max).toBe(3);
+      spy.mockRestore();
+    });
+
+    it('should use 3 slots when system has 64GB RAM', () => {
+      const spy = vi.spyOn(os, 'totalmem').mockReturnValue(64 * 1024 ** 3); // 64GB
+      const mgr = new ConcurrencyManager({ autoScale: true });
+      expect(mgr.getStats().max).toBe(3);
+      spy.mockRestore();
+    });
+
+    it('should respect explicit maxSlots even with autoScale', () => {
+      const spy = vi.spyOn(os, 'totalmem').mockReturnValue(64 * 1024 ** 3);
+      const mgr = new ConcurrencyManager({ autoScale: true, maxSlots: 5 });
+      // When maxSlots is explicit, it should use that value (existing behavior)
+      expect(mgr.getStats().max).toBe(5);
+      spy.mockRestore();
     });
   });
 

@@ -76,7 +76,7 @@ program
   .command('analyze <project-dir>')
   .description('Analyze photos in a project directory')
   .option('-o, --output <dir>', 'Output directory for results (relative to project)', 'results')
-  .option('-p, --parallel <n>', 'Number of parallel analyses or "auto" for adaptive scaling (FR-3.8)', '3')
+  .option('-p, --parallel <n>', 'Number of parallel analyses or "auto" for RAM-based adaptive scaling (ADR-024)', 'auto')
   .option('--skip-prompt', 'Skip prompt generation (use existing)')
   .option('--checkpoint-interval <n>', 'Save checkpoint every N photos (1-50)', '10')
   .option('--clear-checkpoint', 'Clear existing checkpoint before starting')
