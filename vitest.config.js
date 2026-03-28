@@ -26,6 +26,7 @@ export default defineConfig({
       minThreads: 1
     },
     reporters: 'verbose',
-    testMatch: ['tests/**/*.test.js']
+    include: ['tests/**/*.test.js'],
+    exclude: ['node_modules/**', 'web/**']
   }
 });

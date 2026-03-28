@@ -5,6 +5,7 @@ import { PhotoGrid } from '../components/PhotoGrid.jsx';
 import { PhotoDetail } from '../components/PhotoDetail.jsx';
 import { SortControls } from '../components/SortControls.jsx';
 import { CompareDrawer } from '../components/CompareDrawer.jsx';
+import { SetCard } from '../components/SetCard.jsx';
 import { useCompare } from '../context/CompareContext.jsx';
 
 const EXPORT_FORMATS = ['md', 'json', 'csv'];
@@ -40,16 +41,22 @@ export function ProjectResults() {
     return () => { cancelled = true; };
   }, [name]);
 
+  // Detect if results are set-analysis (Polaroid mode) vs single-photo
+  const isSetMode = useMemo(() => {
+    if (!results?.ranking?.length) return false;
+    return !!results.ranking[0].compositeScore;
+  }, [results]);
+
   // Extract criterion names from the first photo that has them
   const criteriaNames = useMemo(() => {
-    if (!results?.ranking?.length) return [];
+    if (!results?.ranking?.length || isSetMode) return [];
     for (const photo of results.ranking) {
       if (photo.individual_scores && Object.keys(photo.individual_scores).length > 0) {
         return Object.keys(photo.individual_scores);
       }
     }
     return [];
-  }, [results]);
+  }, [results, isSetMode]);
 
   // Sort photos based on current sort selection
   const sortedPhotos = useMemo(() => {
@@ -92,11 +99,11 @@ export function ProjectResults() {
           </span>
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <SortControls
+          {!isSetMode && <SortControls
             criteria={criteriaNames}
             onSort={setSortBy}
             currentSort={sortBy}
-          />
+          />}
           <div className="flex items-center gap-1">
             {EXPORT_FORMATS.map((fmt) => (
               <a
@@ -112,26 +119,36 @@ export function ProjectResults() {
         </div>
       </div>
 
-      <PhotoGrid
-        photos={sortedPhotos}
-        projectName={name}
-        onPhotoClick={setDetailPhoto}
-        selectable
-        selectedPhotos={selectedPhotos}
-        onToggleSelect={togglePhoto}
-      />
+      {isSetMode ? (
+        <div className="space-y-4">
+          {(results.ranking || []).map((set, i) => (
+            <SetCard key={set.setId || i} set={set} projectName={name} rank={i + 1} />
+          ))}
+        </div>
+      ) : (
+        <>
+          <PhotoGrid
+            photos={sortedPhotos}
+            projectName={name}
+            onPhotoClick={setDetailPhoto}
+            selectable
+            selectedPhotos={selectedPhotos}
+            onToggleSelect={togglePhoto}
+          />
 
-      <PhotoDetail
-        photo={detailPhoto}
-        projectName={name}
-        onClose={() => setDetailPhoto(null)}
-      />
+          <PhotoDetail
+            photo={detailPhoto}
+            projectName={name}
+            onClose={() => setDetailPhoto(null)}
+          />
 
-      <CompareDrawer
-        photos={selectedPhotos}
-        projectName={name}
-        onClear={clearSelection}
-      />
+          <CompareDrawer
+            photos={selectedPhotos}
+            projectName={name}
+            onClear={clearSelection}
+          />
+        </>
+      )}
     </div>
   );
 }

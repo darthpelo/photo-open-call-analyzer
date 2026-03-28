@@ -94,7 +94,7 @@
 
 ---
 
-## Milestone 3: Performance & Optimization 🟡 In Progress
+## Milestone 3: Performance & Optimization ✅ Complete
 
 ### 🔴 P0 - Critical (Complete)
 
@@ -113,10 +113,10 @@
 |------|-------|--------|------|
 | Consistent results directory (FR-3.12) | Dev | ✅ Done | 2026-02 | Per-open-call timestamped results (ADR-016) |
 | Smart photo selection (FR-3.13) | Dev | ✅ Done | 2026-02 | Smart defaults + glob patterns for analyze-set |
-| Analysis caching (FR-3.7) | Dev | 📋 Planned | ~50% time savings on re-runs |
-| Parallel processing optimization (FR-3.8) | Dev | 📋 Planned | Dynamic concurrency |
-| Model selection (FR-3.9) | Dev | 📋 Planned | llava:13b, moondream, bakllava |
-| Historical winner learning (FR-3.10) | Dev + Art Critic | 📋 Planned | Pattern extraction |
+| Analysis caching (FR-3.7) | Dev | ✅ Done | 2026-03 | cache-manager.js, ~50% time savings on re-runs (ADR-017) |
+| Parallel processing optimization (FR-3.8) | Dev | ✅ Done | 2026-03 | concurrency-manager.js, RAM-based smart default (ADR-018, ADR-024) |
+| Model selection (FR-3.9) | Dev | ✅ Done | 2026-03 | model-manager.js, auto-pull, llava:13b, moondream (ADR-019) |
+| Historical winner learning (FR-3.10) | Dev + Art Critic | ✅ Done | 2026-03 | winner-manager.js, pattern extraction (ADR-020) |
 | Polaroid Set Analysis (FR-3.11) | Dev + Art Critic | ✅ Done | 2026-02 | Set-level photo group evaluation |
 
 ### FR-3.11: Polaroid Set Analysis ✅ Complete

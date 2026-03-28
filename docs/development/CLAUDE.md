@@ -122,7 +122,10 @@ photo-open-call-analyzer/
 │   │   ├── winner-manager.js       # Historical winner learning (FR-3.10)
 │   │   ├── strategic-analyzer.js       # Sebastiano curatorial reasoning orchestrator
 │   │   ├── strategic-prompt-builder.js # Sebastiano system prompt + context builder
-│   │   └── strategic-output-parser.js  # Sebastiano dual output parser (MD + JSON)
+│   │   ├── strategic-output-parser.js  # Sebastiano dual output parser (MD + JSON)
+│   │   ├── strategic-researcher.js     # Sebastiano open call web research (Sprint 3)
+│   │   ├── strategic-memory.js         # Cross-session curatorial memory (Sprint 3)
+│   │   └── url-discoverer.js           # Open call URL discovery (Sprint 3)
 │   ├── processing/           # Batch processing
 │   │   ├── batch-processor.js      # Batch photo processing with caching & concurrency
 │   │   ├── cache-manager.js        # Per-project analysis cache (FR-3.7)
@@ -137,6 +140,11 @@ photo-open-call-analyzer/
 │   │   ├── set-report-generator.js      # Set reports (MD/JSON/CSV)
 │   │   └── title-description-generator.js # AI-generated titles/descriptions
 │   ├── cli/                  # CLI commands
+│   ├── config/
+│   │   └── validator.js            # Configuration schema validation (Sprint 5)
+│   ├── validation/
+│   │   ├── prompt-quality-validator.js  # Prompt quality pre-analysis checks (Sprint 5)
+│   │   └── ab-testing-framework.js     # A/B prompt comparison framework (Sprint 5)
 │   └── utils/
 │       ├── api-client.js       # Ollama client (getModelName supports override)
 │       ├── model-manager.js    # Model selection & auto-pull (FR-3.9)
@@ -161,7 +169,12 @@ photo-open-call-analyzer/
         ├── ADR-017-analysis-caching.md  # Per-project cache (FR-3.7)
         ├── ADR-018-parallel-processing-optimization.md  # Slot-based concurrency (FR-3.8)
         ├── ADR-019-model-selection-management.md  # Model resolution chain (FR-3.9)
-        └── ADR-020-historical-winner-learning.md  # Winner patterns (FR-3.10)
+        ├── ADR-020-historical-winner-learning.md  # Winner patterns (FR-3.10)
+        ├── ADR-021-strategic-memory.md  # Cross-session curatorial memory (Sprint 3)
+        ├── ADR-022-url-discovery.md     # Open call URL discovery (Sprint 3)
+        ├── ADR-023-strategic-researcher.md  # Web research integration (Sprint 3)
+        ├── ADR-024-smart-concurrency-default.md  # RAM-based concurrency default (Sprint 5)
+        └── ADR-025-dx-reliability.md    # DX and reliability improvements (Sprint 5)
 ```
 
 ## Conventions
@@ -324,7 +337,7 @@ npm test
 
 ## BMAD Context
 
-Uses BMAD plugin for structured development workflow: `/bmad-scope` -> `/bmad-prioritize` -> `/bmad-arch` -> `/bmad-impl` -> `/bmad-qa`. See available `/bmad-*` skills for full list.
+Uses Circle plugin for structured development workflow: `/circle:scope` -> `/circle:prioritize` -> `/circle:arch` -> `/circle:impl` -> `/circle:qa`. See available `/circle:*` skills for full list.
 
 ## Language Guidelines
 
