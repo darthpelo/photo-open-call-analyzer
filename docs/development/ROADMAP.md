@@ -291,36 +291,27 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 ---
 
-## Milestone 4 (M4): Web UI & User Experience ⚪ PLANNED
-**Status**: ⚪ Future
-**Target**: Q3 2026
+## Milestone 4 (M4): Web UI & User Experience 🟡 IN PROGRESS
+**Status**: 🟡 In Progress (March 2026)
+**Target**: Q1-Q2 2026
 **Goal**: Web UI and interactive workflows
 
-### Planned Deliverables
+### Delivered
 
-#### FR-4.1: Results Visualization
-- [ ] Web UI for ranked photo grid with scores
-- [ ] Sortable by criteria, drag-and-drop reordering
-- [ ] Side-by-side comparison (2-3 photos)
-- [ ] Expandable detail view with full feedback
+#### FR-4.1: Results Visualization ✅
+- [x] Web UI for ranked photo grid with scores
+- [x] Sortable by criteria
+- [x] Expandable detail view with full feedback
 
-**Priority**: P1 (High - Requested by users)
+#### FR-4.2: Analysis Management Dashboard ✅
+- [x] List all open call projects with metadata
+- [x] Project dashboard with analysis history
 
-#### FR-4.2: Analysis Management Dashboard
-- [ ] List all open call projects with metadata
-- [ ] Re-run analysis on existing projects
-- [ ] Export from UI (MD, JSON, CSV)
-- [ ] Search/filter by competition name or date
+#### FR-4.3: UI Polish ✅
+- [x] Dark mode support (system preference default)
+- [x] Responsive layout
 
-**Priority**: P1 (High)
-
-#### FR-4.3: UI Polish
-- [ ] Dark mode support (system preference default)
-- [ ] Mobile responsive (tablets + phones)
-- [ ] Keyboard navigation
-- [ ] WCAG 2.1 AA accessibility compliance
-
-**Priority**: P2 (Medium)
+### Remaining
 
 #### FR-4.4: Interactive Prompt Refinement
 - [ ] Deferred component from FR-2.4
@@ -330,7 +321,14 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 **Priority**: P2 (Medium - Nice to have)
 
-### Technology Stack (Proposed)
+#### FR-4.5: Advanced UI Features
+- [ ] Side-by-side comparison (2-3 photos)
+- [ ] Drag-and-drop reordering
+- [ ] Export from UI (MD, JSON, CSV)
+- [ ] Keyboard navigation
+- [ ] WCAG 2.1 AA accessibility compliance
+
+### Technology Stack
 - **Frontend**: React + Vite
 - **Styling**: Tailwind CSS
 - **State**: React Context or Zustand
@@ -376,27 +374,25 @@ Create a tool to help photographers select their best photos for open calls, usi
 
 2026 Q1  |###############| M3 Complete (FR-3.7–FR-3.13, Sprint 3 & 5)
 
-2026 Q2  |               | M4 Web UI (Target)
+2026 Q1  |###########    | M4 Web UI (FR-4.1, FR-4.2, FR-4.3 delivered)
 
-2026 Q3  |               | M4 Web UI (Target)
-         |               |
+2026 Q2  |               | M4 remaining (FR-4.4, FR-4.5)
 ```
 
 ---
 
 ## Current Focus (March 2026)
 
-**M3 Complete**: All planned M3 features delivered across 5 sprints.
-- FR-3.5 through FR-3.13: All complete
-- Sprint 3: Strategic memory + URL discovery
-- Sprint 5: DX improvements, ADR-021 to ADR-025
+**M4 In Progress**: Web UI core features delivered, polish ongoing.
+- FR-4.1: Results Viewer delivered
+- FR-4.2: Dashboard delivered
+- FR-4.3: Dark mode and UI polish delivered
 - 605+ tests passing, coverage thresholds enforced
 
 **Next Steps**:
-1. Plan M4 Web UI architecture
-2. FR-4.1: Results visualization (React + Vite)
-3. FR-4.2: Analysis management dashboard
-4. FR-4.8: Photo group support in suggest-sets
+1. FR-4.4: Interactive prompt refinement (web-based)
+2. FR-4.5: Advanced UI features (comparison, export, a11y)
+3. Documentation cleanup and consolidation
 
 ---
 
