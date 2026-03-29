@@ -25,7 +25,7 @@ When communicating with Copilot, you can:
 # Reference markdown files for context
 "Based on docs/development/CLAUDE.md..."
 "According to docs/development/ROADMAP.md..."
-"See docs/guides/QUICKSTART.md for..."
+"See docs/guides/CONFIG.md for..."
 
 # Reference specific agents
 "Art Critic should..."
@@ -67,7 +67,7 @@ Copilot implements for:
 - **Backend**: Node.js 20+
 - **Vision**: Ollama + LLaVA 7B (local)
 - **CLI**: commander.js
-- **Testing**: Jest
+- **Testing**: Vitest
 - **UI**: Terminal (chalk, ora)
 - **Reports**: Markdown, JSON, CSV
 
@@ -86,7 +86,7 @@ export async function analyzePhoto(photo, config) {
   // 5. Structured return
 }
 
-// Test: Jest with async support
+// Test: Vitest with async support
 describe('Feature', () => {
   test('case', async () => {
     expect(...).toBe(...);
@@ -112,7 +112,7 @@ When Copilot executes tasks, it should check:
 ✓ docs/development/CLAUDE.md      → General context, agents
 ✓ docs/development/ROADMAP.md     → Milestone target, timeline
 ✓ docs/development/BACKLOG.md     → Priority, task assignment
-✓ docs/guides/QUICKSTART.md       → Setup, usage
+✓ docs/guides/CONFIG.md            → Configuration reference
 ✓ package.json                    → Current dependencies
 ✓ src/                            → Code architecture
 ✓ tests/                          → Test coverage
