@@ -3,7 +3,7 @@
   "title": "Open Call Configuration Schema",
   "description": "Schema for validating open-call.json files used in Photo Open Call Analyzer. See ADR-007: Configuration Validation Schema.",
   "type": "object",
-  "required": ["title", "theme", "jury", "pastWinners"],
+  "required": ["title", "theme"],
   "additionalProperties": true,
   "properties": {
     "title": {

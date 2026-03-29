@@ -47,7 +47,7 @@ export function buildTextPrompt(photoAnalysis, openCallConfig) {
 
   // Build jury description
   const juryDescription = (openCallConfig.jury || [])
-    .map(j => `${j.name} (${j.style || ''}, ${j.focus || ''})`)
+    .map(j => typeof j === 'string' ? j : `${j.name} (${j.style || ''}, ${j.focus || ''})`)
     .join('; ');
 
   const overallScore = summary.weighted_average || summary.average || 0;

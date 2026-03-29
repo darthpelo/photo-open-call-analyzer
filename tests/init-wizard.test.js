@@ -157,7 +157,7 @@ describe('Init Wizard Configuration Tests (FR-3.4)', () => {
       expect(validation.valid).toBe(false);
     });
 
-    it('should reject config with missing jury', () => {
+    it('should accept config with missing jury (jury is optional)', () => {
       const config = {
         title: 'Test Competition',
         theme: 'Test theme',
@@ -165,10 +165,10 @@ describe('Init Wizard Configuration Tests (FR-3.4)', () => {
       };
 
       const validation = validateOpenCall(config);
-      expect(validation.valid).toBe(false);
+      expect(validation.valid).toBe(true);
     });
 
-    it('should reject config with missing pastWinners', () => {
+    it('should accept config with missing pastWinners (pastWinners is optional)', () => {
       const config = {
         title: 'Test Competition',
         theme: 'Test theme',
@@ -176,7 +176,7 @@ describe('Init Wizard Configuration Tests (FR-3.4)', () => {
       };
 
       const validation = validateOpenCall(config);
-      expect(validation.valid).toBe(false);
+      expect(validation.valid).toBe(true);
     });
 
     it('should reject config with empty jury array', () => {
