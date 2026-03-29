@@ -127,7 +127,7 @@ describe('Configuration Validator (EC-004: Config Invalid Cases)', () => {
       expect(result.errors.some((e) => e.message.includes('theme'))).toBe(true);
     });
 
-    it('should reject configuration with missing jury', () => {
+    it('should accept configuration with missing jury (jury is optional)', () => {
       const config = {
         title: 'Test Competition',
         theme: 'Photography',
@@ -136,11 +136,10 @@ describe('Configuration Validator (EC-004: Config Invalid Cases)', () => {
 
       const result = validateOpenCall(config);
 
-      expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.message.includes('jury'))).toBe(true);
+      expect(result.valid).toBe(true);
     });
 
-    it('should reject configuration with missing pastWinners', () => {
+    it('should accept configuration with missing pastWinners (pastWinners is optional)', () => {
       const config = {
         title: 'Test Competition',
         theme: 'Photography',
@@ -149,8 +148,7 @@ describe('Configuration Validator (EC-004: Config Invalid Cases)', () => {
 
       const result = validateOpenCall(config);
 
-      expect(result.valid).toBe(false);
-      expect(result.errors.some((e) => e.message.includes('pastWinners'))).toBe(true);
+      expect(result.valid).toBe(true);
     });
 
     it('should reject configuration with title too short', () => {
@@ -476,7 +474,7 @@ describe('Configuration Validator (EC-004: Config Invalid Cases)', () => {
     });
 
     it('UT-003.2: Missing field detected with field name in error', () => {
-      const missingFields = ['title', 'theme', 'jury', 'pastWinners'];
+      const missingFields = ['title', 'theme'];
 
       missingFields.forEach((field) => {
         const config = {

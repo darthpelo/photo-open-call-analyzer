@@ -3,7 +3,7 @@
   "title": "Open Call Configuration Schema",
   "description": "Schema for validating open-call.json files used in Photo Open Call Analyzer. See ADR-007: Configuration Validation Schema.",
   "type": "object",
-  "required": ["title", "theme", "jury", "pastWinners"],
+  "required": ["title", "theme"],
   "additionalProperties": true,
   "properties": {
     "title": {
@@ -17,6 +17,45 @@
       "minLength": 5,
       "maxLength": 1000,
       "description": "Photography theme or subject description for this competition"
+    },
+    "description": {
+      "type": "string",
+      "maxLength": 2000,
+      "description": "Detailed description of the open call, its aesthetic values, and what it rewards"
+    },
+    "aestheticContext": {
+      "type": "string",
+      "maxLength": 500,
+      "description": "Explicit aesthetic evaluation framing injected into prompts. Use when the call values unconventional qualities."
+    },
+    "criteria": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "required": ["name", "weight"],
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 50,
+            "description": "Criterion name"
+          },
+          "weight": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 100,
+            "description": "Weight percentage for this criterion"
+          },
+          "description": {
+            "type": "string",
+            "maxLength": 200,
+            "description": "What a high score means for this criterion"
+          }
+        }
+      },
+      "description": "User-defined evaluation criteria with weights. When present, these override AI-generated criteria."
     },
     "jury": {
       "type": "array",

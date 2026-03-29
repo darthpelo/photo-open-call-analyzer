@@ -505,6 +505,9 @@ export function buildEnhancedMetaPrompt(openCallData, template) {
   prompt += `**Competition Context**:\n`;
   prompt += `Title: ${openCallData.title || 'Not specified'}\n`;
   prompt += `Theme: ${openCallData.theme || 'Not specified'}\n`;
+  if (openCallData.description) {
+    prompt += `Description: ${openCallData.description}\n`;
+  }
   prompt += `Jury: ${openCallData.jury?.join(', ') || 'Not specified'}\n`;
   prompt += `Past Winners Context: ${openCallData.pastWinners || 'No information'}\n\n`;
 
@@ -530,13 +533,22 @@ export function buildEnhancedMetaPrompt(openCallData, template) {
   }
 
   prompt += `**YOUR TASK**:\n`;
-  prompt += `Generate 5 evaluation criteria for this competition following the GOOD examples above.\n`;
-  prompt += `Each criterion must:\n`;
-  prompt += `1. Be SPECIFIC and MEASURABLE (avoid: ${template.template.avoidGeneric.join(', ')})\n`;
-  prompt += `2. Use concrete photography terminology\n`;
-  prompt += `3. Relate to the competition theme and jury preferences\n`;
-  prompt += `4. Provide clear guidance on what to look for\n`;
-  prompt += `5. Have a weight percentage (total must equal 100%)\n\n`;
+
+  if (openCallData.criteria && openCallData.criteria.length > 0) {
+    prompt += `\nThe organizer has defined these evaluation criteria. Use them as-is, refining descriptions where needed:\n`;
+    openCallData.criteria.forEach(c => {
+      prompt += `- ${c.name} (weight: ${c.weight}%)${c.description ? ': ' + c.description : ''}\n`;
+    });
+    prompt += `\nDo NOT replace these criteria. You may add descriptions if missing, but keep names and weights exactly as specified.\n\n`;
+  } else {
+    prompt += `Generate 5 evaluation criteria for this competition following the GOOD examples above.\n`;
+    prompt += `Each criterion must:\n`;
+    prompt += `1. Be SPECIFIC and MEASURABLE (avoid: ${template.template.avoidGeneric.join(', ')})\n`;
+    prompt += `2. Use concrete photography terminology\n`;
+    prompt += `3. Relate to the competition theme and jury preferences\n`;
+    prompt += `4. Provide clear guidance on what to look for\n`;
+    prompt += `5. Have a weight percentage (total must equal 100%)\n\n`;
+  }
 
   prompt += `Format each criterion as:\n`;
   prompt += `CRITERION: [Specific Name]\n`;

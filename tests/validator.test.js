@@ -69,18 +69,16 @@ describe('validateOpenCall', () => {
     });
 
     it('should show generic suggestion for unknown required fields', () => {
-      // Fields without examples should fall back to generic text
-      // We test this by checking that the FIELD_EXAMPLES map works for known fields
-      // and falls back for unknown ones. Since schema only requires title/theme/jury/pastWinners,
-      // we verify the fallback by checking a field not in FIELD_EXAMPLES would get "Check the template"
-      const config = { title: validConfig.title, theme: validConfig.theme, jury: validConfig.jury };
+      // jury and pastWinners are now optional — test fallback with a missing required field (theme)
+      // that IS in FIELD_EXAMPLES to verify the example suggestion path
+      const config = { title: validConfig.title };
       const result = validateOpenCall(config);
 
       expect(result.valid).toBe(false);
-      const pwError = result.errors.find(e => e.message.includes('"pastWinners"'));
-      expect(pwError).toBeDefined();
-      // pastWinners IS in FIELD_EXAMPLES, so it should have an example
-      expect(pwError.suggestion).toContain('Example:');
+      const themeError = result.errors.find(e => e.message.includes('"theme"'));
+      expect(themeError).toBeDefined();
+      // theme IS in FIELD_EXAMPLES, so it should have an example
+      expect(themeError.suggestion).toContain('Example:');
     });
   });
 });

@@ -90,6 +90,13 @@ export function buildSingleStagePrompt(analysisPrompt) {
     prompt += `**Theme**: ${analysisPrompt.theme}\n`;
   }
 
+  // Inject aesthetic context so the model does not penalize intentional qualities
+  const aestheticDesc = analysisPrompt.aestheticContext || analysisPrompt.description;
+  if (aestheticDesc) {
+    prompt += `\n**AESTHETIC CONTEXT (CRITICAL)**: ${aestheticDesc}\n`;
+    prompt += `Evaluate according to this aesthetic. Qualities described above are POSITIVE, not defects.\n\n`;
+  }
+
   if (analysisPrompt.criteria && analysisPrompt.criteria.length > 0) {
     prompt += '\n**Evaluation Criteria**:\n';
     analysisPrompt.criteria.forEach((criterion) => {
@@ -142,9 +149,15 @@ RECOMMENDATION: [Strong Yes / Yes / Maybe / No]
 export function buildMultiStagePrompts(analysisPrompt, options = {}) {
   const stages = EVALUATION_STAGES;
 
+  // Build aesthetic context block (shared across stages)
+  const aestheticDesc = analysisPrompt.aestheticContext || analysisPrompt.description;
+  const aestheticBlock = aestheticDesc
+    ? `\n**AESTHETIC CONTEXT (CRITICAL)**: ${aestheticDesc}\nEvaluate according to this aesthetic. Qualities described above are POSITIVE, not defects.\n\n`
+    : '';
+
   // Stage 1: Understanding (no scoring)
   const stage1 = {
-    prompt: stages.stage1_understanding.prompt,
+    prompt: stages.stage1_understanding.prompt + aestheticBlock,
     temperature: stages.stage1_understanding.temperature,
     maxTokens: stages.stage1_understanding.maxTokens,
     purpose: stages.stage1_understanding.purpose
@@ -158,7 +171,7 @@ export function buildMultiStagePrompts(analysisPrompt, options = {}) {
       .replace('{criterion_name}', criterion.name)
       .replace('{criterion_name}', criterion.name) // Replace both occurrences
       .replace('{criterion_weight}', criterion.weight || 20)
-      .replace('{criterion_description}', criterion.description),
+      .replace('{criterion_description}', criterion.description) + aestheticBlock,
     temperature: stages.stage2_evaluation.temperature,
     maxTokens: stages.stage2_evaluation.maxTokens
   }));
