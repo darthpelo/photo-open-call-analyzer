@@ -29,7 +29,9 @@ import { researchOpenCall, readCachedResearch } from '../analysis/strategic-rese
 import { generateUrlSuggestions, validateUrls } from '../analysis/url-discoverer.js';
 import { retrieveMemoryContext, saveAnalysisMemory } from '../analysis/strategic-memory.js';
 import { checkOllamaStatus } from '../utils/api-client.js';
+import { computeSpearmanRho, computeTopNOverlap, findDisagreements, analyzeConsistency, generateComparisonReport } from '../analysis/comparison-engine.js';
 import { join, basename } from 'path';
+import { readdirSync } from 'fs';
 import ora from 'ora';
 
 const program = new Command();
@@ -1674,6 +1676,159 @@ program
       if (process.env.NODE_ENV === 'development') {
         console.error(error);
       }
+      process.exit(1);
+    }
+  });
+
+// ============================================================
+// Human Ranking (FR-B.2)
+// ============================================================
+
+program
+  .command('human-ranking <project-dir>')
+  .description('Record your personal photo ranking as ground truth for comparison')
+  .option('--photos <photos...>', 'Ordered list of photo filenames (best first)')
+  .action(async (projectDir, options) => {
+    try {
+      const dir = projectPath(projectDir);
+      const photosDir = join(dir, 'photos');
+
+      if (!options.photos || options.photos.length === 0) {
+        logger.error('Please provide photos in order: --photos best.jpg second.jpg third.jpg ...');
+        process.exit(1);
+      }
+
+      // Validate each filename exists
+      const missing = [];
+      for (const photo of options.photos) {
+        if (!fileExists(join(photosDir, photo))) {
+          missing.push(photo);
+        }
+      }
+
+      if (missing.length > 0) {
+        logger.error(`Photos not found in ${photosDir}: ${missing.join(', ')}`);
+        process.exit(1);
+      }
+
+      const humanRanking = {
+        version: 1,
+        created: new Date().toISOString(),
+        type: options.photos.length < 10 ? 'partial' : 'full',
+        ranked: options.photos,
+        notes: '',
+      };
+
+      const outputPath = join(dir, 'human-ranking.json');
+      writeJson(outputPath, humanRanking);
+      logger.success(`Human ranking saved: ${outputPath}`);
+      logger.info(`${options.photos.length} photos ranked (${humanRanking.type})`);
+    } catch (error) {
+      logger.error(`Failed to save human ranking: ${error.message}`);
+      process.exit(1);
+    }
+  });
+
+// ============================================================
+// Comparison Report (FR-B.3 + FR-B.4)
+// ============================================================
+
+program
+  .command('compare <project-dir>')
+  .description('Compare AI ranking against human ground truth and analyze cross-run consistency')
+  .action(async (projectDir) => {
+    try {
+      const dir = projectPath(projectDir);
+      const resultsDir = join(dir, 'results');
+
+      // Load latest AI ranking
+      const latestDir = join(resultsDir, 'latest');
+      let aiData;
+      const analysisFile = join(latestDir, 'photo-analysis.json');
+      if (fileExists(analysisFile)) {
+        aiData = readJson(analysisFile);
+      } else {
+        logger.error('No analysis results found. Run "analyze" first.');
+        process.exit(1);
+      }
+
+      const aiRanking = (aiData.ranking || []).map(r => ({
+        photo: basename(r.photo),
+        rank: r.rank,
+        overall_score: r.overall_score,
+      }));
+
+      // Load human ranking
+      let humanRanking = [];
+      const humanFile = join(dir, 'human-ranking.json');
+      if (fileExists(humanFile)) {
+        const humanData = readJson(humanFile);
+        humanRanking = (humanData.ranked || []).map((photo, i) => ({
+          photo,
+          rank: i + 1,
+        }));
+        logger.info(`Human ranking loaded: ${humanRanking.length} photos`);
+      } else {
+        logger.warn('No human-ranking.json found. Skipping AI vs human comparison.');
+        logger.info('Create one with: node src/cli/analyze.js human-ranking <project-dir> --photos ...');
+      }
+
+      // Load all historical runs for consistency analysis
+      const runs = [];
+      if (fileExists(resultsDir)) {
+        const entries = readdirSync(resultsDir, { withFileTypes: true });
+        for (const entry of entries) {
+          if (entry.isDirectory() && entry.name !== 'latest' && entry.name.match(/^\d{4}-/)) {
+            const runFile = join(resultsDir, entry.name, 'photo-analysis.json');
+            if (fileExists(runFile)) {
+              try {
+                const runData = readJson(runFile);
+                const runRanking = (runData.ranking || []).map(r => ({
+                  photo: basename(r.photo),
+                  rank: r.rank,
+                }));
+                runs.push(runRanking);
+              } catch {
+                logger.warn(`Skipping malformed results: ${entry.name}`);
+              }
+            }
+          }
+        }
+      }
+      logger.info(`Found ${runs.length} historical run(s) for consistency analysis`);
+
+      // Generate report
+      const report = generateComparisonReport(aiRanking, humanRanking, runs);
+
+      // Save report
+      const outputPath = join(latestDir, 'comparison-report.md');
+      const { writeText } = await import('../utils/file-utils.js');
+      writeText(outputPath, report);
+      logger.success(`Comparison report saved: ${outputPath}`);
+
+      // Print summary to console
+      if (humanRanking.length > 0) {
+        const rho = computeSpearmanRho(aiRanking, humanRanking);
+        console.log(`\nSpearman's rho: ${rho !== null ? rho.toFixed(3) : 'N/A'}`);
+
+        const top5 = computeTopNOverlap(aiRanking, humanRanking, 5);
+        console.log(`Top-${top5.n} overlap: ${top5.overlap}/${top5.n} (${top5.percentage}%)`);
+
+        const disagreements = findDisagreements(aiRanking, humanRanking, 5);
+        if (disagreements.length > 0) {
+          console.log(`\nBiggest disagreements: ${disagreements.length} photos with rank diff > 5`);
+        }
+      }
+
+      if (runs.length >= 2) {
+        const consistency = analyzeConsistency(runs);
+        console.log(`\nCross-run stability (top-${consistency.topNStability.n}): ${consistency.topNStability.percentage}%`);
+        if (consistency.highVolatility.length > 0) {
+          console.log(`High-volatility photos: ${consistency.highVolatility.length}`);
+        }
+      }
+    } catch (error) {
+      logger.error(`Comparison failed: ${error.message}`);
       process.exit(1);
     }
   });
