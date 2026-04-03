@@ -936,7 +936,7 @@ npm run analyze test-prompt --help
 - Score incoherence: See [Issue 3](#issue-3-score-incoherence)
 
 **Report issues**:
-- GitHub: [github.com/yourusername/photo-open-call-analyzer/issues](https://github.com/yourusername/photo-open-call-analyzer/issues)
+- GitHub: [github.com/darthpelo/photo-open-call-analyzer/issues](https://github.com/darthpelo/photo-open-call-analyzer/issues)
 - Include: validation report, analysis-prompt.json, error messages
 
 ---

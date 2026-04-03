@@ -188,6 +188,10 @@ node src/cli/analyze.js winner-insights <project-dir>
 
 # Strategic curatorial analysis
 node src/cli/analyze.js strategic-analyze <project-dir> [--text-model llama3:8b]
+
+# Feedback loop — validate AI rankings against your judgment
+node src/cli/analyze.js human-ranking <project-dir> --photos best.jpg second.jpg third.jpg
+node src/cli/analyze.js compare <project-dir>
 ```
 
 ### Analysis Modes
