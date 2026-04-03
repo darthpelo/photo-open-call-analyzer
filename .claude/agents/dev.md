@@ -132,10 +132,10 @@ See `CLAUDE.md` for the full, up-to-date project structure. Key directories:
 
 ```javascript
 // src/analysis/photo-analyzer.js (simplified)
-import { getOllamaClient, getModelName } from '../utils/api-client.js';
+import { getApiClient, getModelName } from '../utils/api-client.js';
 
 export async function analyzePhoto(imagePath, analysisPrompt, options = {}) {
-  const client = getOllamaClient();
+  const client = getApiClient();
   const model = getModelName(options.model);
   const imageData = await loadImageAsBase64(imagePath);
 
