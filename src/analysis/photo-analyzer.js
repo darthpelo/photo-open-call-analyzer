@@ -121,11 +121,10 @@ OVERALL ASSESSMENT:
 [Brief overall assessment in 2-3 sentences]
 
 SCORES:
-SCORE: Theme Alignment: [X]/10 - [justification]
-SCORE: Technical Quality: [X]/10 - [justification]
-SCORE: Originality: [X]/10 - [justification]
-SCORE: Emotional Impact: [X]/10 - [justification]
-SCORE: Jury Fit: [X]/10 - [justification]
+${(analysisPrompt.criteria && analysisPrompt.criteria.length > 0
+    ? analysisPrompt.criteria
+    : getDefaultCriteria()
+  ).map(c => `SCORE: ${c.name}: [X]/10 - [justification]`).join('\n')}
 
 STRENGTHS:
 - [strength 1]

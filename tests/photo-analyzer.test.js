@@ -215,6 +215,91 @@ describe('analyzePhoto()', () => {
 
 
 // ============================================================
+// FR-B.1: Custom Criteria in Prompt Tests
+// ============================================================
+
+describe('buildAnalysisPrompt with custom criteria (FR-B.1)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  test('should include custom criteria names in the prompt sent to Ollama', async () => {
+    const customPrompt = {
+      title: 'Grainy Mountains',
+      theme: 'Analog mountain photography',
+      criteria: [
+        { name: 'Grain and Texture', description: 'Visible film grain density', weight: 30 },
+        { name: 'Analog Imperfection', description: 'Light leaks, color shifts', weight: 25 },
+        { name: 'Atmosphere and Mood', description: 'Emotional weight', weight: 20 },
+        { name: 'Composition', description: 'Intentional framing', weight: 15 },
+        { name: 'Subject Relevance', description: 'Mountains as subject', weight: 10 },
+      ]
+    };
+
+    mockChat.mockResolvedValueOnce({
+      message: { content: 'SCORE: Grain and Texture: 9/10 - Heavy grain\nSCORE: Analog Imperfection: 8/10 - Nice leaks' }
+    });
+
+    await analyzePhoto('/photo.jpg', customPrompt);
+
+    const callArgs = mockChat.mock.calls[0][0];
+    const promptText = callArgs.messages[0].content;
+
+    // The prompt must contain the custom criteria names, not generic defaults
+    expect(promptText).toContain('Grain and Texture');
+    expect(promptText).toContain('Analog Imperfection');
+    expect(promptText).toContain('Atmosphere and Mood');
+    expect(promptText).not.toContain('Jury Fit');
+  });
+
+  test('should generate dynamic SCORE format matching custom criteria', async () => {
+    const customPrompt = {
+      title: 'Test',
+      theme: 'Test',
+      criteria: [
+        { name: 'Grain and Texture', description: 'Grain', weight: 50 },
+        { name: 'Analog Imperfection', description: 'Analog', weight: 50 },
+      ]
+    };
+
+    mockChat.mockResolvedValueOnce({
+      message: { content: 'SCORE: Grain and Texture: 8/10 - Good\nSCORE: Analog Imperfection: 7/10 - OK' }
+    });
+
+    await analyzePhoto('/photo.jpg', customPrompt);
+
+    const promptText = mockChat.mock.calls[0][0].messages[0].content;
+
+    // RESPONSE FORMAT section should show custom criterion names, not hardcoded defaults
+    expect(promptText).toContain('SCORE: Grain and Texture:');
+    expect(promptText).toContain('SCORE: Analog Imperfection:');
+    expect(promptText).not.toContain('SCORE: Theme Alignment:');
+    expect(promptText).not.toContain('SCORE: Technical Quality:');
+  });
+
+  test('should parse scores with custom criteria names correctly', async () => {
+    const customPrompt = {
+      title: 'Test',
+      theme: 'Test',
+      criteria: [
+        { name: 'Grain and Texture', description: 'Grain', weight: 30 },
+        { name: 'Analog Imperfection', description: 'Analog', weight: 25 },
+      ]
+    };
+
+    mockChat.mockResolvedValueOnce({
+      message: { content: 'SCORE: Grain and Texture: 9/10 - Heavy grain\nSCORE: Analog Imperfection: 7/10 - Some leaks' }
+    });
+
+    const result = await analyzePhoto('/photo.jpg', customPrompt);
+
+    expect(result.scores.individual['Grain and Texture']).toEqual({ score: 9, weight: 30 });
+    expect(result.scores.individual['Analog Imperfection']).toEqual({ score: 7, weight: 25 });
+  });
+});
+
+
+// ============================================================
 // parseAnalysisResponse() Tests (tested through analyzePhoto)
 // ============================================================
 

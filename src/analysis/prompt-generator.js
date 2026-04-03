@@ -116,9 +116,9 @@ function parseAnalysisPrompt(analysisText, openCallData) {
     });
   }
 
-  // If no criteria found, use defaults
+  // If no criteria parsed from LLaVA response, prefer config criteria over defaults
   if (prompt.criteria.length === 0) {
-    prompt.criteria = getDefaultCriteria();
+    prompt.criteria = openCallData.criteria || getDefaultCriteria();
   }
 
   // Normalize weights to sum to 100
@@ -165,7 +165,7 @@ function getDefaultPrompt(openCallData) {
     title: openCallData.title || 'Photography Competition',
     theme: openCallData.theme || 'General',
     context: '',
-    criteria: getDefaultCriteria(),
+    criteria: openCallData.criteria || getDefaultCriteria(),
     evaluation_questions: [
       'Does this photo effectively communicate the theme?',
       'Is the technical execution professional quality?',
