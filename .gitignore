@@ -38,6 +38,7 @@ data/test-photos/*
 
 # Analysis results & generated data
 data/open-calls/*/results/*
+data/open-calls/*/.analysis-cache/
 data/open-calls/*/batch-results.json
 data/open-calls/*/analysis-prompt.json
 data/open-calls/*/analysis-results.json
