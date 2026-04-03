@@ -64,7 +64,21 @@ node src/cli/analyze.js analyze data/open-calls/my-oc/
 ls data/open-calls/my-oc/results/latest/
 ```
 
-### 5. Set Analysis (Polaroid Mode)
+### 5. Feedback Loop — Validate AI Rankings
+```bash
+# 1. Record your personal ranking (best photo first)
+node src/cli/analyze.js human-ranking data/open-calls/my-oc/ \
+  --photos best.jpg second.jpg third.jpg fourth.jpg
+
+# 2. Compare AI ranking against yours
+node src/cli/analyze.js compare data/open-calls/my-oc/
+# Output: Spearman's rho, top-N overlap, biggest disagreements
+# Report saved to: data/open-calls/my-oc/results/latest/comparison-report.md
+
+# Cross-run consistency is auto-analyzed when multiple runs exist
+```
+
+### 6. Set Analysis (Polaroid Mode)
 ```bash
 # Initialize with Polaroid template (setMode pre-configured)
 node src/cli/analyze.js init my-polaroid --template polaroid
@@ -125,7 +139,8 @@ photo-open-call-analyzer/
 │   │   ├── strategic-output-parser.js  # Sebastiano dual output parser (MD + JSON)
 │   │   ├── strategic-researcher.js     # Sebastiano open call web research (Sprint 3)
 │   │   ├── strategic-memory.js         # Cross-session curatorial memory (Sprint 3)
-│   │   └── url-discoverer.js           # Open call URL discovery (Sprint 3)
+│   │   ├── url-discoverer.js           # Open call URL discovery (Sprint 3)
+│   │   └── comparison-engine.js        # AI vs Human ranking comparison (FR-B.3, FR-B.4)
 │   ├── processing/           # Batch processing
 │   │   ├── batch-processor.js      # Batch photo processing with caching & concurrency
 │   │   ├── cache-manager.js        # Per-project analysis cache (FR-3.7)
@@ -296,6 +311,10 @@ node src/cli/analyze.js analyze ./data/open-calls/my-oc/ --compare-winners
 # Strategic Curatorial Analysis (Sebastiano)
 node src/cli/analyze.js strategic-analyze ./data/open-calls/my-oc/
 node src/cli/analyze.js strategic-analyze ./data/open-calls/my-oc/ --text-model llama3:8b
+
+# Feedback Loop — validate AI rankings against your judgment (FR-B)
+node src/cli/analyze.js human-ranking ./data/open-calls/my-oc/ --photos best.jpg second.jpg third.jpg
+node src/cli/analyze.js compare ./data/open-calls/my-oc/
 
 # Tests
 npm test

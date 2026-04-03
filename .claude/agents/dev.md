@@ -44,11 +44,11 @@ gh pr merge <PR_NUMBER> --merge --admin
 
 ## Preferred Technology Stack
 
-- **Runtime**: Node.js / Python
-- **AI/Vision**: Claude API (image analysis), sharp (processing)
-- **Storage**: Local file system, SQLite for metadata
-- **CLI**: Commander.js / Click
-- **Testing**: Jest / pytest
+- **Runtime**: Node.js (ESM — `type: "module"`)
+- **AI/Vision**: Ollama + LLaVA (local vision analysis), sharp (processing)
+- **Storage**: Local file system (JSON files)
+- **CLI**: Commander.js
+- **Testing**: Vitest
 
 ## Main Responsibilities
 
@@ -120,123 +120,45 @@ Configures necessary API integrations.
 
 ## System Architecture
 
-```
-src/
-├── analysis/
-│   ├── photo-analyzer.js     # Core analysis with Claude Vision
-│   ├── criteria-parser.js    # Parsing Art Critic criteria
-│   └── scorer.js             # Scoring system
-├── processing/
-│   ├── image-loader.js       # Image loading and validation
-│   ├── metadata-reader.js    # EXIF reading
-│   └── batch-processor.js    # Multiple processing
-├── output/
-│   ├── ranking-generator.js  # Ranking generation
-│   ├── report-builder.js     # Reports in various formats
-│   └── exporters/            # JSON, CSV, MD exporters
-├── cli/
-│   └── commands.js           # CLI commands
-└── utils/
-    ├── config.js             # Configuration
-    └── logger.js             # Structured logging
-```
+See `CLAUDE.md` for the full, up-to-date project structure. Key directories:
 
-## Example: Photo Analyzer Core
+- `src/analysis/` — Photo analysis, scoring, set analysis, strategic analysis, comparison engine
+- `src/processing/` — Batch processing, caching, concurrency, checkpoints
+- `src/output/` — Report generation (single-photo and set reports)
+- `src/cli/analyze.js` — All CLI commands
+- `src/utils/` — Ollama client, model manager, logging, file utilities
+
+## Example: Photo Analysis Flow
 
 ```javascript
-// src/analysis/photo-analyzer.js
-const Anthropic = require('@anthropic-ai/sdk');
+// src/analysis/photo-analyzer.js (simplified)
+import { getOllamaClient, getModelName } from '../utils/api-client.js';
 
-class PhotoAnalyzer {
-  constructor(apiKey, criteria) {
-    this.client = new Anthropic({ apiKey });
-    this.criteria = criteria;
-  }
+export async function analyzePhoto(imagePath, analysisPrompt, options = {}) {
+  const client = getOllamaClient();
+  const model = getModelName(options.model);
+  const imageData = await loadImageAsBase64(imagePath);
 
-  async analyzePhoto(imagePath) {
-    const imageData = await this.loadImage(imagePath);
+  const response = await client.chat({
+    model,
+    messages: [{
+      role: 'user',
+      content: analysisPrompt,
+      images: [imageData],
+    }],
+    options: { temperature: 0.2 },
+  });
 
-    const response = await this.client.messages.create({
-      model: 'claude-sonnet-4-20250514',
-      max_tokens: 2000,
-      messages: [{
-        role: 'user',
-        content: [
-          {
-            type: 'image',
-            source: {
-              type: 'base64',
-              media_type: this.getMediaType(imagePath),
-              data: imageData
-            }
-          },
-          {
-            type: 'text',
-            text: this.buildAnalysisPrompt()
-          }
-        ]
-      }]
-    });
-
-    return this.parseResponse(response);
-  }
-
-  buildAnalysisPrompt() {
-    return `
-Analyze this photograph according to the following criteria:
-
-${this.criteria}
-
-Provide:
-1. Score for each criterion (1-10)
-2. Justification for each score
-3. Strengths
-4. Areas for improvement
-5. Weighted total score
-
-Respond in structured JSON format.
-    `;
-  }
+  return parseAnalysisResponse(response.message.content);
 }
-
-module.exports = PhotoAnalyzer;
 ```
 
-## Required Configuration
+## Environment Configuration
 
-```javascript
-// config.js
-module.exports = {
-  anthropic: {
-    apiKey: process.env.ANTHROPIC_API_KEY,
-    model: 'claude-sonnet-4-20250514' // For image analysis
-  },
-  analysis: {
-    maxConcurrent: 3,        // Parallel requests
-    retryAttempts: 3,
-    timeout: 60000           // 60s per photo
-  },
-  output: {
-    format: 'markdown',      // markdown | json | csv
-    includeImages: true
-  }
-};
-```
-
-## Dependencies to Install
-
-```json
-{
-  "dependencies": {
-    "@anthropic-ai/sdk": "^0.25.0",
-    "sharp": "^0.33.0",
-    "exif-reader": "^2.0.0",
-    "commander": "^12.0.0"
-  },
-  "devDependencies": {
-    "jest": "^29.0.0"
-  }
-}
+```bash
+# .env (optional — defaults work out of the box)
+OLLAMA_HOST=http://localhost:11434
+OLLAMA_MODEL=llava:7b
 ```
 
 ## Interaction with Other Agents

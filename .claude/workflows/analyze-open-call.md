@@ -155,6 +155,45 @@ Output (FR-3.12: timestamped results):
 - data/open-calls/{name}/results/latest -> {timestamp} (symlink)
 ```
 
+## Phase 4: Feedback Loop (Optional — Human Validation)
+
+### Step 4.1: Record Human Ranking
+**Owner**: User (via CLI)
+
+```
+Input:
+- Your personal ranking of the photos (best first)
+
+Command:
+  node src/cli/analyze.js human-ranking data/open-calls/{name}/ \
+    --photos best.jpg second.jpg third.jpg ...
+
+Output:
+- data/open-calls/{name}/human-ranking.json
+```
+
+### Step 4.2: Compare AI vs Human
+**Owner**: Dev (automated)
+
+```
+Input:
+- Latest AI ranking (results/latest/photo-analysis.json)
+- Human ranking (human-ranking.json)
+- All historical runs (results/*/photo-analysis.json)
+
+Command:
+  node src/cli/analyze.js compare data/open-calls/{name}/
+
+Metrics:
+- Spearman's rho (rank correlation, -1 to 1)
+- Top-N overlap (agreement on best photos)
+- Biggest disagreements (photos ranked very differently)
+- Cross-run consistency (stability across multiple analysis runs)
+
+Output:
+- data/open-calls/{name}/results/latest/comparison-report.md
+```
+
 ## Final File Structure
 
 ```
@@ -172,6 +211,7 @@ data/open-calls/{call-name}/
 │   └── ...
 ├── aggregated-scores.json     # Aggregated scores
 ├── final-ranking.md           # Final ranking
+├── human-ranking.json         # Your personal ranking (Phase 4)
 └── results/                   # Timestamped results (FR-3.12)
     ├── 2026-02-08T14-30-45/   # Each analysis run
     │   ├── batch-results.json

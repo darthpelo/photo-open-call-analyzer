@@ -241,9 +241,9 @@ npm run analyze analyze data/open-calls/my-competition/
 
 ## See Also
 
-- [README.md](../README.md) - Project overview
-- [QUICKSTART.md](../QUICKSTART.md) - Getting started guide
-- [_bmad-output/PRD.md](../_bmad-output/PRD.md#fr-21-configuration-template-system) - Feature requirements
+- [README.md](../../README.md) - Project overview
+- [PRD.md](../architecture/PRD.md#fr-21-configuration-template-system) - Feature requirements
+- [Prompt Engineering Guide](../prompt-engineering-guide.md) - Optimize analysis quality
 
 ## Schema Reference
 
