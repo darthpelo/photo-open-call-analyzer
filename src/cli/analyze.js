@@ -12,7 +12,7 @@ import { aggregateSetScores, rankSets } from '../analysis/set-score-aggregator.j
 import { selectCandidateSets, countCombinations, selectCandidateSetsByGroup } from '../processing/combination-generator.js';
 import { exportSetReports, exportGroupedSetReports } from '../output/set-report-generator.js';
 import { logger } from '../utils/logger.js';
-import { readJson, fileExists, writeJson, projectPath, resolveOutputDir, resolvePhotoSelection } from '../utils/file-utils.js';
+import { readJson, fileExists, writeJson, writeText, projectPath, resolveOutputDir, resolvePhotoSelection } from '../utils/file-utils.js';
 import { SUPPORTED_FORMATS } from '../processing/photo-validator.js';
 import { loadOpenCallConfig, formatValidationErrors } from '../config/validator.js';
 import { validateProjectPrompt } from '../validation/prompt-quality-validator.js';
@@ -1802,7 +1802,6 @@ program
 
       // Save report
       const outputPath = join(latestDir, 'comparison-report.md');
-      const { writeText } = await import('../utils/file-utils.js');
       writeText(outputPath, report);
       logger.success(`Comparison report saved: ${outputPath}`);
 
