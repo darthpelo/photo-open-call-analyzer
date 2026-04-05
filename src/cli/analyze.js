@@ -30,6 +30,7 @@ import { generateUrlSuggestions, validateUrls } from '../analysis/url-discoverer
 import { retrieveMemoryContext, saveAnalysisMemory } from '../analysis/strategic-memory.js';
 import { checkOllamaStatus } from '../utils/api-client.js';
 import { computeSpearmanRho, computeTopNOverlap, findDisagreements, analyzeConsistency, generateComparisonReport } from '../analysis/comparison-engine.js';
+import { registerDiscoverCommand } from './discover-command.js';
 import { join, basename } from 'path';
 import { readdirSync } from 'fs';
 import ora from 'ora';
@@ -37,6 +38,9 @@ import ora from 'ora';
 const program = new Command();
 
 program.name('photo-analyzer').description('AI-powered photo analysis for photography competitions').version('1.0.0');
+
+// Register discovery layer command (Cycle 1)
+registerDiscoverCommand(program);
 
 /**
  * Project initialization wizard (FR-3.4)

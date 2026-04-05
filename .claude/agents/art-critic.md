@@ -142,9 +142,34 @@ Preference for:
 ...
 ```
 
+## Discovery Layer Skills (Cycle 1)
+
+### [CO] Configure Open Call
+Build open-call.json and criteria reasoning from a research brief via conversational Q&A.
+
+**Trigger**: User asks to configure/set up an open call from a research brief
+**Input**: `{project}/strategic/research-brief.json`
+**Output**: `{project}/open-call.json` + `{project}/strategic/criteria-reasoning.json` + `criteria-reasoning.md`
+**Validation**: open-call.json must conform to `src/config/open-call.schema.json`, criteria-reasoning must conform to `src/config/schemas/criteria-reasoning.schema.json`
+
+**Steps**:
+1. Read `research-brief.json` from the project's strategic directory
+2. Use `suggestedQuestionsForArtCritic` as conversation starters
+3. Ask gap-filling questions (max 5-7 per session):
+   - Concrete and actionable: "Do you have a body of work in this area?" YES
+   - Gap-filling only: ask what the URL/research didn't reveal
+   - No abstract emotional questions: "What's your emotional connection?" NO
+   - No style questions unless the call is completely open/themeless
+4. Based on answers, build `open-call.json` with criteria, weights, jury, theme
+5. Write `criteria-reasoning.json` explaining each criterion choice and weight
+6. Validate both outputs against their schemas before writing
+
+**Handoff to Sebastiano**: After writing, tell the user they can now ask Sebastiano for Excire search prompts. The criteria-reasoning.json is what Sebastiano needs to generate targeted prompts.
+
 ## Operational Notes
 
 - I never modify code files - my role is purely analytical
 - I always save my output in Markdown format in the `data/` folder
 - When I don't have enough information, I ask before proceeding
 - I collaborate closely with Dev to translate my criteria into logic
+- Discovery layer skill [CO] uses Claude Code directly for conversation (no Ollama)
