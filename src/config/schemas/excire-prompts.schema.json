@@ -1,0 +1,61 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Excire Prompts Schema",
+  "description": "Schema for Sebastiano's Excire search prompt output. Conversational discovery layer, Cycle 1.",
+  "type": "object",
+  "required": ["strategies"],
+  "additionalProperties": false,
+  "properties": {
+    "strategies": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "required": ["strategy", "prompts"],
+        "additionalProperties": false,
+        "properties": {
+          "strategy": {
+            "type": "string",
+            "enum": ["direct", "metaphorical", "bold", "jury_informed", "cascade"],
+            "description": "Prompt strategy type"
+          },
+          "prompts": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 5,
+            "items": {
+              "type": "object",
+              "required": ["prompt", "strictnessHint", "rationale"],
+              "additionalProperties": false,
+              "properties": {
+                "prompt": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 200,
+                  "description": "Text for Excire X-Prompt AI search"
+                },
+                "strictnessHint": {
+                  "type": "string",
+                  "enum": ["low", "medium", "high"],
+                  "description": "Suggested strictness level"
+                },
+                "keywordRefinement": {
+                  "type": "string",
+                  "maxLength": 100,
+                  "description": "Optional keyword to apply after prompt search"
+                },
+                "rationale": {
+                  "type": "string",
+                  "minLength": 3,
+                  "maxLength": 500,
+                  "description": "Why this angle"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
