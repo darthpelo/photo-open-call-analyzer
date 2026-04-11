@@ -106,6 +106,19 @@ node src/cli/analyze.js suggest-sets data/open-calls/my-polaroid/ --top 3
 # with a 'latest' symlink pointing to the most recent run
 ```
 
+### 7. Discovery Flow (Conversational Pre-Analysis)
+```bash
+# Discover and research an open call — scaffolds project + prints workflow
+node src/cli/analyze.js discover https://example.com/open-call
+
+# The command creates data/open-calls/{name}/ and guides you through:
+# 1. Research the open call (Sebastiano agent)
+# 2. Build evaluation config (Art Critic agent)
+# 3. Generate Excire search prompts (Sebastiano agent)
+# 4. Search in Excire, export photos
+# 5. Run analysis with the existing pipeline
+```
+
 ## Project Structure
 
 ```
@@ -124,6 +137,11 @@ photo-open-call-analyzer/
 │   └── workflows/            # Reusable workflows
 │       └── analyze-open-call.md
 ├── src/                      # Source code
+│   ├── discovery/            # Conversational discovery layer
+│   │   ├── discovery-orchestrator.js   # URL validation, project scaffolding
+│   │   ├── research-brief-writer.js    # Structured research brief generation
+│   │   ├── criteria-reasoning-writer.js # Evaluation criteria with reasoning
+│   │   └── excire-prompt-writer.js     # Excire X-Prompt search queries (75-char limit)
 │   ├── analysis/             # Photo analysis logic
 │   │   ├── photo-analyzer.js       # Core with Ollama/LLaVA
 │   │   ├── prompt-generator.js
@@ -156,7 +174,9 @@ photo-open-call-analyzer/
 │   │   └── title-description-generator.js # AI-generated titles/descriptions
 │   ├── cli/                  # CLI commands
 │   ├── config/
-│   │   └── validator.js            # Configuration schema validation (Sprint 5)
+│   │   ├── validator.js            # Configuration schema validation (Sprint 5)
+│   │   ├── discovery-validator.js  # Discovery artifact validation
+│   │   └── schemas/               # JSON schemas for discovery artifacts
 │   ├── validation/
 │   │   ├── prompt-quality-validator.js  # Prompt quality pre-analysis checks (Sprint 5)
 │   │   └── ab-testing-framework.js     # A/B prompt comparison framework (Sprint 5)
@@ -285,6 +305,9 @@ See `docs/development/COPILOT.md` for detailed PR workflow and body template.
 git checkout -b feature/m2-task-name
 git push origin feature/m2-task-name
 # Then create PR on GitHub
+
+# Discovery (conversational pre-analysis)
+node src/cli/analyze.js discover https://example.com/open-call
 
 # Analysis (results saved to {project}/results/{timestamp}/, FR-3.12)
 node src/cli/analyze.js analyze-single ./photo.jpg
