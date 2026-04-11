@@ -32,8 +32,8 @@
                 "prompt": {
                   "type": "string",
                   "minLength": 3,
-                  "maxLength": 200,
-                  "description": "Text for Excire X-Prompt AI search"
+                  "maxLength": 75,
+                  "description": "Text for Excire X-Prompt AI search (max 75 chars — Excire truncates beyond this)"
                 },
                 "strictnessHint": {
                   "type": "string",
