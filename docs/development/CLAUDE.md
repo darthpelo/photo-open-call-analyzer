@@ -256,6 +256,16 @@ photo-open-call-analyzer/
 - Messages in English
 - Reference issue if applicable
 
+### Data Privacy
+
+**CRITICAL**: Everything under `data/open-calls/` is personal research data — open call configs, photos, results, strategic briefs, jury research, rankings, Excire prompts, etc. These files MUST NEVER be committed.
+
+The only exception is `data/open-calls/example-template/`, which is a public reference template.
+
+`.gitignore` enforces this with an inversive rule: `data/open-calls/*` is ignored, with `example-template/` and `.gitkeep` whitelisted. Do not weaken this rule — if you create new sample data meant to ship publicly, add an explicit whitelist entry rather than narrowing the block.
+
+If you ever notice tracked files leaking under `data/open-calls/`, untrack them with `git rm --cached <path>` and verify `.gitignore` covers the case.
+
 ## Main Dependencies
 
 ```json
