@@ -31,32 +31,16 @@ coverage/
 # Top-level results (analysis output)
 results/
 
-# Data (keep structure, ignore analysis content)
-# Photos & test images
-data/open-calls/*/photos/*
+# Personal data — NEVER commit anything under data/open-calls/
+# (open call configs, photos, results, strategic briefs, jury research, rankings, etc.)
+# Whitelist only the public example-template/ used as a reference.
+/data/open-calls/*
+!/data/open-calls/.gitkeep
+!/data/open-calls/example-template
+!/data/open-calls/example-template/**
+
+# Test photos (separate scope, also ignored)
 data/test-photos/*
-
-# Analysis results & generated data
-data/open-calls/*/results/*
-data/open-calls/*/.analysis-cache/
-data/open-calls/*/batch-results.json
-data/open-calls/*/analysis-prompt.json
-data/open-calls/*/analysis-results.json
-
-# Open call config & docs (user-specific data)
-data/open-calls/*/open-call.json
-data/open-calls/*/README.md
-
-# Personal analysis documents (Art Critic, Dev notes)
-data/open-calls/*/final-ranking.md
-data/open-calls/*/open-call-analysis.md
-data/open-calls/*/photo-analysis-prompt.md
-data/open-calls/*/project-brief.md
-
-# Keep directory structure
-!data/open-calls/*/.gitkeep
-!data/open-calls/*/photos/.gitkeep
-!data/open-calls/*/results/.gitkeep
 
 # Temp
 tmp/
