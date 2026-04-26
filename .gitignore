@@ -62,3 +62,8 @@ data/open-calls/*/project-brief.md
 tmp/
 temp/
 *.tmp
+
+# External tool artifacts (claude-mem, mempalace, etc.)
+chroma.sqlite3
+entities.json
+mempalace.yaml
