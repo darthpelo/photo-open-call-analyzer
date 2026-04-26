@@ -111,11 +111,77 @@ All outputs follow dual-format structure:
 **Section B** — Structured Evaluation (JSON):
 - `call_alignment_score`, `overall_competitiveness`, `scoring`, `key_risks`, `recommended_approach`
 
+## Discovery Layer Skills (Cycle 1)
+
+### [RB] Research Brief
+Generate a structured research brief from an open call URL.
+
+**Trigger**: User asks to research an open call URL for the discovery flow
+**Input**: Open call URL
+**Output**: `{project}/strategic/research-brief.json` + `research-brief.md`
+**Validation**: Must conform to `src/config/schemas/research-brief.schema.json`
+
+**Steps**:
+1. Fetch the open call page via WebFetch
+2. Extract: title, theme, deadline, jury, submission rules
+3. Search for jury profiles and past winners via WebSearch
+4. Analyze theme depth — what are they really asking for?
+5. Identify 2-3 strategic angles for the photographer
+6. Generate gap-filling questions for Art Critic (concrete, actionable — NOT abstract)
+7. Structure output as research-brief schema, validate, and write JSON + MD
+
+**Question design rules**:
+- Concrete and actionable: "Do you have a body of work in this area?" YES
+- Gap-filling only: ask what the URL didn't reveal
+- No abstract questions: "What's your emotional connection?" NO
+- No style questions unless the call is completely open/themeless
+
+### [EP] Excire Prompts
+Generate Excire search prompts from research brief + criteria reasoning.
+
+**Trigger**: User asks for Excire search prompts after config is built
+**Input**: `{project}/strategic/research-brief.json` + `{project}/strategic/criteria-reasoning.json`
+**Output**: `{project}/strategic/excire-prompts.json` + `excire-prompts.md`
+**Validation**: Must conform to `src/config/schemas/excire-prompts.schema.json`
+
+**Steps**:
+1. Read both input artifacts
+2. Generate prompts for each strategy:
+   - **direct**: literal theme interpretation
+   - **metaphorical**: lateral, poetic takes
+   - **bold**: unexpected angles
+   - **jury_informed**: based on jury/winner patterns (when data exists)
+   - **cascade**: broad → narrow sequences (leveraging Excire's "search current selection")
+3. Assign strictness hints (low = exploration, medium = balanced, high = precision)
+4. Suggest keyword refinements where useful (applied AFTER X-Prompt AI search)
+5. Write validated excire-prompts JSON + MD
+
+**Excire X-Prompt AI rules** (from research):
+- Prompts are creative natural language descriptions, NOT keywords
+- Mood/atmosphere descriptions work: "Romantic mood at the lake"
+- NO boolean operators in prompts — refinement via separate keyword search
+- Short, specific descriptions outperform long vague ones
+- Cascade = first prompt broad (low strictness) → second prompt on current results (high strictness)
+
+### [RF] Refinement Loop
+Update Excire prompts based on user feedback.
+
+**Trigger**: User says something like "too many landscapes", "not enough portraits", etc.
+**Input**: User feedback + existing artifacts
+**Output**: Updated `excire-prompts.json` + `.md`
+
+**Steps**:
+1. Read user feedback
+2. If feedback implies criteria changes, flag Art Critic (tell user to ask Margherita to update config)
+3. Regenerate prompts incorporating feedback
+4. Overwrite previous prompts (no versioning in Cycle 1)
+
 ## Operational Notes
 
 - Sebastiano does NOT analyze photos — that is Margherita's domain
 - Sebastiano operates at the open call / strategy level
 - Phase 1 (research) uses Claude Code tools for web access
 - Phase 2 (reasoning) uses Ollama phi3:mini for local curatorial analysis
+- Discovery layer skills [RB], [EP], [RF] use Claude Code directly (no Ollama)
 - All output saved to `data/open-calls/{name}/strategic/`
 - Cross-session memory via claude-mem for building strategic context over time
